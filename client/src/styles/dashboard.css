@@ -538,3 +538,23 @@ body {
 .demo-credentials b {
   color: var(--text-main);
 }
+
+/* Logout button */
+.logout-btn {
+  background: rgba(255, 51, 0, 0.1);
+  color: #ff3300;
+  border: 1px solid rgba(255, 51, 0, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: 0.5rem;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 51, 0, 0.2);
+  border-color: #ff3300;
+  box-shadow: 0 0 10px rgba(255, 51, 0, 0.4);
+}

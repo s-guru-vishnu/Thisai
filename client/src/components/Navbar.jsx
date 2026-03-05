@@ -1,6 +1,14 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        localStorage.removeItem('userInfo');
+        navigate('/login');
+    };
+
     return (
         <nav className="navbar">
             <div className="nav-brand">
@@ -22,8 +30,11 @@ const Navbar = () => {
                     🔔
                 </div>
                 <div className="avatar">
-                    <img src="https://ui-avatars.com/api/?name=Admin&background=FF6600&color=fff&rounded=true" alt="Admin user" />
+                    <img src="https://ui-avatars.com/api/?name=User&background=FF6600&color=fff&rounded=true" alt="User avatar" />
                 </div>
+                <button onClick={handleLogout} className="logout-btn">
+                    Logout
+                </button>
             </div>
         </nav>
     );
