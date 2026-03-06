@@ -12,9 +12,11 @@ app.use(cors());
 
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
+const parcelReceiverRoutes = require('./routes/parcelReceiverRoutes');
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/parcels', parcelReceiverRoutes);
 
 app.get('/', (req, res) => {
     res.send('Logistics API is running...');
