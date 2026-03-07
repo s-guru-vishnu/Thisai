@@ -1,31 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const Parcel = require('../models/Parcel');
+const { createParcel, getParcels, getParcelById, updateParcel, deleteParcel } = require('../controllers/parcelController');
 
 // Create a new parcel
-router.post('/', async (req, res) => {
-    try {
-        const parcelId = `PRC-${Math.floor(10000 + Math.random() * 90000)}`;
-        const newParcel = new Parcel({
-            ...req.body,
-            parcelId,
-            status: 'Received'
-        });
-        const savedParcel = await newParcel.save();
-        res.status(201).json(savedParcel);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+router.post('/', createParcel);
 
 // Get all parcels
-router.get('/', async (req, res) => {
-    try {
-        const parcels = await Parcel.find().sort({ createdAt: -1 });
-        res.status(200).json(parcels);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
+router.get('/', getParcels);
+
+// Get parcel by ID
+router.get('/:id', getParcelById);
+
+// Update parcel
+router.put('/:id', updateParcel);
+
+// Delete parcel
+router.delete('/:id', deleteParcel);
 
 module.exports = router;
