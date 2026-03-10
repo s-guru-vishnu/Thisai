@@ -1,7 +1,7 @@
 import React from 'react';
-import { MoreVertical, Edit2, Trash2, Ban } from 'lucide-react';
+import { Edit2, Trash2, Ban, MoreVertical } from 'lucide-react';
 
-const DataTable = ({ headers, data, actions }) => {
+const DataTable = ({ headers, data, onEdit, onSuspend, onDelete }) => {
     return (
         <div className="table-responsive" style={{ overflowX: 'auto', background: 'var(--bg-panel)', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -12,65 +12,106 @@ const DataTable = ({ headers, data, actions }) => {
                                 {header}
                             </th>
                         ))}
-                        {actions && <th style={{ padding: '1.2rem', color: 'var(--text-muted)', textAlign: 'right' }}>Actions</th>}
+                        <th style={{ padding: '1.2rem', color: 'var(--text-muted)', textAlign: 'right' }}>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {data.map((row, index) => (
-                        <tr key={index} style={{ borderBottom: '1px solid var(--border-color)', transition: 'var(--transition)' }} className="hover:bg-card-hover">
+                        <tr key={index} style={{ borderBottom: '1px solid var(--border-color)', transition: 'var(--transition)' }} className="table-row-hover">
                             {Object.values(row).map((val, idx) => (
                                 <td key={idx} style={{ padding: '1.2rem', color: 'white', fontSize: '0.95rem' }}>
-                                    {typeof val === 'string' && val.toLowerCase().includes('admin') || val === 'Manager' || val === 'Warehouse' || val === 'Driver' ? (
-                                        <span className={`status-pill ${val.toLowerCase()}`} style={{
-                                            padding: '4px 12px',
-                                            borderRadius: '20px',
-                                            fontSize: '0.8rem',
-                                            fontWeight: '700',
-                                            background: val === 'Admin' ? 'rgba(255,107,0,0.1)' : 'rgba(23,162,184,0.1)',
-                                            color: val === 'Admin' ? 'var(--accent)' : 'var(--info)',
-                                            border: `1px solid ${val === 'Admin' ? 'rgba(255,107,0,0.2)' : 'rgba(23,162,184,0.2)'}`
-                                        }}>
+                                    {typeof val === 'string' && (val === 'Admin' || val === 'Manager' || val === 'Warehouse' || val === 'Driver' || val === 'Suspended') ? (
+                                        <span className={`status-pill ${val.toLowerCase()}`}>
                                             {val}
                                         </span>
-                                    ) : val}
+                                    ) : (
+                                        typeof val === 'string' && val.includes('@') ? (
+                                            <span style={{ color: 'var(--text-muted)' }}>{val}</span>
+                                        ) : val
+                                    )}
                                 </td>
                             ))}
-                            {actions && (
-                                <td style={{ padding: '1.2rem', textAlign: 'right' }}>
-                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                        <button className="icon-btn" title="Edit"><Edit2 size={16} /></button>
-                                        <button className="icon-btn" title="Suspend"><Ban size={16} /></button>
-                                        <button className="icon-btn danger" title="Delete"><Trash2 size={16} /></button>
-                                    </div>
-                                </td>
-                            )}
+                            <td style={{ padding: '1.2rem', textAlign: 'right' }}>
+                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                    <button 
+                                        className="action-btn edit" 
+                                        onClick={() => onEdit && onEdit(row)}
+                                        title="Edit User"
+                                    >
+                                        <Edit2 size={16} />
+                                    </button>
+                                    <button 
+                                        className="action-btn suspend" 
+                                        onClick={() => onSuspend && onSuspend(row)}
+                                        title="Suspend User"
+                                    >
+                                        <Ban size={16} />
+                                    </button>
+                                    <button 
+                                        className="action-btn delete" 
+                                        onClick={() => onDelete && onDelete(row)}
+                                        title="Delete User"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
             
             <style>{`
-                .hover\:bg-card-hover:hover {
-                    background-color: var(--bg-card-hover);
+                .table-row-hover:hover {
+                    background-color: rgba(255, 255, 255, 0.02);
                 }
-                .icon-btn {
-                    background: transparent;
+                .action-btn {
+                    background: rgba(255, 255, 255, 0.03);
                     border: 1px solid var(--border-color);
                     color: var(--text-muted);
-                    padding: 6px;
-                    border-radius: 6px;
+                    padding: 8px;
+                    border-radius: 8px;
                     cursor: pointer;
-                    transition: var(--transition);
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 }
-                .icon-btn:hover {
+                .action-btn:hover {
+                    transform: translateY(-2px);
+                    background: var(--bg-primary);
                     color: white;
                     border-color: var(--text-muted);
                 }
-                .icon-btn.danger:hover {
+                .action-btn.edit:hover {
+                    color: var(--info);
+                    border-color: var(--info);
+                    box-shadow: 0 0 10px rgba(23, 162, 184, 0.2);
+                }
+                .action-btn.suspend:hover {
+                    color: var(--warning);
+                    border-color: var(--warning);
+                    box-shadow: 0 0 10px rgba(247, 147, 26, 0.2);
+                }
+                .action-btn.delete:hover {
                     color: var(--danger);
                     border-color: var(--danger);
-                    background: rgba(255,59,48,0.1);
+                    background: rgba(255, 59, 48, 0.1);
+                    box-shadow: 0 0 10px rgba(255, 59, 48, 0.2);
                 }
+                .status-pill {
+                    padding: 4px 12px;
+                    border-radius: 20px;
+                    font-size: 0.8rem;
+                    font-weight: 700;
+                    white-space: nowrap;
+                    border: 1px solid transparent;
+                }
+                .status-pill.admin { background: rgba(255,107,0,0.1); color: var(--accent); border-color: rgba(255,107,0,0.2); }
+                .status-pill.manager { background: rgba(23,162,184,0.1); color: var(--info); border-color: rgba(23,162,184,0.2); }
+                .status-pill.warehouse { background: rgba(247,147,26,0.1); color: var(--warning); border-color: rgba(247,147,26,0.2); }
+                .status-pill.driver { background: rgba(22,199,132,0.1); color: var(--success); border-color: rgba(22,199,132,0.2); }
+                .status-pill.suspended { background: rgba(255,59,48,0.1); color: var(--danger); border-color: rgba(255,59,48,0.2); }
             `}</style>
         </div>
     );

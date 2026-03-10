@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
+const { loginUser, registerUser } = require('../controllers/authController');
 
 // @route   POST /api/auth/login
-// @desc    Auth user & get token (simulated)
-router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
+// @desc    Auth user & get token
+router.post('/login', loginUser);
 
+<<<<<<< HEAD
+// @route   POST /api/auth/register
+// @desc    Register a new user
+router.post('/register', registerUser);
+=======
     try {
         const user = await User.findOne({ email });
 
@@ -48,5 +52,6 @@ router.post('/seed', async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+>>>>>>> f0c8cb7c0132cc1398f7554139b95d2a9fb56070
 
 module.exports = router;
