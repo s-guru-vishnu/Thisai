@@ -95,7 +95,8 @@ const ReceiverManualEntry = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await axios.post('http://localhost:5000/api/parcels', newProduct);
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            await axios.post(`${apiBase}/api/parcels`, newProduct);
             navigate('/receiver');
         } catch (err) {
             console.error("Failed to add product", err);
