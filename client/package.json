@@ -9,9 +9,15 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@react-google-maps/api": "^2.20.8",
         "axios": "^1.13.6",
+        "html5-qrcode": "^2.3.8",
+        "leaflet": "^1.9.4",
+        "lucide-react": "^0.577.0",
+        "qrcode.react": "^4.2.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
+        "react-leaflet": "^4.2.1",
         "react-router-dom": "^7.13.1"
     },
     "devDependencies": {

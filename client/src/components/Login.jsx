@@ -44,6 +44,9 @@ const Login = () => {
                 case 'parcel_receiver':
                     navigate('/receiver');
                     break;
+                case 'seller':
+                    navigate('/seller');
+                    break;
                 default:
                     navigate('/dashboard');
             }
@@ -117,7 +120,8 @@ const Login = () => {
                     <small>
                         <b>Testing Accounts (PWD: password123):</b><br />
                         admin@impact.com | manager@impact.com | warehouse@impact.com<br />
-                        driver@impact.com | customer@impact.com | receiver@impact.com
+                        driver@impact.com | customer@impact.com | receiver@impact.com<br />
+                        seller@impact.com
                     </small>
                 </div>
             </div>

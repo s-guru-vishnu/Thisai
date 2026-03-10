@@ -39,6 +39,7 @@ router.post('/seed', async (req, res) => {
             { name: 'Driver John', email: 'driver@impact.com', password: 'password123', role: 'driver' },
             { name: 'Valued Customer', email: 'customer@impact.com', password: 'password123', role: 'customer' },
             { name: 'Parcel Receiver', email: 'receiver@impact.com', password: 'password123', role: 'parcel_receiver' },
+            { name: 'Retail Seller', email: 'seller@impact.com', password: 'password123', role: 'seller' },
         ];
 
         const createdUsers = await User.insertMany(seedUsers);

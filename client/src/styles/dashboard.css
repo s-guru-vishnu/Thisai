@@ -2,17 +2,17 @@
   --bg-primary: #0a0a0a;
   --bg-secondary: #141414;
   --bg-panel: rgba(22, 22, 22, 0.65);
-  
+
   --accent: #FF6600;
   --accent-hover: #ff8533;
   --accent-glow: rgba(255, 102, 0, 0.3);
-  
+
   --text-main: #ffffff;
   --text-muted: #888888;
-  
+
   --border-color: rgba(255, 255, 255, 0.08);
   --border-accent: rgba(255, 102, 0, 0.2);
-  
+
   --success: #00cc66;
   --warning: #ffcc00;
   --info: #0099ff;
@@ -42,7 +42,7 @@ body {
   padding: 1.2rem 3rem;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
-  box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -90,7 +90,7 @@ body {
   position: relative;
 }
 
-.nav-links a:hover, 
+.nav-links a:hover,
 .nav-links li.active a {
   color: var(--text-main);
 }
@@ -325,7 +325,7 @@ body {
   gap: 1.2rem;
   padding: 1rem;
   border-radius: 12px;
-  background: rgba(0,0,0,0.2);
+  background: rgba(0, 0, 0, 0.2);
   transition: background 0.3s;
 }
 
@@ -345,9 +345,20 @@ body {
   flex-shrink: 0;
 }
 
-.activity-icon.info { background: rgba(0, 153, 255, 0.1); color: var(--info); }
-.activity-icon.warning { background: rgba(255, 204, 0, 0.1); color: var(--warning); }
-.activity-icon.success { background: rgba(0, 204, 102, 0.1); color: var(--success); }
+.activity-icon.info {
+  background: rgba(0, 153, 255, 0.1);
+  color: var(--info);
+}
+
+.activity-icon.warning {
+  background: rgba(255, 204, 0, 0.1);
+  color: var(--warning);
+}
+
+.activity-icon.success {
+  background: rgba(0, 204, 102, 0.1);
+  color: var(--success);
+}
 
 .activity-details {
   flex-grow: 1;
@@ -373,14 +384,29 @@ body {
 
 /* Animations */
 @keyframes pulse {
-  0% { transform: scale(0.95); box-shadow: 0 0 10px var(--accent-glow); }
-  100% { transform: scale(1.05); box-shadow: 0 0 20px rgba(255, 102, 0, 0.6); }
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+
+  100% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(255, 102, 0, 0.6);
+  }
 }
 
 @keyframes buttonPulse {
-  0% { box-shadow: 0 0 0 0 rgba(255, 102, 0, 0.4); }
-  70% { box-shadow: 0 0 0 15px rgba(255, 102, 0, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 102, 0, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 102, 0, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 15px rgba(255, 102, 0, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 102, 0, 0);
+  }
 }
 
 /* Responsive */
@@ -390,7 +416,7 @@ body {
     align-items: flex-start;
     gap: 1.5rem;
   }
-  
+
   .nav-links {
     display: none;
   }
@@ -415,7 +441,7 @@ body {
   border-radius: 20px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 30px 60px rgba(0,0,0,0.6), 0 0 20px rgba(255,102,0,0.1);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 102, 0, 0.1);
   box-sizing: border-box;
 }
 
@@ -472,8 +498,8 @@ body {
 .form-group input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 10px rgba(255,102,0,0.2);
-  background: rgba(255,255,255,0.05);
+  box-shadow: 0 0 10px rgba(255, 102, 0, 0.2);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .submit-btn {
@@ -557,4 +583,63 @@ body {
   background: rgba(255, 51, 0, 0.2);
   border-color: #ff3300;
   box-shadow: 0 0 10px rgba(255, 51, 0, 0.4);
+}
+
+/* Standard Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.modal-content {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+  animation: popIn 0.3s ease forwards;
+  position: relative;
+}
+
+.modal-content.large-modal {
+  max-width: 1000px;
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.close-modal-btn:hover {
+  color: white;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }

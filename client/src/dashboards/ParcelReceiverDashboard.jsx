@@ -2,11 +2,17 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import DashboardCard from '../components/DashboardCard';
+import { QrCode, X, CheckSquare, Package, Truck, Search } from 'lucide-react';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 
 const ParcelReceiverDashboard = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [products, setProducts] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [showScanner, setShowScanner] = useState(false);
+    const [scanner, setScanner] = useState(null);
+    const [scanResult, setScanResult] = useState(null);
+
     const [newProduct, setNewProduct] = useState({
         productName: '', category: '', weight: '', seller: '', destination: '', customerName: '', deliveryAddress: '', deliveryType: ''
     });
@@ -14,14 +20,53 @@ const ParcelReceiverDashboard = () => {
     useEffect(() => {
         const fetchParcels = async () => {
             try {
+                // Try fetching from backend first
                 const res = await axios.get('http://localhost:5000/api/parcels');
                 setProducts(res.data);
             } catch (err) {
                 console.error("Failed to fetch parcels", err);
+                // Fallback to localStorage if backend fails or is not ready
+                const localData = JSON.parse(localStorage.getItem('sellerDeliveries') || '[]');
+                setProducts(localData);
             }
         };
         fetchParcels();
     }, []);
+
+    const toggleScanner = () => {
+        if (!showScanner) {
+            setShowScanner(true);
+            setTimeout(() => {
+                const newScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+                newScanner.render((decodedText) => {
+                    handleScanSuccess(decodedText.toUpperCase());
+                    newScanner.clear();
+                    setShowScanner(false);
+                }, (error) => {
+                    // console.warn(error);
+                });
+                setScanner(newScanner);
+            }, 100);
+        } else {
+            if (scanner) scanner.clear();
+            setShowScanner(false);
+        }
+    };
+
+    const handleScanSuccess = (code) => {
+        // Sync with either server or localStorage
+        const localDeliveries = JSON.parse(localStorage.getItem('sellerDeliveries') || '[]');
+        const updated = localDeliveries.map(d => {
+            if (d.trackingCode === code) {
+                return { ...d, status: 'Received' };
+            }
+            return d;
+        });
+        localStorage.setItem('sellerDeliveries', JSON.stringify(updated));
+        setProducts(updated);
+        setScanResult(`Successfully Received Package: ${code}`);
+        setTimeout(() => setScanResult(null), 5000);
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -39,7 +84,12 @@ const ParcelReceiverDashboard = () => {
             });
         } catch (err) {
             console.error("Failed to add product", err);
-            alert("Error adding product!");
+            // Fallback for demo
+            const localP = { ...newProduct, id: Date.now(), status: 'Received', trackingCode: 'MANUAL-' + Date.now().toString().slice(-4) };
+            const localD = JSON.parse(localStorage.getItem('sellerDeliveries') || '[]');
+            localStorage.setItem('sellerDeliveries', JSON.stringify([localP, ...localD]));
+            setProducts([localP, ...products]);
+            setIsModalOpen(false);
         }
     };
 
@@ -55,13 +105,24 @@ const ParcelReceiverDashboard = () => {
                 <header className="dashboard-header">
                     <div>
                         <h1>Receiver <span>Portal</span></h1>
-                        <p className="subtitle">First-mile collection: receiving from sellers and sending to warehouses.</p>
+                        <p className="subtitle">First-mile collection: Scan seller QR codes to receive packages.</p>
                     </div>
-                    <div className="header-actions" style={{ display: 'flex', gap: '1rem' }}>
-                        <button className="secondary-btn" style={{ padding: '0.8rem 1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer', fontWeight: 'bold' }}>Log Seller Receipt</button>
-                        <button className="primary-btn pulse-glow" onClick={() => setIsModalOpen(true)}>Receive Product</button>
+                    <div className="header-actions" style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        {scanResult && <div style={{ background: 'rgba(0,204,102,0.1)', color: 'var(--success)', padding: '0.8rem 1.2rem', borderRadius: '8px', border: '1px solid var(--success)', fontSize: '0.9rem' }}>{scanResult}</div>}
+                        <button onClick={toggleScanner} className="secondary-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0.8rem 1.5rem', borderRadius: '8px', background: showScanner ? 'var(--accent)' : 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}>
+                            <QrCode size={20} />
+                            {showScanner ? 'Close Scanner' : 'Scan Seller QR'}
+                        </button>
+                        <button className="primary-btn pulse-glow" onClick={() => setIsModalOpen(true)}>Manual Entry</button>
                     </div>
                 </header>
+
+                {showScanner && (
+                    <div style={{ maxWidth: '600px', margin: '0 auto 2rem auto', animation: 'fadeIn 0.3s ease' }}>
+                        <div id="reader" style={{ width: '100%', borderRadius: '12px', border: '2px solid var(--accent)', overflow: 'hidden', background: '#000' }}></div>
+                        <p style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '10px' }}>Point camera at the seller's package QR code</p>
+                    </div>
+                )}
 
                 <section className="dashboard-grid">
                     <DashboardCard title="Received from Sellers" value={totalReceived.toLocaleString()} trend="+15% today" icon="🏪" trendPositive={true} />
@@ -86,7 +147,7 @@ const ParcelReceiverDashboard = () => {
                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.95rem' }}>
                                 <thead>
                                     <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
-                                        <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Parcel ID</th>
+                                        <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>ID / Tracking</th>
                                         <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Product Info</th>
                                         <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Seller</th>
                                         <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Delivery Details</th>
@@ -95,9 +156,16 @@ const ParcelReceiverDashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {products.filter(p => p.productName.toLowerCase().includes(searchTerm.toLowerCase()) || (p.parcelId && p.parcelId.toLowerCase().includes(searchTerm.toLowerCase()))).map(product => (
-                                        <tr key={product._id || product.parcelId} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.2s' }}>
-                                            <td style={{ padding: '1rem', fontWeight: 'bold' }}>{product.parcelId}</td>
+                                    {products.filter(p =>
+                                        p.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        p.parcelId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        p.trackingCode?.toLowerCase().includes(searchTerm.toLowerCase())
+                                    ).map(product => (
+                                        <tr key={product._id || product.id || product.parcelId} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.2s' }}>
+                                            <td style={{ padding: '1rem', fontWeight: 'bold' }}>
+                                                <div style={{ color: 'var(--accent)', fontSize: '0.9rem' }}>{product.trackingCode || 'No Code'}</div>
+                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>ID: {product.parcelId || product.id}</div>
+                                            </td>
                                             <td style={{ padding: '1rem' }}>
                                                 <div style={{ fontWeight: '500', color: 'var(--text-color)' }}>{product.productName}</div>
                                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{product.category} • {product.weight}</div>

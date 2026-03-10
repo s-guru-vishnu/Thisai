@@ -1,8 +1,13 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 
 const Navbar = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const isSeller = location.pathname.startsWith('/seller');
+    const isCustomer = location.pathname.startsWith('/customer');
+    const isReceiver = location.pathname.startsWith('/receiver');
 
     const handleLogout = () => {
         localStorage.removeItem('userInfo');
@@ -17,11 +22,36 @@ const Navbar = () => {
             </div>
 
             <ul className="nav-links">
-                <li className="active"><a href="#dashboard">Dashboard</a></li>
-                <li><a href="#map">Live Map</a></li>
-                <li><a href="#parcels">Parcels</a></li>
-                <li><a href="#drivers">Drivers</a></li>
-                <li><a href="#predictions">AI Predictions</a></li>
+                {isSeller && (
+                    <>
+                        <li className={location.pathname === '/seller' ? 'active' : ''}>
+                            <Link to="/seller" style={{ textDecoration: 'none', color: 'inherit' }}>Dashboard</Link>
+                        </li>
+                        <li className={location.pathname.includes('/seller/deliveries') ? 'active' : ''}>
+                            <Link to="/seller/deliveries" style={{ textDecoration: 'none', color: 'inherit' }}>Manage Deliveries</Link>
+                        </li>
+                    </>
+                )}
+                {isCustomer && (
+                    <>
+                        <li className={location.pathname === '/customer' ? 'active' : ''}>
+                            <Link to="/customer" style={{ textDecoration: 'none', color: 'inherit' }}>Track Shipment</Link>
+                        </li>
+                    </>
+                )}
+                {isReceiver && (
+                    <>
+                        <li className={location.pathname === '/receiver' ? 'active' : ''}>
+                            <Link to="/receiver" style={{ textDecoration: 'none', color: 'inherit' }}>Receiver Hub</Link>
+                        </li>
+                    </>
+                )}
+                {!isSeller && !isCustomer && !isReceiver && (
+                    <>
+                        <li className="active"><a href="#dashboard">Dashboard</a></li>
+                        <li><a href="#map">Live Map</a></li>
+                    </>
+                )}
             </ul>
 
             <div className="nav-profile">

@@ -9,6 +9,7 @@ import WarehouseRoutes from './routes/warehouseRoutes';
 import DriverRoutes from './routes/driverRoutes';
 import CustomerRoutes from './routes/customerRoutes';
 import ParcelReceiverRoutes from './routes/parcelReceiverRoutes';
+import SellerRoutes from './routes/sellerRoutes';
 
 function App() {
     return (
@@ -24,6 +25,7 @@ function App() {
                 <Route path="/driver/*" element={<DriverRoutes />} />
                 <Route path="/customer/*" element={<CustomerRoutes />} />
                 <Route path="/receiver/*" element={<ParcelReceiverRoutes />} />
+                <Route path="/seller/*" element={<SellerRoutes />} />
             </Routes>
         </Router>
     );
