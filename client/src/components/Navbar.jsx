@@ -41,8 +41,18 @@ const Navbar = () => {
                 )}
                 {isReceiver && (
                     <>
-                        <li className={location.pathname === '/receiver' ? 'active' : ''}>
+                        <li className={location.pathname === '/receiver' && !location.search ? 'active' : ''}>
                             <Link to="/receiver" style={{ textDecoration: 'none', color: 'inherit' }}>Receiver Hub</Link>
+                        </li>
+                        <li className={location.pathname === '/receiver/scan' ? 'active' : ''}>
+                            <Link to="/receiver/scan" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                📷 Scan QR
+                            </Link>
+                        </li>
+                        <li className={location.pathname === '/receiver/manual' ? 'active' : ''}>
+                            <Link to="/receiver/manual" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                ✍️ Manual Entry
+                            </Link>
                         </li>
                     </>
                 )}
