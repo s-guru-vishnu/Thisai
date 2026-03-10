@@ -21,6 +21,12 @@ const userSchema = mongoose.Schema(
             enum: ['admin', 'manager', 'warehouse', 'driver', 'customer', 'parcel_receiver', 'seller'],
             default: 'customer',
         },
+        region: {
+            type: String,
+        },
+        hub: {
+            type: String,
+        },
     },
     {
         timestamps: true,

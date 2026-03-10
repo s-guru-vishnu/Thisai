@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
+import { QRCodeSVG } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { Truck, MapPin, Box, ArrowLeft, Navigation, Search, CheckCircle } from 'lucide-react';
+import { Truck, MapPin, Box, ArrowLeft, Navigation, Search, CheckCircle, Download, X } from 'lucide-react';
 import '../styles/dashboard.css';
 
 const containerStyle = {
@@ -28,7 +29,8 @@ const SellerManualEntry = () => {
     const [position, setPosition] = useState(center);
     const [products] = useState(() => JSON.parse(localStorage.getItem('sellerProducts') || '[]'));
     const [loading, setLoading] = useState(false);
-    const [toast, setToast] = useState('');
+    const [showQRSuccess, setShowQRSuccess] = useState(false);
+    const [generatedTrk, setGeneratedTrk] = useState('');
 
     const [formData, setFormData] = useState({
         productId: '',
@@ -82,10 +84,11 @@ const SellerManualEntry = () => {
         e.preventDefault();
         setLoading(true);
 
+        const trk = Math.random().toString(36).substring(2, 12).toUpperCase();
         const product = products.find(p => p.id.toString() === formData.productId);
         const newDelivery = {
             id: Date.now(),
-            trackingCode: Math.random().toString(36).substring(2, 12).toUpperCase(),
+            trackingCode: trk,
             productName: product ? product.name : 'Manual Item',
             ...formData,
             location: position,
@@ -96,19 +99,14 @@ const SellerManualEntry = () => {
         const existing = JSON.parse(localStorage.getItem('sellerDeliveries') || '[]');
         localStorage.setItem('sellerDeliveries', JSON.stringify([newDelivery, ...existing]));
 
-        setToast('Dispatch Successful!');
-        setTimeout(() => navigate('/seller'), 1500);
+        setGeneratedTrk(trk);
+        setShowQRSuccess(true);
+        setLoading(false);
     };
 
     return (
         <div className="app-container" style={{ background: 'var(--bg-color)', minHeight: '100vh' }}>
             <Navbar />
-
-            {toast && (
-                <div className="custom-toast" style={{ zIndex: 9999 }}>
-                    <CheckCircle size={24} /> <span>{toast}</span>
-                </div>
-            )}
 
             <main className="main-content" style={{ display: 'flex', height: 'calc(100vh - 80px)', gap: 0, padding: 0 }}>
                 {/* Left Panel: Form */}
@@ -189,14 +187,8 @@ const SellerManualEntry = () => {
                             onLoad={onLoad}
                             onClick={handleMapClick}
                             options={{
-                                styles: [
-                                    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-                                    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-                                    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-                                    { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }
-                                ],
-                                streetViewControl: false,
-                                mapTypeControl: false
+                                styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }],
+                                streetViewControl: false, mapTypeControl: false
                             }}
                         >
                             <Marker position={position} animation={window.google.maps.Animation.DROP} />
@@ -213,6 +205,34 @@ const SellerManualEntry = () => {
                     </div>
                 </div>
             </main>
+
+            {/* QR Result Modal */}
+            {showQRSuccess && (
+                <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.95)', zIndex: 10000 }}>
+                    <div className="panel" style={{ background: 'var(--panel-bg)', width: '450px', p: '2.5rem', textAlign: 'center', border: '2px solid var(--accent)', padding: '2.5rem', borderRadius: '24px' }}>
+                        <h2 style={{ marginBottom: '1rem' }}>Dispatch <span className="brand-accent">Confirmed</span></h2>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Tracking code and QR identity generated for driver pickup.</p>
+
+                        <div style={{ background: 'white', padding: '2rem', borderRadius: '20px', display: 'inline-block', marginBottom: '1.5rem' }}>
+                            <QRCodeSVG value={generatedTrk} size={250} level="H" includeMargin={true} />
+                        </div>
+
+                        <div style={{ marginBottom: '2.5rem' }}>
+                            <p style={{ fontSize: '0.8rem', color: '#888', letterSpacing: '4px', marginBottom: '5px' }}>TRACKING IDENTITY</p>
+                            <p style={{ fontSize: '1.5rem', fontWeight: '900', color: 'var(--accent)', fontFamily: 'monospace' }}>{generatedTrk}</p>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                            <button className="secondary-btn" style={{ padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                <Download size={20} /> Save Image
+                            </button>
+                            <button onClick={() => navigate('/seller')} className="primary-btn" style={{ padding: '1rem', borderRadius: '12px', fontWeight: 'bold' }}>
+                                Back to Hub
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 @keyframes pulse {
@@ -235,7 +255,6 @@ const SellerManualEntry = () => {
                 }
                 .pac-item:hover { background-color: #222 !important; }
                 .pac-item-query { color: #ff6600 !important; }
-                .pac-matched { color: #ffcc00 !important; }
             `}</style>
         </div>
     );
