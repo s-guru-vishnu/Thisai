@@ -6,7 +6,7 @@ import ParcelsPage from '../pages/ParcelsPage';
 import DriversPage from '../pages/DriversPage';
 import LiveMapPage from '../pages/LiveMapPage';
 import PredictionsPage from '../pages/PredictionsPage';
-import SettingsPage from '../pages/SettingsPage';
+import ProfilePage from '../pages/ProfilePage';
 
 const AdminRoutes = () => {
     return (
@@ -17,7 +17,7 @@ const AdminRoutes = () => {
             <Route path="/drivers" element={<DriversPage />} />
             <Route path="/map" element={<LiveMapPage />} />
             <Route path="/predictions" element={<PredictionsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
         </Routes>
     );
 };
