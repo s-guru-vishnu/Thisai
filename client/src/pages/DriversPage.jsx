@@ -3,12 +3,35 @@ import Navbar from '../components/Navbar';
 import { Truck, Star, Phone, MapPin, MoreHorizontal, UserCheck, ShieldCheck, Search, Plus } from 'lucide-react';
 
 const DriversPage = () => {
-    const drivers = [
-        { id: 'DRV-101', name: 'Mike Ross', vehicle: 'Toyota HiAce (TN-01-AB-1234)', rating: 4.8, parcels: 12, status: 'Online', phone: '+91 98765 43210' },
-        { id: 'DRV-102', name: 'Harvey Specter', vehicle: 'Eicher Pro (TN-02-BC-2345)', rating: 4.9, parcels: 8, status: 'On Delivery', phone: '+91 87654 32109' },
-        { id: 'DRV-103', name: 'Donna Paulsen', vehicle: 'Tata Ace (TN-03-CD-3456)', rating: 5.0, parcels: 15, status: 'Offline', phone: '+91 76543 21098' },
-        { id: 'DRV-104', name: 'Louis Litt', vehicle: 'Mahindra Bolero (TN-04-DE-4567)', rating: 4.2, parcels: 5, status: 'Away', phone: '+91 65432 10987' }
-    ];
+    const [drivers, setDrivers] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    React.useEffect(() => {
+        const fetchDrivers = async () => {
+            try {
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+                const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+                const config = { headers: { Authorization: `Bearer ${userInfo?.token}` } };
+                // Fetch all users and filter drivers
+                const { data } = await window.axios ? window.axios.get(`${apiBase}/api/admin/users`, config) : await fetch(`${apiBase}/api/admin/users`, config).then(res => res.json());
+                const driverUsers = (data || []).filter(u => u.role === 'driver').map(d => ({
+                    id: d._id || d.id,
+                    name: d.name,
+                    vehicle: d.vehicle || 'Unassigned Vehicle',
+                    rating: d.rating || 5.0,
+                    parcels: d.parcels || 0,
+                    status: d.status || 'Offline',
+                    phone: d.phone || 'N/A'
+                }));
+                setDrivers(driverUsers);
+            } catch (err) {
+                console.error("Failed to fetch drivers", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchDrivers();
+    }, []);
 
     const getStatusStyle = (status) => {
         switch (status) {
@@ -29,9 +52,6 @@ const DriversPage = () => {
                         <h1>Fleet <span>Management</span></h1>
                         <p className="subtitle">Monitor driver performance and vehicle assignments.</p>
                     </div>
-                    <button className="primary-btn pulse-glow flex items-center gap-2">
-                        <Plus size={18} /> Register Driver
-                    </button>
                 </header>
 
                 <div className="table-controls" style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>

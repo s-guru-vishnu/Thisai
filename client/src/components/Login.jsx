@@ -75,8 +75,8 @@ const Login = () => {
         <div className="login-container">
             <div className="login-box">
                 <div className="login-header">
-                    <div className="logo-orb large-orb pulse-glow"></div>
-                    <h2>IMPACT<span>LOGISTICS</span></h2>
+                    <img src="/Thisai.png" alt="Thisai Logo" className="logo-orb large-orb" />
+                    <h2>THISAI</h2>
                     <p>Login to your portal</p>
                 </div>
 
@@ -87,7 +87,7 @@ const Login = () => {
                         <label>Email Address</label>
                         <input
                             type="email"
-                            placeholder="e.g. admin@impact.com"
+                            placeholder="Enter Email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -98,7 +98,7 @@ const Login = () => {
                         <label>Password</label>
                         <input
                             type="password"
-                            placeholder="Enter password123"
+                            placeholder="Enter Password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required

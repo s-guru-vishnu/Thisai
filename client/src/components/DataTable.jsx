@@ -20,7 +20,7 @@ const DataTable = ({ headers, data, onEdit, onSuspend, onDelete }) => {
                         <tr key={index} style={{ borderBottom: '1px solid var(--border-color)', transition: 'var(--transition)' }} className="table-row-hover">
                             {Object.values(row).map((val, idx) => (
                                 <td key={idx} style={{ padding: '1.2rem', color: 'white', fontSize: '0.95rem' }}>
-                                    {typeof val === 'string' && (val === 'Admin' || val === 'Manager' || val === 'Warehouse' || val === 'Driver' || val === 'Suspended') ? (
+                                    {typeof val === 'string' && (val === 'Admin' || val === 'Manager' || val === 'Warehouse' || val === 'Driver' || val === 'Suspended' || val === 'Customer' || val === 'Receiver' || val === 'Seller') ? (
                                         <span className={`status-pill ${val.toLowerCase()}`}>
                                             {val}
                                         </span>
@@ -107,11 +107,14 @@ const DataTable = ({ headers, data, onEdit, onSuspend, onDelete }) => {
                     white-space: nowrap;
                     border: 1px solid transparent;
                 }
-                .status-pill.admin { background: rgba(255,107,0,0.1); color: var(--accent); border-color: rgba(255,107,0,0.2); }
+                .status-pill.admin { background: rgba(255,59,48,0.1); color: var(--danger); border-color: rgba(255,59,48,0.2); }
                 .status-pill.manager { background: rgba(23,162,184,0.1); color: var(--info); border-color: rgba(23,162,184,0.2); }
                 .status-pill.warehouse { background: rgba(247,147,26,0.1); color: var(--warning); border-color: rgba(247,147,26,0.2); }
                 .status-pill.driver { background: rgba(22,199,132,0.1); color: var(--success); border-color: rgba(22,199,132,0.2); }
                 .status-pill.suspended { background: rgba(255,59,48,0.1); color: var(--danger); border-color: rgba(255,59,48,0.2); }
+                .status-pill.customer { background: rgba(163,163,163,0.1); color: var(--text-muted); border-color: rgba(163,163,163,0.2); }
+                .status-pill.receiver { background: rgba(155,89,182,0.1); color: #9b59b6; border-color: rgba(155,89,182,0.2); }
+                .status-pill.seller { background: rgba(52,152,219,0.1); color: #3498db; border-color: rgba(52,152,219,0.2); }
             `}</style>
         </div>
     );

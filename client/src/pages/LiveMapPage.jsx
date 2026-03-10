@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow, TrafficLayer } from '@react-google-maps/api';
 import { MapPin, Truck, AlertCircle, Maximize2, Layers } from 'lucide-react';
 
 const mapContainerStyle = {
@@ -34,12 +34,43 @@ const LiveMapPage = () => {
     });
 
     const [selectedMarker, setSelectedMarker] = useState(null);
+    const [activeDrivers, setActiveDrivers] = useState([]);
+    const [liveAlert, setLiveAlert] = useState(null);
+    const [loadingData, setLoadingData] = useState(true);
+    const [mapInstance, setMapInstance] = useState(null);
+    const [showTraffic, setShowTraffic] = useState(false);
 
-    const activeDrivers = [
-        { id: 1, name: 'Mike Ross', pos: { lat: 13.0850, lng: 80.2750 }, status: 'En-route', vehicle: 'Toyota HiAce' },
-        { id: 2, name: 'Harvey Specter', pos: { lat: 13.0950, lng: 80.2650 }, status: 'Near Destination', vehicle: 'Eicher Pro' },
-        { id: 3, name: 'Donna Paulsen', pos: { lat: 13.0750, lng: 80.2850 }, status: 'Idle', vehicle: 'Tata Ace' }
-    ];
+    const handleFocusCenter = () => {
+        if (mapInstance) {
+            mapInstance.panTo(center);
+            mapInstance.setZoom(13);
+        }
+    };
+
+    const toggleTraffic = () => {
+        setShowTraffic(!showTraffic);
+    };
+
+    React.useEffect(() => {
+        const fetchMapData = async () => {
+            try {
+                const response = await fetch('http://localhost:5000/api/admin/live-map');
+                if (response.ok) {
+                    const data = await response.json();
+                    setActiveDrivers(data.activeDrivers);
+                    setLiveAlert(data.alert);
+                }
+            } catch (error) {
+                console.error("Error fetching live map data:", error);
+            } finally {
+                setLoadingData(false);
+            }
+        };
+
+        fetchMapData();
+        const interval = setInterval(fetchMapData, 15000); // refresh every 15s
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <div className="app-container">
@@ -51,20 +82,23 @@ const LiveMapPage = () => {
                         <p className="subtitle">Real-time GPS tracking and transit visualization.</p>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
-                        <button className="secondary-btn flex items-center gap-2" style={{ width: 'auto' }}><Layers size={18} /> Layers</button>
-                        <button className="primary-btn pulse-glow flex items-center gap-2" style={{ width: 'auto' }}><Maximize2 size={18} /> Focus Center</button>
+                        <button onClick={toggleTraffic} className="primary-btn pulse-glow flex items-center gap-2" style={{ padding: '0 20px', margin: 0, height: '42px', whiteSpace: 'nowrap', display: 'flex', boxSizing: 'border-box' }}>
+                            <Layers size={18} /> {showTraffic ? 'Hide Traffic' : 'View Traffic'}
+                        </button>
                     </div>
                 </header>
 
                 <div className="map-view-container" style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '1.5rem' }}>
                     <div style={{ position: 'relative', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '16px', overflow: 'hidden' }}>
-                        {isLoaded ? (
+                        {isLoaded && !loadingData ? (
                             <GoogleMap
                                 mapContainerStyle={mapContainerStyle}
                                 center={center}
                                 zoom={13}
+                                onLoad={map => setMapInstance(map)}
                                 options={{ styles: darkModeStyles, disableDefaultUI: true, zoomControl: true }}
                             >
+                                {showTraffic && <TrafficLayer />}
                                 {activeDrivers.map(driver => (
                                     <Marker 
                                         key={driver.id} 
@@ -113,21 +147,29 @@ const LiveMapPage = () => {
                         <div className="dashboard-card" style={{ padding: '1.5rem' }}>
                             <h3 style={{ fontSize: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}><AlertCircle size={16} className="text-warning" /> Critical Alerts</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <div style={{ padding: '10px', background: 'rgba(247,147,26,0.05)', borderLeft: '3px solid var(--warning)', borderRadius: '4px' }}>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>Traffic Anomaly</div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Heavy congestion detected on Mount Road.</div>
-                                </div>
+                                {liveAlert ? (
+                                    <div style={{ padding: '10px', background: 'rgba(247,147,26,0.05)', borderLeft: '3px solid var(--warning)', borderRadius: '4px' }}>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>{liveAlert.type}</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{liveAlert.desc}</div>
+                                    </div>
+                                ) : (
+                                    <div style={{ padding: '10px', fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                                        No critical alerts present.
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div className="dashboard-card" style={{ padding: '1.5rem', flexGrow: 1 }}>
                             <h3 style={{ fontSize: '1rem', marginBottom: '1rem' }}>Vehicle Feed</h3>
                             <div className="activity-list" style={{ gap: '1rem' }}>
-                                {activeDrivers.map(d => (
+                                {activeDrivers.length > 0 ? activeDrivers.map(d => (
                                     <div key={d.id} className="activity-item" style={{ padding: '10px', background: 'rgba(0,0,0,0.2)' }}>
                                         <div style={{ fontSize: '0.85rem', fontWeight: '600' }}>{d.name}</div>
                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{d.status} • {d.vehicle}</div>
                                     </div>
-                                ))}
+                                )) : (
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>No active drivers.</div>
+                                )}
                             </div>
                         </div>
                     </div>

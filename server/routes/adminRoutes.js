@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getUsers, deleteUser, getWarehouses, createWarehouse, getAllParcels } = require('../controllers/adminController');
+const { getUsers, deleteUser, getWarehouses, createWarehouse, getAllParcels, createParcel, getDashboardStats, getLiveMapData, getNotifications } = require('../controllers/adminController');
 
 // Get all users
 router.get('/users', getUsers);
@@ -16,5 +16,17 @@ router.post('/warehouses', createWarehouse);
 
 // Get all parcels
 router.get('/parcels', getAllParcels);
+
+// Create parcel
+router.post('/parcels', createParcel);
+
+// Get dashboard stats
+router.get('/dashboard/stats', getDashboardStats);
+
+// Get live map data
+router.get('/live-map', getLiveMapData);
+
+// Get notifications
+router.get('/notifications', getNotifications);
 
 module.exports = router;

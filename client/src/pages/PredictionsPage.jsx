@@ -3,24 +3,13 @@ import Navbar from '../components/Navbar';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { BrainCircuit, TrendingUp, AlertTriangle, Lightbulb, Zap } from 'lucide-react';
 
-const delayData = [
-    { name: '08:00', value: 12 },
-    { name: '10:00', value: 34 },
-    { name: '12:00', value: 56 },
-    { name: '14:00', value: 45 },
-    { name: '16:00', value: 89 },
-    { name: '18:00', value: 67 },
-    { name: '20:00', value: 23 },
-];
-
-const workloadData = [
-    { name: 'Hub A', load: 85 },
-    { name: 'Hub B', load: 42 },
-    { name: 'Hub C', load: 91 },
-    { name: 'Hub D', load: 65 },
-];
-
 const PredictionsPage = () => {
+    const [delayData, setDelayData] = React.useState([]);
+    const [workloadData, setWorkloadData] = React.useState([]);
+
+    React.useEffect(() => {
+        // TODO: Map to actual backend AI endpoints when ready
+    }, []);
     return (
         <div className="app-container">
             <Navbar />
@@ -85,32 +74,11 @@ const PredictionsPage = () => {
                 </div>
 
                 <div className="ai-insights-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
-                    <div className="dashboard-card" style={{ padding: '20px', borderLeft: '4px solid var(--warning)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                            <AlertTriangle size={20} className="text-warning" />
-                            <h4 style={{ margin: 0 }}>Delay Warning</h4>
-                        </div>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: 0 }}>
-                            Hub C reaching 91% capacity. Transfer 15% inbound load to Hub B to avoid bottlenecks.
-                        </p>
-                    </div>
-                    <div className="dashboard-card" style={{ padding: '20px', borderLeft: '4px solid var(--accent)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                            <Lightbulb size={20} className="text-accent" />
-                            <h4 style={{ margin: 0 }}>Route Optimization</h4>
-                        </div>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: 0 }}>
-                            AI suggests shifting Route 4 pickups to 10:00 AM to avoid the predicted 4:00 PM peak traffic.
-                        </p>
-                    </div>
-                    <div className="dashboard-card" style={{ padding: '20px', borderLeft: '4px solid var(--success)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                            <BrainCircuit size={20} className="text-success" />
-                            <h4 style={{ margin: 0 }}>Efficiency Spike</h4>
-                        </div>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: 0 }}>
-                            Warehouse A performance improved by 12% following the new scanning protocol implementation.
-                        </p>
+                    {/* Placeholder for future dynamic AI insights */}
+                    <div style={{ gridColumn: '1 / -1', padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', background: 'var(--bg-panel)', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
+                        <BrainCircuit size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
+                        <h3 style={{ margin: '0 0 0.5rem 0' }}>AI Engine Standby</h3>
+                        <p style={{ margin: 0 }}>Waiting for sufficient dynamic system data to generate predictions...</p>
                     </div>
                 </div>
             </main>
