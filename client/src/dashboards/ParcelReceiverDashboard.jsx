@@ -1,47 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import DashboardCard from '../components/DashboardCard';
+import { Box, X, CheckSquare, Package, Truck, Search, QrCode } from 'lucide-react';
 
 const ParcelReceiverDashboard = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [products, setProducts] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newProduct, setNewProduct] = useState({
-        productName: '', category: '', weight: '', seller: '', destination: '', customerName: '', deliveryAddress: '', deliveryType: ''
-    });
 
     useEffect(() => {
         const fetchParcels = async () => {
             try {
-                const res = await axios.get('http://localhost:5000/api/parcels');
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+                const res = await axios.get(`${apiBase}/api/parcels`);
                 setProducts(res.data);
             } catch (err) {
                 console.error("Failed to fetch parcels", err);
+                const localData = JSON.parse(localStorage.getItem('sellerDeliveries') || '[]');
+                setProducts(localData);
             }
         };
         fetchParcels();
     }, []);
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setNewProduct(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleAddProduct = async (e) => {
-        e.preventDefault();
-        try {
-            const res = await axios.post('http://localhost:5000/api/parcels', newProduct);
-            setProducts([res.data, ...products]);
-            setIsModalOpen(false);
-            setNewProduct({
-                productName: '', category: '', weight: '', seller: '', destination: '', customerName: '', deliveryAddress: '', deliveryType: ''
-            });
-        } catch (err) {
-            console.error("Failed to add product", err);
-            alert("Error adding product!");
-        }
-    };
 
     const totalReceived = products.length;
     const pendingDispatch = products.filter(p => !p.status || p.status === 'Received' || p.status === 'Pending Dispatch').length;
@@ -54,12 +35,8 @@ const ParcelReceiverDashboard = () => {
             <main className="main-content">
                 <header className="dashboard-header">
                     <div>
-                        <h1>Receiver <span>Portal</span></h1>
-                        <p className="subtitle">First-mile collection: receiving from sellers and sending to warehouses.</p>
-                    </div>
-                    <div className="header-actions" style={{ display: 'flex', gap: '1rem' }}>
-                        <button className="secondary-btn" style={{ padding: '0.8rem 1.5rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-color)', cursor: 'pointer', fontWeight: 'bold' }}>Log Seller Receipt</button>
-                        <button className="primary-btn pulse-glow" onClick={() => setIsModalOpen(true)}>Receive Product</button>
+                        <h1>Receiver <span>Terminal</span></h1>
+                        <p className="subtitle">Operational hub for first-mile parcel collection.</p>
                     </div>
                 </header>
 
@@ -86,7 +63,7 @@ const ParcelReceiverDashboard = () => {
                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.95rem' }}>
                                 <thead>
                                     <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
-                                        <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Parcel ID</th>
+                                        <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>ID / Tracking</th>
                                         <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Product Info</th>
                                         <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Seller</th>
                                         <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Delivery Details</th>
@@ -95,9 +72,16 @@ const ParcelReceiverDashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {products.filter(p => p.productName.toLowerCase().includes(searchTerm.toLowerCase()) || (p.parcelId && p.parcelId.toLowerCase().includes(searchTerm.toLowerCase()))).map(product => (
-                                        <tr key={product._id || product.parcelId} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.2s' }}>
-                                            <td style={{ padding: '1rem', fontWeight: 'bold' }}>{product.parcelId}</td>
+                                    {products.filter(p =>
+                                        p.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        p.parcelId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        p.trackingCode?.toLowerCase().includes(searchTerm.toLowerCase())
+                                    ).map(product => (
+                                        <tr key={product._id || product.id || product.parcelId} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background-color 0.2s' }}>
+                                            <td style={{ padding: '1rem', fontWeight: 'bold' }}>
+                                                <div style={{ color: 'var(--accent)', fontSize: '0.9rem' }}>{product.trackingCode || 'No Code'}</div>
+                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>ID: {product.parcelId || product.id}</div>
+                                            </td>
                                             <td style={{ padding: '1rem' }}>
                                                 <div style={{ fontWeight: '500', color: 'var(--text-color)' }}>{product.productName}</div>
                                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{product.category} • {product.weight}</div>
@@ -168,57 +152,6 @@ const ParcelReceiverDashboard = () => {
                     </div>
                 </section>
             </main>
-            {isModalOpen && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(5px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-                    <div style={{ background: 'var(--panel-bg)', color: 'var(--text-color)', padding: '2.5rem', borderRadius: '16px', width: '90%', maxWidth: '650px', maxHeight: '90vh', overflowY: 'auto', border: '1px solid var(--border-color)', boxShadow: '0 20px 40px rgba(0,0,0,0.15)' }}>
-                        <h2 style={{ marginTop: 0, marginBottom: '2rem', fontSize: '1.8rem', color: 'var(--text-color)', textAlign: 'center' }}>📥 Receive New Product</h2>
-                        <form onSubmit={handleAddProduct} style={{ display: 'grid', gap: '1.2rem', gridTemplateColumns: '1fr 1fr' }}>
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-color)' }}>Product Name</label>
-                                <input required name="productName" value={newProduct.productName} onChange={handleInputChange} style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)', outline: 'none', transition: 'box-shadow 0.2s' }} />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-color)' }}>Category</label>
-                                <input required name="category" value={newProduct.category} onChange={handleInputChange} style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)', outline: 'none' }} />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-color)' }}>Weight</label>
-                                <input required name="weight" placeholder="e.g. 1.5 kg" value={newProduct.weight} onChange={handleInputChange} style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)', outline: 'none' }} />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-color)' }}>Seller (From)</label>
-                                <input required name="seller" value={newProduct.seller} onChange={handleInputChange} style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)', outline: 'none' }} />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-color)' }}>Destination Hub</label>
-                                <input required name="destination" value={newProduct.destination} onChange={handleInputChange} style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)', outline: 'none' }} />
-                            </div>
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-color)' }}>Customer Name (To)</label>
-                                <input required name="customerName" value={newProduct.customerName} onChange={handleInputChange} style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)', outline: 'none' }} />
-                            </div>
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-color)' }}>Delivery Address</label>
-                                <input required name="deliveryAddress" value={newProduct.deliveryAddress} onChange={handleInputChange} style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)', outline: 'none' }} />
-                            </div>
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-color)' }}>Delivery Type</label>
-                                <select required name="deliveryType" value={newProduct.deliveryType} onChange={handleInputChange} style={{ width: '100%', padding: '0.8rem 1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)', outline: 'none' }}>
-                                    <option value="">Select Type</option>
-                                    <option value="Standard">Standard</option>
-                                    <option value="Express">Express</option>
-                                    <option value="Next Day">Next Day</option>
-                                </select>
-                            </div>
-
-                            <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
-                                <button type="button" onClick={() => setIsModalOpen(false)} style={{ padding: '0.8rem 1.5rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)', cursor: 'pointer', fontWeight: '600' }}>Cancel</button>
-                                <button type="submit" className="primary-btn pulse-glow" style={{ padding: '0.8rem 1.5rem', borderRadius: '10px', border: 'none', cursor: 'pointer', fontWeight: '600', background: 'var(--accent-color, #007bff)', color: '#fff', boxShadow: '0 4px 15px rgba(0,123,255,0.3)' }}>✅ Save Product</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
