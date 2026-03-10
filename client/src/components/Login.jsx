@@ -16,7 +16,8 @@ const Login = () => {
         setError('');
 
         try {
-            const { data } = await axios.post('http://localhost:5000/api/auth/login', {
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const { data } = await axios.post(`${apiBase}/api/auth/login`, {
                 email,
                 password,
             });
@@ -24,7 +25,6 @@ const Login = () => {
             // Save user to local storage for demo
             localStorage.setItem('userInfo', JSON.stringify(data));
 
-            // Route based on role
             switch (data.role) {
                 case 'admin':
                     navigate('/dashboard');
@@ -60,7 +60,8 @@ const Login = () => {
     const handleSeedDatabase = async () => {
         try {
             setLoading(true);
-            await axios.post('http://localhost:5000/api/auth/seed');
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            await axios.post(`${apiBase}/api/auth/seed`);
             alert('Database seeded successfully in MongoDB Compass! Check "logist" DB.');
             setError('');
         } catch (err) {
