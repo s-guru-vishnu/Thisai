@@ -12,7 +12,8 @@ const ParcelReceiverDashboard = () => {
     useEffect(() => {
         const fetchParcels = async () => {
             try {
-                const res = await axios.get('http://localhost:5000/api/parcels');
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+                const res = await axios.get(`${apiBase}/api/parcels`);
                 setProducts(res.data);
             } catch (err) {
                 console.error("Failed to fetch parcels", err);

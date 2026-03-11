@@ -16,7 +16,8 @@ const Login = () => {
         setError('');
 
         try {
-            const { data } = await axios.post('http://localhost:5000/api/auth/login', {
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const { data } = await axios.post(`${apiBase}/api/auth/login`, {
                 email,
                 password,
             });
@@ -24,7 +25,6 @@ const Login = () => {
             // Save user to local storage for demo
             localStorage.setItem('userInfo', JSON.stringify(data));
 
-            // Route based on role
             switch (data.role) {
                 case 'admin':
                     navigate('/dashboard');
@@ -60,7 +60,8 @@ const Login = () => {
     const handleSeedDatabase = async () => {
         try {
             setLoading(true);
-            await axios.post('http://localhost:5000/api/auth/seed');
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            await axios.post(`${apiBase}/api/auth/seed`);
             alert('Database seeded successfully in MongoDB Compass! Check "logist" DB.');
             setError('');
         } catch (err) {
@@ -74,8 +75,8 @@ const Login = () => {
         <div className="login-container">
             <div className="login-box">
                 <div className="login-header">
-                    <div className="logo-orb large-orb pulse-glow"></div>
-                    <h2>IMPACT<span>LOGISTICS</span></h2>
+                    <img src="/Thisai.png" alt="Thisai Logo" className="logo-orb large-orb" />
+                    <h2>THISAI</h2>
                     <p>Login to your portal</p>
                 </div>
 
@@ -86,7 +87,7 @@ const Login = () => {
                         <label>Email Address</label>
                         <input
                             type="email"
-                            placeholder="e.g. admin@impact.com"
+                            placeholder="Enter Email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -97,7 +98,7 @@ const Login = () => {
                         <label>Password</label>
                         <input
                             type="password"
-                            placeholder="Enter password123"
+                            placeholder="Enter Password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required

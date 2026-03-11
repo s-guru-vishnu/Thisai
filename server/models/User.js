@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
 const userSchema = mongoose.Schema(
     {
@@ -21,6 +22,12 @@ const userSchema = mongoose.Schema(
             enum: ['admin', 'manager', 'warehouse', 'driver', 'customer', 'parcel_receiver', 'seller'],
             default: 'customer',
         },
+        region: {
+            type: String,
+        },
+        hub: {
+            type: String,
+        },
     },
     {
         timestamps: true,
@@ -28,9 +35,17 @@ const userSchema = mongoose.Schema(
 );
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
-    // Simple check for demo purposes, could use bcrypt
-    return enteredPassword === this.password;
+    return await bcrypt.compare(enteredPassword, this.password);
 };
+
+userSchema.pre('save', async function (next) {
+    if (!this.isModified('password')) {
+        next();
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+});
 
 const User = mongoose.model('User', userSchema);
 
