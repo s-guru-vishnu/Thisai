@@ -22,6 +22,7 @@ const userSchema = mongoose.Schema(
             enum: ['admin', 'manager', 'warehouse', 'driver', 'customer', 'parcel_receiver', 'seller'],
             default: 'customer',
         },
+<<<<<<< HEAD
         phone: {
             type: String,
             default: '',
@@ -91,6 +92,17 @@ const userSchema = mongoose.Schema(
             allowDriverApplications: { type: Boolean, default: false },
             partnerAccess: { type: Boolean, default: false }
         }
+=======
+        region: {
+            type: String,
+        },
+        hub: {
+            type: String,
+        },
+        location: {
+            type: String,
+        },
+>>>>>>> 325c4039c10287285b4dcd647c557890aca4518f
     },
     {
         timestamps: true,

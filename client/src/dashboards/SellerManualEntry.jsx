@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
+import { QRCodeSVG } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { Truck, MapPin, Box, ArrowLeft, Navigation, Search, CheckCircle } from 'lucide-react';
+import { Truck, MapPin, Box, ArrowLeft, Navigation, Search, CheckCircle, Download, X } from 'lucide-react';
 import '../styles/dashboard.css';
 
 const containerStyle = {
@@ -27,8 +28,10 @@ const SellerManualEntry = () => {
     const [autocomplete, setAutocomplete] = useState(null);
     const [position, setPosition] = useState(center);
     const [products] = useState(() => JSON.parse(localStorage.getItem('sellerProducts') || '[]'));
+    const [userInfo] = useState(() => JSON.parse(localStorage.getItem('userInfo') || '{}'));
     const [loading, setLoading] = useState(false);
-    const [toast, setToast] = useState('');
+    const [showQRSuccess, setShowQRSuccess] = useState(false);
+    const [generatedTrk, setGeneratedTrk] = useState('');
 
     const [formData, setFormData] = useState({
         productId: '',
@@ -82,13 +85,15 @@ const SellerManualEntry = () => {
         e.preventDefault();
         setLoading(true);
 
+        const trk = Math.random().toString(36).substring(2, 12).toUpperCase();
         const product = products.find(p => p.id.toString() === formData.productId);
         const newDelivery = {
             id: Date.now(),
-            trackingCode: Math.random().toString(36).substring(2, 12).toUpperCase(),
+            trackingCode: trk,
             productName: product ? product.name : 'Manual Item',
             ...formData,
             location: position,
+            origin: userInfo.location || 'Not Configured',
             status: 'Pending Pickup',
             createdAt: new Date().toISOString()
         };
@@ -96,19 +101,14 @@ const SellerManualEntry = () => {
         const existing = JSON.parse(localStorage.getItem('sellerDeliveries') || '[]');
         localStorage.setItem('sellerDeliveries', JSON.stringify([newDelivery, ...existing]));
 
-        setToast('Dispatch Successful!');
-        setTimeout(() => navigate('/seller'), 1500);
+        setGeneratedTrk(trk);
+        setShowQRSuccess(true);
+        setLoading(false);
     };
 
     return (
         <div className="app-container" style={{ background: 'var(--bg-color)', minHeight: '100vh' }}>
             <Navbar />
-
-            {toast && (
-                <div className="custom-toast" style={{ zIndex: 9999 }}>
-                    <CheckCircle size={24} /> <span>{toast}</span>
-                </div>
-            )}
 
             <main className="main-content" style={{ display: 'flex', height: 'calc(100vh - 80px)', gap: 0, padding: 0 }}>
                 {/* Left Panel: Form */}
@@ -121,22 +121,30 @@ const SellerManualEntry = () => {
                         <p style={{ margin: 0, color: 'var(--text-muted)' }}>Configure delivery route & customer details.</p>
                     </header>
 
+                    {!userInfo.location && (
+                        <div style={{ background: 'rgba(255, 60, 60, 0.1)', border: '1px solid var(--danger)', padding: '1rem', borderRadius: '10px', marginBottom: '2rem' }}>
+                            <h4 style={{ color: 'var(--danger)', margin: '0 0 5px 0' }}>Profile Incomplete</h4>
+                            <p style={{ fontSize: '0.9rem', margin: 0 }}>You must update your Location / Base Address in your profile before you can dispatch products.</p>
+                            <button onClick={() => navigate('/profile')} className="secondary-btn" style={{ marginTop: '10px', fontSize: '0.85rem' }}>Go to Profile</button>
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <div>
+                        <div className="form-group">
                             <label style={{ display: 'block', mb: '0.5rem', fontWeight: '600' }}>Select Catalog Product</label>
-                            <select name="productId" value={formData.productId} onChange={handleInputChange} required style={{ width: '100%', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)', cursor: 'pointer' }}>
+                            <select name="productId" value={formData.productId} onChange={handleInputChange} required style={{ width: '100%', cursor: 'pointer' }}>
                                 <option value="">-- Choose Product --</option>
                                 {products.map(p => <option key={p.id} value={p.id}>{p.name} (₹{p.price})</option>)}
                                 <option value="manual">Other / Custom Item</option>
                             </select>
                         </div>
 
-                        <div>
+                        <div className="form-group">
                             <label style={{ display: 'block', mb: '0.5rem', fontWeight: '600' }}>Customer Name</label>
-                            <input name="customerName" value={formData.customerName} onChange={handleInputChange} required placeholder="Full Name" style={{ width: '100%', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)' }} />
+                            <input name="customerName" value={formData.customerName} onChange={handleInputChange} required placeholder="Full Name" style={{ width: '100%' }} />
                         </div>
 
-                        <div style={{ position: 'relative' }}>
+                        <div className="form-group" style={{ position: 'relative' }}>
                             <label style={{ display: 'block', mb: '0.5rem', fontWeight: '600' }}>Full Delivery Address</label>
                             {isLoaded && (
                                 <Autocomplete onLoad={onAutocompleteLoad} onPlaceChanged={onPlaceChanged}>
@@ -145,7 +153,7 @@ const SellerManualEntry = () => {
                                         value={formData.deliveryAddress}
                                         onChange={handleInputChange}
                                         placeholder="Search for address or drop pin..."
-                                        style={{ width: '100%', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)', paddingRight: '40px' }}
+                                        style={{ width: '100%', paddingRight: '40px' }}
                                     />
                                 </Autocomplete>
                             )}
@@ -153,17 +161,17 @@ const SellerManualEntry = () => {
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <div>
+                            <div className="form-group">
                                 <label style={{ display: 'block', mb: '0.5rem', fontWeight: '600' }}>Service</label>
-                                <select name="deliveryType" value={formData.deliveryType} onChange={handleInputChange} style={{ width: '100%', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)' }}>
+                                <select name="deliveryType" value={formData.deliveryType} onChange={handleInputChange} style={{ width: '100%' }}>
                                     <option value="Standard">Standard</option>
                                     <option value="Express">Express</option>
                                     <option value="Same Day">Same Day</option>
                                 </select>
                             </div>
-                            <div>
+                            <div className="form-group">
                                 <label style={{ display: 'block', mb: '0.5rem', fontWeight: '600' }}>Destination</label>
-                                <input name="destination" value={formData.destination} onChange={handleInputChange} placeholder="Hub City" style={{ width: '100%', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)' }} />
+                                <input name="destination" value={formData.destination} onChange={handleInputChange} placeholder="Hub City" style={{ width: '100%' }} />
                             </div>
                         </div>
 
@@ -172,7 +180,7 @@ const SellerManualEntry = () => {
                             <p style={{ margin: '5px 0 0 0', fontWeight: '800', fontFamily: 'monospace', color: 'var(--accent)' }}>{formData.lat}, {formData.lng}</p>
                         </div>
 
-                        <button type="submit" disabled={loading} className="primary-btn pulse-glow" style={{ padding: '1.2rem', borderRadius: '12px', marginTop: '1rem' }}>
+                        <button type="submit" disabled={loading || !userInfo.location} className="primary-btn pulse-glow" style={{ padding: '1.2rem', borderRadius: '12px', marginTop: '1rem', opacity: (!userInfo.location) ? 0.5 : 1 }}>
                             <Navigation size={20} style={{ marginRight: '10px' }} />
                             {loading ? 'Processing...' : 'CONFIRM DISPATCH'}
                         </button>
@@ -189,14 +197,8 @@ const SellerManualEntry = () => {
                             onLoad={onLoad}
                             onClick={handleMapClick}
                             options={{
-                                styles: [
-                                    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-                                    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-                                    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-                                    { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] }
-                                ],
-                                streetViewControl: false,
-                                mapTypeControl: false
+                                styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }],
+                                streetViewControl: false, mapTypeControl: false
                             }}
                         >
                             <Marker position={position} animation={window.google.maps.Animation.DROP} />
@@ -213,6 +215,34 @@ const SellerManualEntry = () => {
                     </div>
                 </div>
             </main>
+
+            {/* QR Result Modal */}
+            {showQRSuccess && (
+                <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.95)', zIndex: 10000 }}>
+                    <div className="panel" style={{ background: 'var(--panel-bg)', width: '450px', p: '2.5rem', textAlign: 'center', border: '2px solid var(--accent)', padding: '2.5rem', borderRadius: '24px' }}>
+                        <h2 style={{ marginBottom: '1rem' }}>Dispatch <span className="brand-accent">Confirmed</span></h2>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Tracking code and QR identity generated for driver pickup.</p>
+
+                        <div style={{ background: 'white', padding: '2rem', borderRadius: '20px', display: 'inline-block', marginBottom: '1.5rem' }}>
+                            <QRCodeSVG value={generatedTrk} size={250} level="H" includeMargin={true} />
+                        </div>
+
+                        <div style={{ marginBottom: '2.5rem' }}>
+                            <p style={{ fontSize: '0.8rem', color: '#888', letterSpacing: '4px', marginBottom: '5px' }}>TRACKING IDENTITY</p>
+                            <p style={{ fontSize: '1.5rem', fontWeight: '900', color: 'var(--accent)', fontFamily: 'monospace' }}>{generatedTrk}</p>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                            <button className="secondary-btn" style={{ padding: '1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                <Download size={20} /> Save Image
+                            </button>
+                            <button onClick={() => navigate('/seller')} className="primary-btn" style={{ padding: '1rem', borderRadius: '12px', fontWeight: 'bold' }}>
+                                Back to Hub
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 @keyframes pulse {
@@ -235,7 +265,6 @@ const SellerManualEntry = () => {
                 }
                 .pac-item:hover { background-color: #222 !important; }
                 .pac-item-query { color: #ff6600 !important; }
-                .pac-matched { color: #ffcc00 !important; }
             `}</style>
         </div>
     );

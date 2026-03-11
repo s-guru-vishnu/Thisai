@@ -17,6 +17,9 @@ const loginUser = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                region: user.region,
+                hub: user.hub,
+                location: user.location,
                 token: generateToken(user._id)
             });
         } else {
@@ -50,6 +53,7 @@ const registerUser = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                location: user.location,
                 token: generateToken(user._id)
             });
         } else {
@@ -60,6 +64,7 @@ const registerUser = async (req, res) => {
     }
 };
 
+<<<<<<< HEAD
 const changePassword = async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     
@@ -92,6 +97,31 @@ const deleteAccount = async (req, res) => {
         if (user) {
             await User.deleteOne({ _id: user._id });
             res.json({ message: 'User account deleted successfully' });
+=======
+const updateProfile = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (user) {
+            user.name = req.body.name || user.name;
+            user.email = req.body.email || user.email;
+            user.location = req.body.location || user.location;
+
+            if (req.body.password) {
+                user.password = req.body.password;
+            }
+
+            const updatedUser = await user.save();
+            res.json({
+                _id: updatedUser._id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                role: updatedUser.role,
+                region: updatedUser.region,
+                hub: updatedUser.hub,
+                location: updatedUser.location,
+                token: generateToken(updatedUser._id)
+            });
+>>>>>>> 325c4039c10287285b4dcd647c557890aca4518f
         } else {
             res.status(404).json({ message: 'User not found' });
         }
@@ -100,4 +130,8 @@ const deleteAccount = async (req, res) => {
     }
 };
 
+<<<<<<< HEAD
 module.exports = { loginUser, registerUser, changePassword, deleteAccount };
+=======
+module.exports = { loginUser, registerUser, updateProfile };
+>>>>>>> 325c4039c10287285b4dcd647c557890aca4518f

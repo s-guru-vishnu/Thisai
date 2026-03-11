@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
+<<<<<<< HEAD
 const { loginUser, registerUser, changePassword, deleteAccount } = require('../controllers/authController');
+=======
+const { loginUser, registerUser, updateProfile } = require('../controllers/authController');
+const { protect } = require('../middleware/authMiddleware');
+>>>>>>> 325c4039c10287285b4dcd647c557890aca4518f
 
 // @route   POST /api/auth/login
 // @desc    Auth user & get token
@@ -9,6 +14,10 @@ router.post('/login', loginUser);
 // @route   POST /api/auth/register
 // @desc    Register a new user
 router.post('/register', registerUser);
+
+// @route   PUT /api/auth/profile
+// @desc    Update user profile & location
+router.put('/profile', protect, updateProfile);
 
 // @route   POST /api/auth/seed
 // @desc    Seed database with dummy users (Admin, Driver, Customer, etc.)
