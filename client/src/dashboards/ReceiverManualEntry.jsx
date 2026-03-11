@@ -98,17 +98,11 @@ const ReceiverManualEntry = () => {
         e.preventDefault();
         setLoading(true);
         try {
-<<<<<<< HEAD
             const trk = 'M-' + Math.random().toString(36).substring(2, 8).toUpperCase();
             const payload = { ...newProduct, trackingCode: trk, status: 'Received' };
             await axios.post('http://localhost:5000/api/parcels', payload);
             setGeneratedTracking(trk);
             setShowQRModal(true);
-=======
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            await axios.post(`${apiBase}/api/parcels`, newProduct);
-            navigate('/receiver');
->>>>>>> f0c8cb7c0132cc1398f7554139b95d2a9fb56070
         } catch (err) {
             console.error("Failed to add product", err);
             const trk = 'M-' + Math.random().toString(36).substring(2, 8).toUpperCase();
