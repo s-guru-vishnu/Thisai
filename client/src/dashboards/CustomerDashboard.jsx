@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import CustomerMap from '../components/CustomerMap';
 import { Search, QrCode, Package, Truck, MapPin, CheckCircle, X, ShieldCheck } from 'lucide-react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import '../styles/dashboard.css';
@@ -177,6 +178,9 @@ const CustomerDashboard = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Embed CustomerMap here for live tracking */}
+                        <CustomerMap deliveryDetails={deliveryDetails} />
 
                         {deliveryDetails.status !== 'Delivered' && (
                             <div style={{ marginTop: '2.5rem', textAlign: 'center', background: 'rgba(255,255,255,0.03)', padding: '2rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>

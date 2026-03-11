@@ -1,66 +1,73 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer } from '@react-google-maps/api';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Navbar from '../components/Navbar';
+import DriverMap from '../components/DriverMap';
 import { Truck, MapPin, Navigation, Package, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import '../styles/dashboard.css';
 
-const containerStyle = {
-    width: '100%',
-    height: '100%'
-};
-
-const center = {
-    lat: 13.0827,
-    lng: 80.2707
-};
-
-const mapOptions = {
-    styles: [
-        { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-        { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-        { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-        { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
-        { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
-        { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
-        { featureType: "poi", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
-        { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] }
-    ],
-    disableDefaultUI: false,
-    zoomControl: true,
-};
-
 const DriverDashboard = () => {
-    const { isLoaded } = useJsApiLoader({
-        id: 'google-map-script',
-        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""
-    });
-
     const [map, setMap] = useState(null);
-    const [directions, setDirections] = useState(null);
     const [activeDeliveries, setActiveDeliveries] = useState([]);
+    const [driverLocation, setDriverLocation] = useState({ lat: 13.0827, lng: 80.2707 });
 
     useEffect(() => {
-        const saved = localStorage.getItem('sellerDeliveries');
-        if (saved) {
-            const allDels = JSON.parse(saved);
-            // Simulate active deliveries for the driver
-            setActiveDeliveries(allDels.slice(0, 3).map(d => ({ ...d, status: 'In Transit' })));
-        } else {
-            // Mock data if empty
-            setActiveDeliveries([
-                { id: 101, productName: 'MacBook Pro M2', customerName: 'Alice Johnson', destination: 'Guindy Hub', status: 'In Transit', location: { lat: 13.0067, lng: 80.2206 } },
-                { id: 102, productName: 'Sony WH-1000XM5', customerName: 'Bob Smith', destination: 'Anna Nagar', status: 'In Transit', location: { lat: 13.0850, lng: 80.2101 } }
-            ]);
-        }
+        const fetchDriverData = async () => {
+            const driverId = 'CURRENT_DRIVER_ID'; // Can be replaced with actual logged-in user ID
+            
+            try {
+                // Step 6: Fetch driver location
+                const locRes = await axios.get(`http://localhost:5000/api/driver/location/${driverId}`);
+                if (locRes.data && locRes.data.location) {
+                    setDriverLocation(locRes.data.location);
+                }
+            } catch (err) {
+                // If API fails, keep current location
+            }
+
+            try {
+                // Step 7: Fetch delivery stops
+                const routeRes = await axios.get(`http://localhost:5000/api/driver/route/${driverId}`);
+                if (routeRes.data && routeRes.data.stops) {
+                    setActiveDeliveries(routeRes.data.stops);
+                }
+            } catch (err) {
+                // Fallback to local storage (No hardcoded dummy markers!)
+                const saved = localStorage.getItem('sellerDeliveries');
+                if (saved) {
+                    const allDels = JSON.parse(saved);
+                    // Assume first item is pickup, rest are deliveries
+                    if (allDels.length > 0) {
+                        const pickup = allDels[0];
+                        setDriverLocation(pickup.location);
+                        setActiveDeliveries(allDels.slice(1).map(d => ({ ...d, status: 'In Transit' })));
+                    } else {
+                        setActiveDeliveries([]);
+                    }
+                } else {
+                    // Mock pickup (Chennai Central) and a single delivery (TIDEL Park)
+                    const pickupLocation = { lat: 13.0827, lng: 80.2707 }; // Chennai Central
+                    setDriverLocation(pickupLocation);
+                    setActiveDeliveries([
+                        {
+                            id: 'mock1',
+                            trackingCode: 'MOCK123456',
+                            productName: 'Sample Package',
+                            destination: 'TIDEL Park, Chennai',
+                            location: { lat: 12.9897, lng: 80.2458 } 
+                        }
+                    ]);
+                }
+            }
+        };
+
+        fetchDriverData();
+        const interval = setInterval(fetchDriverData, 10000); // Poll every 10 seconds
+        return () => clearInterval(interval);
     }, []);
 
-    const onLoad = useCallback(function callback(mapInstance) {
+    const handleMapLoad = (mapInstance) => {
         setMap(mapInstance);
-    }, []);
-
-    const onUnmount = useCallback(function callback(mapInstance) {
-        setMap(null);
-    }, []);
+    };
 
     const stats = [
         { label: 'Pending Picks', value: '4', color: 'orange', icon: Clock },
@@ -118,43 +125,7 @@ const DriverDashboard = () => {
 
                 {/* Right Panel: Live Map */}
                 <div style={{ flex: 1, position: 'relative' }}>
-                    {isLoaded ? (
-                        <GoogleMap
-                            mapContainerStyle={containerStyle}
-                            center={center}
-                            zoom={12}
-                            onLoad={onLoad}
-                            onUnmount={onUnmount}
-                            options={mapOptions}
-                        >
-                            {/* Marker for Current Driver Position (Simulated) */}
-                            <Marker
-                                position={center}
-                                icon={{
-                                    path: "M 0,0 m -5,-5 L 5,-5 L 5,5 L -5,5 Z",
-                                    fillColor: "#ff6600",
-                                    fillOpacity: 1,
-                                    strokeColor: "#000",
-                                    strokeWeight: 2,
-                                    scale: 2
-                                }}
-                            />
-
-                            {/* Markers for Deliveries */}
-                            {activeDeliveries.map(del => (
-                                <Marker
-                                    key={del.id}
-                                    position={del.location}
-                                    icon="https://maps.google.com/mapfiles/ms/icons/green-dot.png"
-                                    onClick={() => map.panTo(del.location)}
-                                />
-                            ))}
-                        </GoogleMap>
-                    ) : (
-                        <div style={{ height: '100%', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <p>Initializing Cyber Road Map...</p>
-                        </div>
-                    )}
+                    <DriverMap driverLocation={driverLocation} stops={activeDeliveries} onMapLoad={handleMapLoad} />
 
                     {/* Overlay: Current Speed / Heading */}
                     <div style={{ position: 'absolute', bottom: '30px', left: '30px', background: 'rgba(0,0,0,0.85)', padding: '20px', borderRadius: '15px', border: '1px solid var(--accent)', color: 'white', display: 'flex', gap: '20px', backdropFilter: 'blur(10px)' }}>
