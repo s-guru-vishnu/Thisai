@@ -16,28 +16,27 @@ const Navbar = () => {
     const isSeller = userInfo.role === 'seller';
     const isCustomer = userInfo.role === 'customer';
     const isReceiver = userInfo.role === 'parcel_receiver';
+    const isManager = userInfo.role === 'manager';
 
     const firstLetter = userInfo.name ? userInfo.name.charAt(0).toUpperCase() : '?';
 
     const [notifications, setNotifications] = useState([]);
 
     const fetchNotifications = async () => {
-        if (isCustomer) {
-            setNotifications([
-                { id: 1, title: 'Package Picked Up', message: 'Your package (Code: 1234567890) has been picked up from the warehouse.', type: 'info', time: '2 hours ago' },
-                { id: 2, title: 'Driver Approaching', message: 'Driver is approximately 15 mins away from your location.', type: 'warning', time: '10 mins ago' }
-            ]);
-            return;
-        }
-
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             const config = {
                 headers: {
                     Authorization: `Bearer ${userInfo?.token}`
                 }
             };
-            const { data } = await axios.get(`${apiBase}/api/admin/notifications`, config);
+            
+            let url = `${apiBase}/api/admin/notifications`;
+            if (isCustomer) {
+                url = `${apiBase}/api/parcel/notifications`;
+            }
+            
+            const { data } = await axios.get(url, config);
             setNotifications(data);
         } catch (error) {
             console.error('Error fetching notifications:', error);
@@ -61,18 +60,26 @@ const Navbar = () => {
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
     const navItems = [
-        { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} />, show: isAdmin || !userInfo.role },
+        { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard size={18} />, show: isAdmin || (!userInfo.role && !isManager) },
+        { name: 'Dashboard', path: '/manager', icon: <LayoutDashboard size={18} />, show: isManager },
         { name: 'Users', path: '/dashboard/users', icon: <Users size={18} />, show: isAdmin },
         { name: 'Live Map', path: '/dashboard/map', icon: <Map size={18} />, show: isAdmin },
         { name: 'Parcels', path: '/dashboard/parcels', icon: <Package size={18} />, show: isAdmin || isReceiver },
         { name: 'Drivers', path: '/dashboard/drivers', icon: <Truck size={18} />, show: isAdmin },
         { name: 'AI Predictions', path: '/dashboard/predictions', icon: <BrainCircuit size={18} />, show: isAdmin },
-        
+        // Seller specific
         { name: 'My Deliveries', path: '/seller/deliveries', icon: <Package size={18} />, show: isSeller },
-        
+
+        // Receiver specific
         { name: 'Scan QR', path: '/receiver/scan', icon: <LayoutDashboard size={18} />, show: isReceiver },
         { name: 'Manual Entry', path: '/receiver/manual', icon: <LayoutDashboard size={18} />, show: isReceiver },
 
+        // Manager specific
+        { name: 'Parcels', path: '/manager', icon: <Package size={18} />, show: isManager },
+        { name: 'Scan QR', path: '/manager/scan', icon: <LayoutDashboard size={18} />, show: isManager },
+        { name: 'Manual Entry', path: '/manager/manual', icon: <LayoutDashboard size={18} />, show: isManager },
+
+        // Customer specific
         { name: 'Dashboard', path: '/customer', icon: <LayoutDashboard size={18} />, show: isCustomer },
         { name: 'Track', path: '/customer/track', icon: <Map size={18} />, show: isCustomer },
         { name: 'History', path: '/customer/history', icon: <Package size={18} />, show: isCustomer },
@@ -100,8 +107,8 @@ const Navbar = () => {
 
             <div className="nav-profile">
                 <div className="notifications-wrapper" style={{ position: 'relative' }}>
-                    <div 
-                        className="notifications" 
+                    <div
+                        className="notifications"
                         onClick={() => {
                             setIsNotificationsOpen(!isNotificationsOpen);
                             setIsProfileOpen(false);
@@ -152,14 +159,14 @@ const Navbar = () => {
                 </div>
 
                 <div className="avatar-wrapper" style={{ position: 'relative' }}>
-                    <div 
-                        className="avatar" 
+                    <div
+                        className="avatar"
                         onClick={() => {
                             setIsProfileOpen(!isProfileOpen);
                             setIsNotificationsOpen(false);
                         }}
-                        style={{ 
-                            cursor: 'pointer', 
+                        style={{
+                            cursor: 'pointer',
                             border: isProfileOpen ? '2px solid var(--accent)' : '2px solid var(--border-color)',
                             transition: 'all 0.2s',
                             width: '36px',
@@ -177,7 +184,7 @@ const Navbar = () => {
                     >
                         {firstLetter}
                     </div>
-                    
+
                     {isProfileOpen && (
                         <div className="profile-dropdown" style={{
                             position: 'absolute',
@@ -198,12 +205,12 @@ const Navbar = () => {
                                 <p style={{ margin: 0, fontWeight: 'bold', color: 'var(--text-main)', fontSize: '0.95rem' }}>{userInfo.name || 'User'}</p>
                                 <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'capitalize' }}>{userInfo.role || 'Guest'}</p>
                             </div>
-                            
-                            <Link to="/dashboard/profile" onClick={() => setIsProfileOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', color: 'var(--text-color)', textDecoration: 'none', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+
+                            <Link to="/settings/basic-info" onClick={() => setIsProfileOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', color: 'var(--text-color)', textDecoration: 'none', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
                                 <User size={16} />
-                                <span>Profile</span>
+                                <span>Profile Settings</span>
                             </Link>
-                            
+
                             <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', color: 'var(--danger)', background: 'transparent', border: 'none', width: '100%', textAlign: 'left', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,59,48,0.1)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
                                 <LogOut size={16} />
                                 <span>Sign Out</span>

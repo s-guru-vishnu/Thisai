@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
+<<<<<<< HEAD
 const { getUsers, deleteUser, getWarehouses, createWarehouse, getAllParcels, createParcel, getDashboardStats, getLiveMapData, getNotifications, getReassignmentSuggestions } = require('../controllers/adminController');
+=======
+const { getUsers, deleteUser, getWarehouses, createWarehouse, getAllParcels, createParcel, getDashboardStats, getLiveMapData, getNotifications } = require('../controllers/adminController');
+const { checkLocation } = require('../middleware/authMiddleware');
+>>>>>>> 2b4e5cdf2178a0f91a2e4a5c8bb4bd1a1b7660a0
 
 // Get all users
 router.get('/users', getUsers);
@@ -18,7 +23,7 @@ router.post('/warehouses', createWarehouse);
 router.get('/parcels', getAllParcels);
 
 // Create parcel
-router.post('/parcels', createParcel);
+router.post('/parcels', checkLocation, createParcel);
 
 // Get dashboard stats
 router.get('/dashboard/stats', getDashboardStats);

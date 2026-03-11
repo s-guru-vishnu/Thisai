@@ -3,6 +3,7 @@ import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { Package, Truck, MapPin, CheckCircle, PlusCircle, Tag, Navigation, Box, ExternalLink, X } from 'lucide-react';
+import LocationRequiredModal from '../components/modals/LocationRequiredModal';
 import '../styles/dashboard.css';
 import '../styles/seller.css';
 
@@ -18,6 +19,7 @@ const center = {
 
 const SellerDashboard = () => {
     const navigate = useNavigate();
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""
@@ -65,6 +67,17 @@ const SellerDashboard = () => {
 
     const [toastMsg, setToastMsg] = useState('');
     const [showProductModal, setShowProductModal] = useState(false);
+
+    const checkLocationAndProceed = (action) => {
+        const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+        const location = userInfo?.location;
+        
+        if (!location || !location.addressLine1 || !location.city) {
+            setIsLocationModalOpen(true);
+        } else {
+            action();
+        }
+    };
 
     const showToast = (msg) => {
         setToastMsg(msg);
@@ -148,7 +161,7 @@ const SellerDashboard = () => {
                 <div className="dashboard-grid seller-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
 
                     {/* Action Cards */}
-                    <div className="action-module" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }} onClick={() => setShowProductModal(true)}>
+                    <div className="action-module" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }} onClick={() => checkLocationAndProceed(() => setShowProductModal(true))}>
                         <div className="icon-container" style={{ background: 'rgba(255,102,0,0.1)', padding: '2rem', borderRadius: '50%', marginBottom: '1rem', color: 'var(--accent)' }}>
                             <PlusCircle size={48} />
                         </div>
@@ -156,7 +169,7 @@ const SellerDashboard = () => {
                         <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '10px', paddingInline: '40px' }}>Register a new item into your digital inventory catalog to allow quick dispatching later.</p>
                     </div>
 
-                    <div className="action-module" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }} onClick={() => navigate('/seller/dispatch')}>
+                    <div className="action-module" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }} onClick={() => checkLocationAndProceed(() => navigate('/seller/dispatch'))}>
                         <div className="icon-container" style={{ background: 'rgba(0,204,102,0.1)', padding: '2rem', borderRadius: '50%', marginBottom: '1rem', color: 'var(--success)' }}>
                             <MapPin size={48} />
                         </div>
@@ -249,6 +262,10 @@ const SellerDashboard = () => {
                 </div>
             )}
 
+            <LocationRequiredModal 
+                isOpen={isLocationModalOpen} 
+                onClose={() => setIsLocationModalOpen(false)} 
+            />
         </div>
     );
 };

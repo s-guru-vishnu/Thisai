@@ -98,7 +98,10 @@ const ReceiverManualEntry = () => {
         e.preventDefault();
         setLoading(true);
         try {
+<<<<<<< HEAD
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+=======
+>>>>>>> 2b4e5cdf2178a0f91a2e4a5c8bb4bd1a1b7660a0
             const trk = 'M-' + Math.random().toString(36).substring(2, 8).toUpperCase();
             const payload = { ...newProduct, trackingCode: trk, status: 'Received' };
             await axios.post(`${apiBase}/api/parcels`, payload);

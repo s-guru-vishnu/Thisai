@@ -17,7 +17,6 @@ const AdminRoutes = () => {
             <Route path="/drivers" element={<DriversPage />} />
             <Route path="/map" element={<LiveMapPage />} />
             <Route path="/predictions" element={<PredictionsPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
         </Routes>
     );
 };

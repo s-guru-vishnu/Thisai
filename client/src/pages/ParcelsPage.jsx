@@ -3,11 +3,13 @@ import Navbar from '../components/Navbar';
 import DataTable from '../components/DataTable';
 import { Package, Search, Filter, Plus, Truck, MapPin, User, ChevronRight, X, Save } from 'lucide-react';
 import axios from 'axios';
+import LocationRequiredModal from '../components/modals/LocationRequiredModal';
 
 const ParcelsPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [parcels, setParcels] = useState([]);
     const [loading, setLoading] = useState(true);
     
@@ -19,6 +21,17 @@ const ParcelsPage = () => {
         fetchParcels();
         fetchDropdownData();
     }, []);
+
+    const checkLocationAndOpenModal = () => {
+        const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+        const location = userInfo?.location;
+        
+        if (!location || !location.addressLine1 || !location.city) {
+            setIsLocationModalOpen(true);
+        } else {
+            setIsModalOpen(true);
+        }
+    };
 
     const fetchParcels = async () => {
         try {
@@ -119,7 +132,7 @@ const ParcelsPage = () => {
                         <h1>Parcel <span>Logs</span></h1>
                         <p className="subtitle">Real-time status tracking and logistics pipeline.</p>
                     </div>
-                    <button className="primary-btn pulse-glow flex items-center gap-2" onClick={() => setIsModalOpen(true)} style={{ padding: '0.6rem 1.2rem', height: '42px' }}>
+                    <button className="primary-btn pulse-glow flex items-center gap-2" onClick={checkLocationAndOpenModal} style={{ padding: '0.6rem 1.2rem', height: '42px' }}>
                         <Plus size={18} /> Create Parcel
                     </button>
                 </header>
@@ -304,6 +317,11 @@ const ParcelsPage = () => {
                         </div>
                     </div>
                 )}
+
+                <LocationRequiredModal 
+                    isOpen={isLocationModalOpen} 
+                    onClose={() => setIsLocationModalOpen(false)} 
+                />
             </main>
             <style>{`
                 .hover\:bg-card-hover:hover {

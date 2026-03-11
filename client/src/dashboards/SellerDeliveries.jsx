@@ -132,7 +132,8 @@ const SellerDeliveries = () => {
                                             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{del.category || 'N/A'} • {del.weight || 'N/A'}</div>
                                         </td>
                                         <td style={{ padding: '1rem' }}>
-                                            <div style={{ fontWeight: '500', color: '#fff' }}>To: {del.customerName || 'TBD'}</div>
+                                            <div style={{ fontWeight: '500', color: '#fff' }}>From: {del.origin || 'Not Configured'}</div>
+                                            <div style={{ fontWeight: '500', color: 'var(--text-muted)', marginTop: '0.2rem' }}>To: {del.customerName || 'TBD'}</div>
                                             <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{del.deliveryAddress || 'No Address'}</div>
                                         </td>
                                         <td style={{ padding: '1rem' }}>
