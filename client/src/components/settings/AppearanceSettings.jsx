@@ -11,12 +11,11 @@ const ACCENT_COLORS = [
     { name: 'Pink', value: '#FF2A7B' }
 ];
 
-const AppearanceSettings = ({ userContext }) => {
+const AppearanceSettings = ({ userContext, showToast }) => {
     const defaultPreferences = userContext.preferences || { theme: 'system', accentColor: '#6C63FF' };
     
     const [preferences, setPreferences] = useState(defaultPreferences);
     const [loading, setLoading] = useState(false);
-    const [saved, setSaved] = useState(false);
 
     // Apply accent color to document root immediately
     useEffect(() => {
@@ -51,9 +50,8 @@ const AppearanceSettings = ({ userContext }) => {
 
     const handleSavePreferences = async () => {
         setLoading(true);
-        setSaved(false);
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
             
             await axios.put(`${apiBase}/api/auth/preferences`, preferences, config);
@@ -63,11 +61,10 @@ const AppearanceSettings = ({ userContext }) => {
             localStorage.setItem('userInfo', JSON.stringify(updatedUser));
             localStorage.setItem('theme', preferences.theme);
 
-            setSaved(true);
-            setTimeout(() => setSaved(false), 3000);
+            showToast('Appearance settings saved successfully');
         } catch (error) {
             console.error('Error saving preferences:', error);
-            alert('Failed to save appearance: ' + (error.response?.data?.message || error.message));
+            showToast('Failed to save appearance: ' + (error.response?.data?.message || error.message), 'error');
         } finally {
             setLoading(false);
         }
@@ -154,13 +151,7 @@ const AppearanceSettings = ({ userContext }) => {
                 </div>
             </section>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '2rem' }}>
-                {saved ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--success)' }} className="fade-in">
-                        <CheckCircle size={20} />
-                        <span>Appearance updated successfully</span>
-                    </div>
-                ) : <div />}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '2rem' }}>
                 
                 <button onClick={handleSavePreferences} disabled={loading} style={{ background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', padding: '10px 24px' }}>
                     {loading ? 'Saving...' : 'Save Appearance'}

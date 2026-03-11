@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { Eye, ShieldAlert, CheckCircle, Save } from 'lucide-react';
 import axios from 'axios';
 
-const VisibilitySettings = ({ userContext }) => {
+const VisibilitySettings = ({ userContext, showToast }) => {
     const [loading, setLoading] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
     const [visibility, setVisibility] = useState({
         publicProfile: userContext.visibility?.publicProfile || false,
         showStats: userContext.visibility?.showStats || false,
@@ -20,9 +19,8 @@ const VisibilitySettings = ({ userContext }) => {
 
     const handleSaveVisibility = async () => {
         setLoading(true);
-        setSuccessMessage('');
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
             
             const { data } = await axios.put(`${apiBase}/api/auth/visibility`, visibility, config);
@@ -30,11 +28,10 @@ const VisibilitySettings = ({ userContext }) => {
             const updatedContext = { ...userContext, visibility: data };
             localStorage.setItem('userInfo', JSON.stringify(updatedContext));
             
-            setSuccessMessage('Visibility preferences saved');
-            setTimeout(() => setSuccessMessage(''), 3000);
+            showToast('Privacy and visibility settings updated');
         } catch (error) {
-            console.error('Error saving visibility:', error);
-            alert('Failed to save visibility: ' + (error.response?.data?.message || error.message));
+            console.error('Error updating visibility:', error);
+            showToast('Failed to save visibility settings: ' + (error.response?.data?.message || error.message), 'error');
         } finally {
             setLoading(false);
         }
@@ -62,6 +59,8 @@ const VisibilitySettings = ({ userContext }) => {
             </div>
         </div>
     );
+
+    const role = userContext.role || 'customer';
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', animation: 'fadeIn 0.3s ease' }}>
@@ -110,17 +109,27 @@ const VisibilitySettings = ({ userContext }) => {
                     description="Allow trusted marketplaces to connect and view operational downtime natively." 
                     stateKey="partnerAccess" 
                 />
+                
+                {role === 'driver' && (
+                    <ToggleRow 
+                        label="Allow Job Offers" 
+                        description="Allow logistics managers to see your profile and send direct job offers." 
+                        stateKey="allowJobOffers" 
+                    />
+                )}
+
+                {role === 'seller' && (
+                    <ToggleRow 
+                        label="Allow Marketplace Sync" 
+                        description="Automatically sync your inventory and order data with connected marketplaces." 
+                        stateKey="allowMarketplaceSync" 
+                    />
+                )}
             </section>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
-                {successMessage ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--success)' }} className="fade-in">
-                        <CheckCircle size={20} />
-                        <span>{successMessage}</span>
-                    </div>
-                ) : <div />}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem' }}>
                 
-                <button onClick={handleSaveVisibility} disabled={loading} style={{ background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <button onClick={handleSaveVisibility} disabled={loading} style={{ background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '10px', transition: 'opacity 0.2s' }}>
                     {loading ? <span className="loader" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></span> : <Save size={18} />}
                     {loading ? 'Saving...' : 'Save Preferences'}
                 </button>

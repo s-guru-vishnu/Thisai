@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getUsers, deleteUser, getWarehouses, createWarehouse, getAllParcels, createParcel, getDashboardStats, getLiveMapData, getNotifications } = require('../controllers/adminController');
+const { checkLocation } = require('../middleware/authMiddleware');
 
 // Get all users
 router.get('/users', getUsers);
@@ -18,7 +19,7 @@ router.post('/warehouses', createWarehouse);
 router.get('/parcels', getAllParcels);
 
 // Create parcel
-router.post('/parcels', createParcel);
+router.post('/parcels', checkLocation, createParcel);
 
 // Get dashboard stats
 router.get('/dashboard/stats', getDashboardStats);

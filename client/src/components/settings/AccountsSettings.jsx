@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Shield, Key, AlertCircle, CheckCircle, Trash2, Mail } from 'lucide-react';
+import { Shield, Key, AlertCircle, CheckCircle, Trash2, Mail, Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const AccountsSettings = ({ userContext }) => {
+const AccountsSettings = ({ userContext, showToast }) => {
     const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState({ text: '', type: '' });
     
     const [accountData, setAccountData] = useState({
         email: userContext.email || ''
@@ -17,50 +16,53 @@ const AccountsSettings = ({ userContext }) => {
         confirmPassword: ''
     });
 
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [deleteInput, setDeleteInput] = useState('');
     const navigate = useNavigate();
 
-    const handleEmailChange = async (e) => {
+    const handleEmailUpdate = async (e) => {
         e.preventDefault();
-        setMessage({ text: '', type: '' });
         setLoading(true);
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
             
             const { data } = await axios.put(`${apiBase}/api/auth/profile`, { email: accountData.email }, config);
             
-            const updatedContext = { ...userContext, email: data.email };
+            // Spread existing userContext to preserve token, then overwrite with updated data
+            const updatedContext = { ...userContext, ...data };
             localStorage.setItem('userInfo', JSON.stringify(updatedContext));
             
-            setMessage({ text: 'Email updated successfully.', type: 'success' });
-            setTimeout(() => setMessage({ text: '', type: '' }), 4000);
+            // Also need to update state if there's any local state depending on context
+            showToast('Email and Account Info updated successfully.');
         } catch (error) {
-            setMessage({ text: error.response?.data?.message || 'Failed to update email.', type: 'error' });
+            showToast(error.response?.data?.message || 'Failed to update email.', 'error');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleUpdatePassword = async (e) => {
+    const handlePasswordChange = async (e) => {
         e.preventDefault();
-        setMessage({ text: '', type: '' });
 
         if (passwords.newPassword !== passwords.confirmPassword) {
-            setMessage({ text: 'New passwords do not match.', type: 'error' });
+            showToast('New passwords do not match.', 'error');
             return;
         }
 
         const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
         if (!passwordRegex.test(passwords.newPassword)) {
-            setMessage({ text: 'Password must be at least 8 characters, with 1 uppercase letter and 1 number.', type: 'error' });
+            showToast('Password must be at least 8 characters, with 1 uppercase letter and 1 number.', 'error');
             return;
         }
 
         setLoading(true);
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
             
             await axios.post(`${apiBase}/api/auth/change-password`, {
@@ -68,11 +70,10 @@ const AccountsSettings = ({ userContext }) => {
                 newPassword: passwords.newPassword
             }, config);
 
-            setMessage({ text: 'Password changed successfully.', type: 'success' });
+            showToast('Password changed successfully.');
             setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
-            setTimeout(() => setMessage({ text: '', type: '' }), 4000);
         } catch (error) {
-            setMessage({ text: error.response?.data?.message || 'Failed to update password.', type: 'error' });
+            showToast(error.response?.data?.message || 'Failed to change password', 'error');
         } finally {
             setLoading(false);
         }
@@ -82,16 +83,17 @@ const AccountsSettings = ({ userContext }) => {
         if (deleteInput !== 'DELETE') return;
         setLoading(true);
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
             
             await axios.delete(`${apiBase}/api/auth/account`, config);
             
             localStorage.removeItem('userInfo');
             setDeleteModalOpen(false);
+            showToast('Account deleted successfully.'); // Changed from 'Verification email sent!' as it's for account deletion
             navigate('/login');
         } catch (error) {
-            setMessage({ text: error.response?.data?.message || 'Failed to delete account.', type: 'error' });
+            showToast(error.response?.data?.message || 'Failed to delete account.', 'error');
             setLoading(false);
         }
     };
@@ -108,15 +110,15 @@ const AccountsSettings = ({ userContext }) => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
                     <div className="form-group">
                         <label style={{ color: 'var(--text-muted)', marginBottom: '8px', display: 'block', fontSize: '0.9rem' }}>User ID</label>
-                        <input value={userContext._id || 'Pending Authentication'} disabled style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.1)', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }} />
+                        <input value={userContext.userId || userContext._id || 'Pending Authentication'} disabled className="settings-input" style={{ background: 'rgba(0,0,0,0.1)', color: 'var(--text-muted)', cursor: 'not-allowed' }} />
                     </div>
                     <div className="form-group">
                         <label style={{ color: 'var(--text-muted)', marginBottom: '8px', display: 'block', fontSize: '0.9rem' }}>Account Role</label>
-                        <input value={(userContext.role || 'Unknown').toUpperCase()} disabled style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.1)', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }} />
+                        <input value={(userContext.role || 'Unknown').toUpperCase()} disabled className="settings-input" style={{ background: 'rgba(0,0,0,0.1)', color: 'var(--text-muted)', cursor: 'not-allowed' }} />
                     </div>
                 </div>
 
-                <form onSubmit={handleEmailChange} style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem', maxWidth: '500px' }}>
+                <form onSubmit={handleEmailUpdate} style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem', maxWidth: '500px' }}>
                     <div className="form-group" style={{ flex: 1 }}>
                         <label style={{ color: 'var(--text-muted)', marginBottom: '8px', display: 'block', fontSize: '0.9rem' }}>Primary Email Address</label>
                         <div style={{ position: 'relative' }}>
@@ -124,7 +126,7 @@ const AccountsSettings = ({ userContext }) => {
                             <input 
                                 type="email" required
                                 value={accountData.email} onChange={(e) => setAccountData({ email: e.target.value })} 
-                                style={{ width: '100%', padding: '12px 12px 12px 45px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white' }} 
+                                className="settings-input settings-input-with-icon"
                             />
                         </div>
                     </div>
@@ -140,45 +142,71 @@ const AccountsSettings = ({ userContext }) => {
                     <Key size={18} className="text-accent" /> Update Password
                 </h4>
                 
-                <form onSubmit={handleUpdatePassword} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                <form onSubmit={handlePasswordChange} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
                     <div className="form-group">
                         <label style={{ color: 'var(--text-muted)', marginBottom: '8px', display: 'block', fontSize: '0.9rem' }}>Current Password</label>
-                        <input 
-                            name="currentPassword" type="password" required
-                            value={passwords.currentPassword} onChange={(e) => setPasswords({...passwords, currentPassword: e.target.value})} 
-                            style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white' }} 
-                        />
+                        <div style={{ position: 'relative' }}>
+                            <Key size={18} style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <input 
+                                name="currentPassword" type={showCurrentPassword ? "text" : "password"} required
+                                value={passwords.currentPassword} onChange={(e) => setPasswords({...passwords, currentPassword: e.target.value})} 
+                                className="settings-input settings-input-with-icon" 
+                                style={{ paddingRight: '45px' }}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+                            >
+                                {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
                     </div>
                     
                     <div className="form-group">
                         <label style={{ color: 'var(--text-muted)', marginBottom: '8px', display: 'block', fontSize: '0.9rem' }}>New Password</label>
-                        <input 
-                            name="newPassword" type="password" required
-                            value={passwords.newPassword} onChange={(e) => setPasswords({...passwords, newPassword: e.target.value})} 
-                            style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white' }} 
-                        />
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>Min 8 characters, 1 uppercase, 1 number.</p>
+                        <div style={{ position: 'relative' }}>
+                            <Key size={18} style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <input 
+                                name="newPassword" type={showNewPassword ? "text" : "password"} required
+                                value={passwords.newPassword} onChange={(e) => setPasswords({...passwords, newPassword: e.target.value})} 
+                                className="settings-input settings-input-with-icon" 
+                                style={{ paddingRight: '45px' }}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowNewPassword(!showNewPassword)}
+                                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+                            >
+                                {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="form-group">
                         <label style={{ color: 'var(--text-muted)', marginBottom: '8px', display: 'block', fontSize: '0.9rem' }}>Confirm New Password</label>
-                        <input 
-                            name="confirmPassword" type="password" required
-                            value={passwords.confirmPassword} onChange={(e) => setPasswords({...passwords, confirmPassword: e.target.value})} 
-                            style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white' }} 
-                        />
+                        <div style={{ position: 'relative' }}>
+                            <Key size={18} style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <input 
+                                name="confirmPassword" type={showConfirmPassword ? "text" : "password"} required
+                                value={passwords.confirmPassword} onChange={(e) => setPasswords({...passwords, confirmPassword: e.target.value})} 
+                                className="settings-input settings-input-with-icon" 
+                                style={{ paddingRight: '45px' }}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
+                            >
+                                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
                     </div>
 
                     <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <button type="submit" disabled={loading} style={{ padding: '10px 24px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>
+                        <button type="submit" disabled={loading} style={{ padding: '12px 28px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', transition: 'opacity 0.2s' }}>
                             {loading ? 'Processing...' : 'Update Password'}
                         </button>
-                        {message.text && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: message.type === 'success' ? 'var(--success)' : 'var(--danger)', fontSize: '0.9rem' }} className="fade-in">
-                                {message.type === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
-                                <span>{message.text}</span>
-                            </div>
-                        )}
                     </div>
                 </form>
             </section>
@@ -239,6 +267,37 @@ const AccountsSettings = ({ userContext }) => {
                 </div>
             )}
             
+            <style>{`
+                .settings-input {
+                    width: 100%;
+                    padding: 12px;
+                    border-radius: 8px;
+                    background: rgba(0,0,0,0.3);
+                    border: 1px solid var(--border-color);
+                    color: white;
+                    outline: none;
+                    transition: all 0.2s ease;
+                }
+                .settings-input:focus {
+                    border-color: var(--accent);
+                    background: rgba(0,0,0,0.4);
+                }
+                .settings-input-with-icon {
+                    padding-left: 45px !important;
+                }
+                .settings-select {
+                    width: 100%;
+                    padding: 12px;
+                    border-radius: 8px;
+                    background: #1c1c1e;
+                    border: 1px solid var(--border-color);
+                    color: white;
+                    outline: none;
+                }
+                .settings-select:focus {
+                    border-color: var(--accent);
+                }
+            `}</style>
         </div>
     );
 };
