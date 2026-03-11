@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { loginUser, registerUser } = require('../controllers/authController');
+const { loginUser, registerUser, changePassword, deleteAccount } = require('../controllers/authController');
 
 // @route   POST /api/auth/login
 // @desc    Auth user & get token
@@ -39,5 +39,15 @@ router.post('/seed', async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+
+const { protect } = require('../middleware/authMiddleware');
+const { updateProfile, updatePreferences, updatePlatforms, updateVisibility } = require('../controllers/userSettingsController');
+
+router.post('/change-password', protect, changePassword);
+router.put('/profile', protect, updateProfile);
+router.put('/preferences', protect, updatePreferences);
+router.put('/platforms', protect, updatePlatforms);
+router.put('/visibility', protect, updateVisibility);
+router.delete('/account', protect, deleteAccount);
 
 module.exports = router;

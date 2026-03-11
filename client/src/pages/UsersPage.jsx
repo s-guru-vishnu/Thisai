@@ -121,7 +121,7 @@ const UsersPage = () => {
                         <h1>User <span>Management</span></h1>
                         <p className="subtitle">Maintain system access and role assignments.</p>
                     </div>
-                    <button className="primary-btn pulse-glow flex items-center gap-2" onClick={handleAddUser}>
+                    <button style={{ background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={handleAddUser}>
                         <UserPlus size={18} /> Add New User
                     </button>
                 </header>
@@ -231,8 +231,7 @@ const UsersPage = () => {
                                 </select>
                             </div>
                             <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-                                <button type="button" className="secondary-btn" style={{ margin: 0, padding: '14px', flex: 1 }} onClick={() => setIsModalOpen(false)}>Cancel</button>
-                                <button type="submit" className="primary-btn" style={{ margin: 0, padding: '14px', flex: 1 }}>{currentUser ? 'Save Changes' : 'Generate Account'}</button>
+                                <button type="submit" style={{ padding: '14px', flex: 1, background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}>{currentUser ? 'Save Changes' : 'Generate Account'}</button>
                             </div>
                         </form>
                     </div>
