@@ -37,7 +37,7 @@ const ProfileSettings = ({ userContext }) => {
         setLoading(true);
         setSuccessMessage('');
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
             
             const payload = {

@@ -205,15 +205,10 @@ const Navbar = () => {
                                 <p style={{ margin: 0, fontWeight: 'bold', color: 'var(--text-main)', fontSize: '0.95rem' }}>{userInfo.name || 'User'}</p>
                                 <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'capitalize' }}>{userInfo.role || 'Guest'}</p>
                             </div>
-<<<<<<< HEAD
-                            
-                            <Link to="/settings/basic-info" onClick={() => setIsProfileOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', color: 'var(--text-color)', textDecoration: 'none', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
-=======
 
-                            <Link to="/dashboard/profile" onClick={() => setIsProfileOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', color: 'var(--text-color)', textDecoration: 'none', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
->>>>>>> 325c4039c10287285b4dcd647c557890aca4518f
+                            <Link to="/settings/basic-info" onClick={() => setIsProfileOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', color: 'var(--text-color)', textDecoration: 'none', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
                                 <User size={16} />
-                                <span>Profile</span>
+                                <span>Profile Settings</span>
                             </Link>
 
                             <button onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', color: 'var(--danger)', background: 'transparent', border: 'none', width: '100%', textAlign: 'left', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,59,48,0.1)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>

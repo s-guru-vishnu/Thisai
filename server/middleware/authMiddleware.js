@@ -29,4 +29,14 @@ const authorize = (...roles) => {
     };
 };
 
-module.exports = { protect, authorize };
+const checkLocation = (req, res, next) => {
+    if (!req.user || !req.user.location || !req.user.location.addressLine1 || !req.user.location.city) {
+        return res.status(403).json({ 
+            message: 'Location Required: Please add your location in profile settings before performing this action.',
+            code: 'LOCATION_REQUIRED'
+        });
+    }
+    next();
+};
+
+module.exports = { protect, authorize, checkLocation };
