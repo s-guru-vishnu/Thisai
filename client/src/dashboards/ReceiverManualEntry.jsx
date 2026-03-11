@@ -2,8 +2,9 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
+import { QRCodeSVG } from 'qrcode.react';
 import Navbar from '../components/Navbar';
-import { Package, MapPin, User, Scale, Tag, ArrowLeft, Save, Crosshair, Search, ShieldAlert } from 'lucide-react';
+import { Package, MapPin, User, Scale, Tag, ArrowLeft, Save, Crosshair, Search, ShieldAlert, CheckCircle, Download, X } from 'lucide-react';
 import '../styles/dashboard.css';
 
 const containerStyle = {
@@ -29,6 +30,8 @@ const ReceiverManualEntry = () => {
     const [autocomplete, setAutocomplete] = useState(null);
     const [map, setMap] = useState(null);
     const [position, setPosition] = useState(center);
+    const [showQRModal, setShowQRModal] = useState(false);
+    const [generatedTracking, setGeneratedTracking] = useState('');
 
     const [newProduct, setNewProduct] = useState({
         productName: '',
@@ -95,21 +98,31 @@ const ReceiverManualEntry = () => {
         e.preventDefault();
         setLoading(true);
         try {
+<<<<<<< HEAD
+            const trk = 'M-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+            const payload = { ...newProduct, trackingCode: trk, status: 'Received' };
+            await axios.post('http://localhost:5000/api/parcels', payload);
+            setGeneratedTracking(trk);
+            setShowQRModal(true);
+=======
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             await axios.post(`${apiBase}/api/parcels`, newProduct);
             navigate('/receiver');
+>>>>>>> f0c8cb7c0132cc1398f7554139b95d2a9fb56070
         } catch (err) {
             console.error("Failed to add product", err);
+            const trk = 'M-' + Math.random().toString(36).substring(2, 8).toUpperCase();
             const localP = {
                 id: Date.now(),
                 ...newProduct,
                 status: 'Received',
-                trackingCode: 'M-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+                trackingCode: trk,
                 createdAt: new Date().toISOString()
             };
             const localD = JSON.parse(localStorage.getItem('sellerDeliveries') || '[]');
             localStorage.setItem('sellerDeliveries', JSON.stringify([localP, ...localD]));
-            navigate('/receiver');
+            setGeneratedTracking(trk);
+            setShowQRModal(true);
         } finally {
             setLoading(false);
         }
@@ -252,6 +265,33 @@ const ReceiverManualEntry = () => {
                     </form>
                 </div>
             </main>
+
+            {/* QR Generation Modal */}
+            {showQRModal && (
+                <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.9)', zIndex: 1000 }}>
+                    <div className="panel" style={{ background: 'var(--panel-bg)', width: '400px', p: '2.5rem', textAlign: 'center', border: '2px solid var(--accent)', boxShadow: '0 0 50px rgba(255,102,0,0.2)', padding: '2.5rem' }}>
+                        <div style={{ marginBottom: '1rem' }}><CheckCircle color="#00cc66" size={64} /></div>
+                        <h2 style={{ margin: '0 0 0.5rem 0' }}>Success!</h2>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Parcel registered successfully. Tag generated!</p>
+
+                        <div style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', display: 'inline-block', marginBottom: '1.5rem', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                            <QRCodeSVG value={generatedTracking} size={200} level="H" includeMargin={true} />
+                        </div>
+
+                        <p style={{ fontFamily: 'monospace', fontWeight: 'bold', letterSpacing: '2px', color: 'var(--accent)', fontSize: '1.2rem', marginBottom: '2rem' }}>{generatedTracking}</p>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                            <button className="secondary-btn" style={{ padding: '0.8rem', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
+                                <Download size={18} /> PNG
+                            </button>
+                            <button onClick={() => navigate('/receiver')} className="primary-btn" style={{ padding: '0.8rem', borderRadius: '8px' }}>
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <style>{`
                 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
                 .pac-container { background: #1a1a1a !important; border: 1px solid #333 !important; box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important; color: white !important; }
