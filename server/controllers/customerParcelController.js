@@ -1,0 +1,128 @@
+// customerParcelController.js (Handles functional customer APIs)
+const Parcel = require('../models/Parcel'); // Assuming returning mock data if DB isn't fully structured for this, but using existing parcel schema layout if possible.
+
+// Helper to simulate delay prediction logic
+const generateAIPrediction = (trackingId) => {
+    // Deterministic mock based on tracking string
+    const codeVal = trackingId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const riskLevels = ['LOW', 'MEDIUM', 'HIGH'];
+    const reasons = ['Traffic congestion', 'Weather conditions', 'High volume routing', 'Driver delay', 'Clear route'];
+    
+    return {
+        delayRisk: riskLevels[codeVal % 3],
+        delayMinutes: (codeVal % 3) * 15 + (codeVal % 10),
+        reason: reasons[codeVal % 5]
+    };
+};
+
+// @desc    Get parcel details by Tracking ID
+// @route   GET /api/parcel/:trackingId
+// @access  Private
+const getParcelByTrackingId = async (req, res) => {
+    try {
+        const { trackingId } = req.params;
+        // In reality: await Parcel.findOne({ trackingCode: trackingId })
+        // Returning mock structure as defined in instructions for immediate frontend integration testing
+        
+        let parcel = await Parcel.findOne({ trackingCode: trackingId }).populate('driver');
+        
+        if (!parcel) {
+            // Mock failover if actual DB record doesn't exist yet but UI needs testing
+             return res.json({
+                trackingId: trackingId,
+                productName: "Logistics Package",
+                senderName: "Warehouse Alpha",
+                pickupLocation: "Central Hub",
+                deliveryAddress: "Customer Location",
+                eta: "15 min",
+                driverName: "John Doe",
+                status: "In Transit",
+                driverLocation: { lat: 13.0827, lng: 80.2707 }, // default chennai
+                timeline: [
+                   { title: 'Order Created', time: '10:00 AM', completed: true },
+                   { title: 'Package Picked Up', time: '11:30 AM', completed: true },
+                   { title: 'In Transit', time: '12:00 PM', completed: true },
+                   { title: 'Out For Delivery', time: '', completed: false },
+                   { title: 'Delivered', time: '', completed: false }
+                ]
+            });
+        }
+
+        res.json({
+            trackingId: parcel.trackingCode,
+            productName: parcel.productName || 'Package',
+            senderName: parcel.sender || 'Sender Name',
+            pickupLocation: parcel.pickupAddress || 'Warehouse',
+            deliveryAddress: parcel.deliveryAddress,
+            eta: "15 min",
+            status: parcel.status,
+            driverName: parcel.driver ? parcel.driver.name : 'Unassigned',
+            driverLocation: parcel.currentLocation || { lat: 13.0827, lng: 80.2707 },
+            timeline: [
+                { title: 'Order Created', time: '10:00 AM', completed: true },
+                { title: 'Package Picked Up', time: '11:30 AM', completed: ['Picked Up', 'In Transit', 'Out For Delivery', 'Delivered'].includes(parcel.status) },
+                { title: 'In Transit', time: '12:00 PM', completed: ['In Transit', 'Out For Delivery', 'Delivered'].includes(parcel.status) },
+                { title: 'Out For Delivery', time: '', completed: ['Out For Delivery', 'Delivered'].includes(parcel.status) },
+                { title: 'Delivered', time: '', completed: parcel.status === 'Delivered' }
+             ]
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get user's parcel history
+// @route   GET /api/parcel/history/:userId
+// @access  Private
+const getUserParcelHistory = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        // In reality: await Parcel.find({ customer: userId, status: 'Delivered' })
+        // Return structured list
+        res.json([
+             { trackingId: "1234567890", productName: 'Laptop Stand', pickupLocation: 'Chennai Hub', deliveryAddress: 'Home', deliveredDate: '2023-10-01', status: 'Delivered', timeline: [{title: 'Delivered', time: '02:00 PM', completed: true}], proof: 'Signed by Receiver', receiverName: 'Customer' },
+             { trackingId: "0987654321", productName: 'Wireless Mouse', pickupLocation: 'Bangalore Hub', deliveryAddress: 'Home', deliveredDate: '2023-09-15', status: 'Delivered', timeline: [{title: 'Delivered', time: '11:00 AM', completed: true}], proof: 'Left at Door', receiverName: 'Customer' }
+        ]);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get live driver location for a tracking ID
+// @route   GET /api/parcel/live-location/:trackingId
+// @access  Private
+const getLiveDriverLocation = async (req, res) => {
+    try {
+        // Mock jitter for the UI polling
+        const latOffset = (Math.random() - 0.5) * 0.005;
+        const lngOffset = (Math.random() - 0.5) * 0.005;
+
+        res.json({
+            driverLocation: {
+                lat: 13.0827 + latOffset,
+                lng: 80.2707 + lngOffset
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get AI Prediction for delay
+// @route   GET /api/predict/delay/:trackingId
+// @access  Private
+const getDelayPrediction = async (req, res) => {
+    try {
+        const prediction = generateAIPrediction(req.params.trackingId);
+        res.json(prediction);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = {
+    getParcelByTrackingId,
+    getUserParcelHistory,
+    getLiveDriverLocation,
+    getDelayPrediction
+};
