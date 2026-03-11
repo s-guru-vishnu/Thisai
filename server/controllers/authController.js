@@ -64,6 +64,40 @@ const registerUser = async (req, res) => {
     }
 };
 
+<<<<<<< HEAD
+const changePassword = async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    
+    try {
+        const user = await User.findById(req.user._id);
+
+        if (user && (await user.matchPassword(currentPassword))) {
+            // Validate password complexity: min 8 chars, 1 uppercase, 1 number
+            const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
+            if (!passwordRegex.test(newPassword)) {
+                return res.status(400).json({ message: 'Password must be at least 8 characters long, contain at least one uppercase letter and one number.' });
+            }
+
+            user.password = newPassword;
+            await user.save();
+
+            res.json({ message: 'Password updated successfully' });
+        } else {
+            res.status(401).json({ message: 'Invalid current password' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const deleteAccount = async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+
+        if (user) {
+            await User.deleteOne({ _id: user._id });
+            res.json({ message: 'User account deleted successfully' });
+=======
 const updateProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
@@ -87,6 +121,7 @@ const updateProfile = async (req, res) => {
                 location: updatedUser.location,
                 token: generateToken(updatedUser._id)
             });
+>>>>>>> 325c4039c10287285b4dcd647c557890aca4518f
         } else {
             res.status(404).json({ message: 'User not found' });
         }
@@ -95,4 +130,8 @@ const updateProfile = async (req, res) => {
     }
 };
 
+<<<<<<< HEAD
+module.exports = { loginUser, registerUser, changePassword, deleteAccount };
+=======
 module.exports = { loginUser, registerUser, updateProfile };
+>>>>>>> 325c4039c10287285b4dcd647c557890aca4518f

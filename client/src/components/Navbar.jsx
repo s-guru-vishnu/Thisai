@@ -23,14 +23,6 @@ const Navbar = () => {
     const [notifications, setNotifications] = useState([]);
 
     const fetchNotifications = async () => {
-        if (isCustomer) {
-            setNotifications([
-                { id: 1, title: 'Package Picked Up', message: 'Your package (Code: 1234567890) has been picked up from the warehouse.', type: 'info', time: '2 hours ago' },
-                { id: 2, title: 'Driver Approaching', message: 'Driver is approximately 15 mins away from your location.', type: 'warning', time: '10 mins ago' }
-            ]);
-            return;
-        }
-
         try {
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             const config = {
@@ -38,7 +30,13 @@ const Navbar = () => {
                     Authorization: `Bearer ${userInfo?.token}`
                 }
             };
-            const { data } = await axios.get(`${apiBase}/api/admin/notifications`, config);
+            
+            let url = `${apiBase}/api/admin/notifications`;
+            if (isCustomer) {
+                url = `${apiBase}/api/parcel/notifications`;
+            }
+            
+            const { data } = await axios.get(url, config);
             setNotifications(data);
         } catch (error) {
             console.error('Error fetching notifications:', error);
@@ -207,8 +205,13 @@ const Navbar = () => {
                                 <p style={{ margin: 0, fontWeight: 'bold', color: 'var(--text-main)', fontSize: '0.95rem' }}>{userInfo.name || 'User'}</p>
                                 <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'capitalize' }}>{userInfo.role || 'Guest'}</p>
                             </div>
+<<<<<<< HEAD
+                            
+                            <Link to="/settings/basic-info" onClick={() => setIsProfileOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', color: 'var(--text-color)', textDecoration: 'none', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+=======
 
                             <Link to="/dashboard/profile" onClick={() => setIsProfileOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', color: 'var(--text-color)', textDecoration: 'none', borderRadius: '8px', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+>>>>>>> 325c4039c10287285b4dcd647c557890aca4518f
                                 <User size={16} />
                                 <span>Profile</span>
                             </Link>
