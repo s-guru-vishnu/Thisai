@@ -28,6 +28,9 @@ const userSchema = mongoose.Schema(
         hub: {
             type: String,
         },
+        location: {
+            type: String,
+        },
     },
     {
         timestamps: true,

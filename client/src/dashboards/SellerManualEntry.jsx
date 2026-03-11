@@ -28,6 +28,7 @@ const SellerManualEntry = () => {
     const [autocomplete, setAutocomplete] = useState(null);
     const [position, setPosition] = useState(center);
     const [products] = useState(() => JSON.parse(localStorage.getItem('sellerProducts') || '[]'));
+    const [userInfo] = useState(() => JSON.parse(localStorage.getItem('userInfo') || '{}'));
     const [loading, setLoading] = useState(false);
     const [showQRSuccess, setShowQRSuccess] = useState(false);
     const [generatedTrk, setGeneratedTrk] = useState('');
@@ -92,6 +93,7 @@ const SellerManualEntry = () => {
             productName: product ? product.name : 'Manual Item',
             ...formData,
             location: position,
+            origin: userInfo.location || 'Not Configured',
             status: 'Pending Pickup',
             createdAt: new Date().toISOString()
         };
@@ -119,22 +121,30 @@ const SellerManualEntry = () => {
                         <p style={{ margin: 0, color: 'var(--text-muted)' }}>Configure delivery route & customer details.</p>
                     </header>
 
+                    {!userInfo.location && (
+                        <div style={{ background: 'rgba(255, 60, 60, 0.1)', border: '1px solid var(--danger)', padding: '1rem', borderRadius: '10px', marginBottom: '2rem' }}>
+                            <h4 style={{ color: 'var(--danger)', margin: '0 0 5px 0' }}>Profile Incomplete</h4>
+                            <p style={{ fontSize: '0.9rem', margin: 0 }}>You must update your Location / Base Address in your profile before you can dispatch products.</p>
+                            <button onClick={() => navigate('/profile')} className="secondary-btn" style={{ marginTop: '10px', fontSize: '0.85rem' }}>Go to Profile</button>
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <div>
+                        <div className="form-group">
                             <label style={{ display: 'block', mb: '0.5rem', fontWeight: '600' }}>Select Catalog Product</label>
-                            <select name="productId" value={formData.productId} onChange={handleInputChange} required style={{ width: '100%', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)', cursor: 'pointer' }}>
+                            <select name="productId" value={formData.productId} onChange={handleInputChange} required style={{ width: '100%', cursor: 'pointer' }}>
                                 <option value="">-- Choose Product --</option>
                                 {products.map(p => <option key={p.id} value={p.id}>{p.name} (₹{p.price})</option>)}
                                 <option value="manual">Other / Custom Item</option>
                             </select>
                         </div>
 
-                        <div>
+                        <div className="form-group">
                             <label style={{ display: 'block', mb: '0.5rem', fontWeight: '600' }}>Customer Name</label>
-                            <input name="customerName" value={formData.customerName} onChange={handleInputChange} required placeholder="Full Name" style={{ width: '100%', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)' }} />
+                            <input name="customerName" value={formData.customerName} onChange={handleInputChange} required placeholder="Full Name" style={{ width: '100%' }} />
                         </div>
 
-                        <div style={{ position: 'relative' }}>
+                        <div className="form-group" style={{ position: 'relative' }}>
                             <label style={{ display: 'block', mb: '0.5rem', fontWeight: '600' }}>Full Delivery Address</label>
                             {isLoaded && (
                                 <Autocomplete onLoad={onAutocompleteLoad} onPlaceChanged={onPlaceChanged}>
@@ -143,7 +153,7 @@ const SellerManualEntry = () => {
                                         value={formData.deliveryAddress}
                                         onChange={handleInputChange}
                                         placeholder="Search for address or drop pin..."
-                                        style={{ width: '100%', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)', paddingRight: '40px' }}
+                                        style={{ width: '100%', paddingRight: '40px' }}
                                     />
                                 </Autocomplete>
                             )}
@@ -151,17 +161,17 @@ const SellerManualEntry = () => {
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <div>
+                            <div className="form-group">
                                 <label style={{ display: 'block', mb: '0.5rem', fontWeight: '600' }}>Service</label>
-                                <select name="deliveryType" value={formData.deliveryType} onChange={handleInputChange} style={{ width: '100%', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)' }}>
+                                <select name="deliveryType" value={formData.deliveryType} onChange={handleInputChange} style={{ width: '100%' }}>
                                     <option value="Standard">Standard</option>
                                     <option value="Express">Express</option>
                                     <option value="Same Day">Same Day</option>
                                 </select>
                             </div>
-                            <div>
+                            <div className="form-group">
                                 <label style={{ display: 'block', mb: '0.5rem', fontWeight: '600' }}>Destination</label>
-                                <input name="destination" value={formData.destination} onChange={handleInputChange} placeholder="Hub City" style={{ width: '100%', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)' }} />
+                                <input name="destination" value={formData.destination} onChange={handleInputChange} placeholder="Hub City" style={{ width: '100%' }} />
                             </div>
                         </div>
 
@@ -170,7 +180,7 @@ const SellerManualEntry = () => {
                             <p style={{ margin: '5px 0 0 0', fontWeight: '800', fontFamily: 'monospace', color: 'var(--accent)' }}>{formData.lat}, {formData.lng}</p>
                         </div>
 
-                        <button type="submit" disabled={loading} className="primary-btn pulse-glow" style={{ padding: '1.2rem', borderRadius: '12px', marginTop: '1rem' }}>
+                        <button type="submit" disabled={loading || !userInfo.location} className="primary-btn pulse-glow" style={{ padding: '1.2rem', borderRadius: '12px', marginTop: '1rem', opacity: (!userInfo.location) ? 0.5 : 1 }}>
                             <Navigation size={20} style={{ marginRight: '10px' }} />
                             {loading ? 'Processing...' : 'CONFIRM DISPATCH'}
                         </button>

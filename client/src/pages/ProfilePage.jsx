@@ -1,12 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Navbar from '../components/Navbar';
 import { Settings, User, Bell, Shield, Database, Cpu, Globe, Moon, Save } from 'lucide-react';
 
 const ProfilePage = () => {
     const [activeTab, setActiveTab] = useState('profile');
+    const [userInfo, setUserInfo] = useState({});
+    const [formData, setFormData] = useState({ name: '', email: '', location: '' });
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const data = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        setUserInfo(data);
+        setFormData({
+            name: data.name || '',
+            email: data.email || '',
+            location: data.location || ''
+        });
+    }, []);
+
+    const handleSave = async () => {
+        try {
+            setLoading(true);
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
+
+            const { data } = await axios.put(`${apiBase}/api/auth/profile`, formData, config);
+            localStorage.setItem('userInfo', JSON.stringify(data));
+            setUserInfo(data);
+            alert('Profile updated successfully!');
+        } catch (error) {
+            console.error(error);
+            alert('Failed to update profile: ' + (error.response?.data?.message || error.message));
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const tabs = [
-        { id: 'profile', label: 'Admin Profile', icon: <User size={18} /> },
+        { id: 'profile', label: `${(userInfo.role || 'User').charAt(0).toUpperCase() + (userInfo.role || 'user').slice(1)} Profile`, icon: <User size={18} /> },
         { id: 'system', label: 'Logistics Engine', icon: <Cpu size={18} /> },
         { id: 'security', label: 'Security & Auth', icon: <Shield size={18} /> },
         { id: 'notifications', label: 'Alert Config', icon: <Bell size={18} /> },
@@ -21,15 +53,15 @@ const ProfilePage = () => {
                         <h1>User <span>Profile</span></h1>
                         <p className="subtitle">Manage your account preferences and system configurations.</p>
                     </div>
-                    <button className="primary-btn pulse-glow flex items-center gap-2">
-                        <Save size={18} /> Save All Changes
+                    <button onClick={handleSave} disabled={loading} className="primary-btn pulse-glow flex items-center gap-2">
+                        <Save size={18} /> {loading ? 'Saving...' : 'Save All Changes'}
                     </button>
                 </header>
 
                 <div className="settings-container" style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '2rem' }}>
                     <div className="settings-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {tabs.map(tab => (
-                            <button 
+                            <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 style={{
@@ -61,18 +93,22 @@ const ProfilePage = () => {
                                         <User size={40} className="text-accent" />
                                     </div>
                                     <div>
-                                        <h3 style={{ margin: 0 }}>Guru Vishnu</h3>
-                                        <p style={{ color: 'var(--text-muted)', margin: '5px 0 0 0' }}>Super Admin • Registered Mar 2026</p>
+                                        <h3 style={{ margin: 0, textTransform: 'capitalize' }}>{userInfo.name || 'User'}</h3>
+                                        <p style={{ color: 'var(--text-muted)', margin: '5px 0 0 0', textTransform: 'capitalize' }}>{userInfo.role || 'Guest'} Role</p>
                                     </div>
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                                     <div className="form-group">
                                         <label>Display Name</label>
-                                        <input type="text" defaultValue="Guru Vishnu" style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white' }} />
+                                        <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white' }} />
                                     </div>
                                     <div className="form-group">
                                         <label>Email Address</label>
-                                        <input type="email" defaultValue="admin@impact.com" style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white' }} />
+                                        <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white' }} />
+                                    </div>
+                                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                                        <label>Origin Location / Base Address (Important for Dispatching)</label>
+                                        <input type="text" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} placeholder="e.g. 123 Main St, Coimbatore Hub" style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white' }} />
                                     </div>
                                 </div>
                             </div>

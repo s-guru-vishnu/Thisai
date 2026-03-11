@@ -196,11 +196,11 @@ body {
   .navbar {
     padding: 0.8rem 1.5rem;
   }
-  
+
   .nav-links {
     gap: 1.5rem;
   }
-  
+
   .nav-links a {
     font-size: 0.9rem;
   }
@@ -409,31 +409,115 @@ body {
   white-space: nowrap;
 }
 
-.status-pill.admin { background: rgba(255,59,48,0.1); color: var(--danger); border: 1px solid rgba(255,59,48,0.2); }
-.status-pill.manager { background: rgba(23,162,184,0.1); color: var(--info); border: 1px solid rgba(23,162,184,0.2); }
-.status-pill.driver { background: rgba(22,199,132,0.1); color: var(--success); border: 1px solid rgba(22,199,132,0.2); }
-.status-pill.warehouse { background: rgba(247,147,26,0.1); color: var(--warning); border: 1px solid rgba(247,147,26,0.2); }
-.status-pill.customer { background: rgba(163,163,163,0.1); color: var(--text-muted); border: 1px solid rgba(163,163,163,0.2); }
-.status-pill.parcel_receiver { background: rgba(155,89,182,0.1); color: #9b59b6; border: 1px solid rgba(155,89,182,0.2); }
-.status-pill.seller { background: rgba(52,152,219,0.1); color: #3498db; border: 1px solid rgba(52,152,219,0.2); }
+.status-pill.admin {
+  background: rgba(255, 59, 48, 0.1);
+  color: var(--danger);
+  border: 1px solid rgba(255, 59, 48, 0.2);
+}
 
-.activity-icon.warning { background: rgba(247,147,26,0.1); color: var(--warning); }
-.activity-icon.info { background: rgba(23,162,184,0.1); color: var(--info); }
-.activity-icon.success { background: rgba(22,199,132,0.1); color: var(--success); }
-.activity-icon.danger { background: rgba(255,59,48,0.1); color: var(--danger); }
+.status-pill.manager {
+  background: rgba(23, 162, 184, 0.1);
+  color: var(--info);
+  border: 1px solid rgba(23, 162, 184, 0.2);
+}
 
-.flex { display: flex; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.gap-2 { gap: 0.5rem; }
-.gap-4 { gap: 1rem; }
-.flex-grow { flex-grow: 1; }
-.text-accent { color: var(--accent); }
-.text-muted { color: var(--text-muted); }
-.text-success { color: var(--success); }
-.text-warning { color: var(--warning); }
-.text-info { color: var(--info); }
-.text-danger { color: var(--danger); }
+.status-pill.driver {
+  background: rgba(22, 199, 132, 0.1);
+  color: var(--success);
+  border: 1px solid rgba(22, 199, 132, 0.2);
+}
+
+.status-pill.warehouse {
+  background: rgba(247, 147, 26, 0.1);
+  color: var(--warning);
+  border: 1px solid rgba(247, 147, 26, 0.2);
+}
+
+.status-pill.customer {
+  background: rgba(163, 163, 163, 0.1);
+  color: var(--text-muted);
+  border: 1px solid rgba(163, 163, 163, 0.2);
+}
+
+.status-pill.parcel_receiver {
+  background: rgba(155, 89, 182, 0.1);
+  color: #9b59b6;
+  border: 1px solid rgba(155, 89, 182, 0.2);
+}
+
+.status-pill.seller {
+  background: rgba(52, 152, 219, 0.1);
+  color: #3498db;
+  border: 1px solid rgba(52, 152, 219, 0.2);
+}
+
+.activity-icon.warning {
+  background: rgba(247, 147, 26, 0.1);
+  color: var(--warning);
+}
+
+.activity-icon.info {
+  background: rgba(23, 162, 184, 0.1);
+  color: var(--info);
+}
+
+.activity-icon.success {
+  background: rgba(22, 199, 132, 0.1);
+  color: var(--success);
+}
+
+.activity-icon.danger {
+  background: rgba(255, 59, 48, 0.1);
+  color: var(--danger);
+}
+
+.flex {
+  display: flex;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
+
+.text-accent {
+  color: var(--accent);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-success {
+  color: var(--success);
+}
+
+.text-warning {
+  color: var(--warning);
+}
+
+.text-info {
+  color: var(--info);
+}
+
+.text-danger {
+  color: var(--danger);
+}
 
 /* Recent Activity Panel */
 .activity-panel {
@@ -617,7 +701,8 @@ body {
   font-weight: 500;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid var(--border-color);
   padding: 1rem 1.2rem;
@@ -628,7 +713,13 @@ body {
   transition: all 0.3s;
 }
 
-.form-group input:focus {
+.form-group select option {
+  background: var(--bg-panel);
+  color: white;
+}
+
+.form-group input:focus,
+.form-group select:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 10px rgba(255, 102, 0, 0.2);
