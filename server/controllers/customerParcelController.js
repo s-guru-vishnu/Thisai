@@ -1,19 +1,7 @@
 // customerParcelController.js (Handles functional customer APIs)
 const Parcel = require('../models/Parcel'); // Assuming returning mock data if DB isn't fully structured for this, but using existing parcel schema layout if possible.
 
-// Helper to simulate delay prediction logic
-const generateAIPrediction = (trackingId) => {
-    // Deterministic mock based on tracking string
-    const codeVal = trackingId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const riskLevels = ['LOW', 'MEDIUM', 'HIGH'];
-    const reasons = ['Traffic congestion', 'Weather conditions', 'High volume routing', 'Driver delay', 'Clear route'];
-    
-    return {
-        delayRisk: riskLevels[codeVal % 3],
-        delayMinutes: (codeVal % 3) * 15 + (codeVal % 10),
-        reason: reasons[codeVal % 5]
-    };
-};
+const { getLiveWeather } = require('../services/weatherService');
 
 // @desc    Get parcel details by Tracking ID
 // @route   GET /api/parcel/:trackingId
@@ -108,14 +96,67 @@ const getLiveDriverLocation = async (req, res) => {
     }
 };
 
-// @desc    Get AI Prediction for delay
+// @desc    Get AI Prediction for delay (Using Real-Time Live Routing logic)
 // @route   GET /api/predict/delay/:trackingId
 // @access  Private
 const getDelayPrediction = async (req, res) => {
     try {
-        const prediction = generateAIPrediction(req.params.trackingId);
-        res.json(prediction);
+        const { trackingId } = req.params;
+        const parcel = await Parcel.findOne({ trackingCode: trackingId });
+        
+        // Base driver mock coordinates (or actual parcel coordinates if available)
+        let lat = 13.0827;
+        let lng = 80.2707;
+        let distanceFactor = 1.0;
+        
+        if (parcel && parcel.currentLocation) {
+             lat = parcel.currentLocation.lat;
+             lng = parcel.currentLocation.lng;
+             distanceFactor = 1.1; // Baseline realistic distance factor
+        }
+
+        // Live Weather API Evaluation
+        const weather = await getLiveWeather(lat, lng);
+        
+        let weatherRiskFactor = 1.0;
+        if (weather.riskLevel === 'HIGH') weatherRiskFactor = 1.6;
+        else if (weather.riskLevel === 'MEDIUM') weatherRiskFactor = 1.25;
+        
+        // Traffic Delay Logic (Based on Time of Day rush hours natively)
+        const hour = new Date().getHours();
+        const isRushHour = (hour >= 8 && hour <= 10) || (hour >= 17 && hour <= 20);
+        const trafficDelayFactor = isRushHour ? 1.5 : 1.0;
+
+        // ** CORE ROUTING CALCULATION **
+        // RouteScore = distanceFactor * trafficDelayFactor * weatherRiskFactor
+        const routeScore = distanceFactor * trafficDelayFactor * weatherRiskFactor;
+        
+        // Interpret Score into Dashboard Data
+        let delayRisk = 'LOW';
+        let customReason = 'Clear route';
+        
+        if (routeScore >= 1.8) {
+             delayRisk = 'HIGH';
+             if (weatherRiskFactor >= 1.6) customReason = `Severe weather delay (${weather.weatherMain})`;
+             else customReason = 'Severe traffic congestion detected';
+        } else if (routeScore >= 1.3) {
+             delayRisk = 'MEDIUM';
+             if (weatherRiskFactor > 1.0) customReason = `Moderate weather impact (${weather.weatherDescription})`;
+             else customReason = 'Moderate routing delay';
+        }
+        
+        // Output translation
+        const delayMinutes = Math.floor((routeScore - 1.0) * 20);
+
+        res.json({
+            delayRisk,
+            delayMinutes: delayMinutes > 0 ? delayMinutes : 0,
+            reason: customReason,
+            routeScore: routeScore.toFixed(2),
+            weatherMeta: weather
+        });
     } catch (error) {
+        console.error('Route scoring error:', error);
         res.status(500).json({ message: error.message });
     }
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import DriverMap from '../components/DriverMap';
@@ -9,6 +9,47 @@ const DriverDashboard = () => {
     const [map, setMap] = useState(null);
     const [activeDeliveries, setActiveDeliveries] = useState([]);
     const [driverLocation, setDriverLocation] = useState({ lat: 13.0827, lng: 80.2707 });
+    const [weatherAlert, setWeatherAlert] = useState(null);
+    const [trafficAlerts, setTrafficAlerts] = useState([]);
+    const locationRef = useRef(driverLocation);
+
+    // Keep ref updated without causing API interval resets
+    useEffect(() => {
+        locationRef.current = driverLocation;
+    }, [driverLocation]);
+
+    // Live Weather Polling (Every 60 Seconds per specs)
+    useEffect(() => {
+        const fetchWeatherAlerts = async () => {
+            try {
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+                const { lat, lng } = locationRef.current;
+                
+                const res = await axios.get(`${apiBase}/api/weather/live?lat=${lat}&lng=${lng}`);
+                if (res.data) {
+                    let alertString = `☀ Clear weather — optimal travel`;
+                    let iconColor = "#00cc66"; // Green
+                    
+                    if (res.data.riskLevel === 'HIGH') {
+                        alertString = `⚠ Severe weather detected near route: ${res.data.weatherDescription}`;
+                        iconColor = "#ff3333"; // Red
+                    } else if (res.data.riskLevel === 'MEDIUM') {
+                        alertString = `🌬 High wind/weather warning: ${res.data.weatherDescription}`;
+                        iconColor = "#ffaa00"; // Orange
+                    }
+                    
+                    setWeatherAlert({ message: alertString, color: iconColor });
+                }
+            } catch (err) {
+                console.error('Failed to fetch live weather:', err);
+                setWeatherAlert({ message: '⚠ Weather API Offline', color: '#555' });
+            }
+        };
+
+        fetchWeatherAlerts(); // Initial fetch
+        const weatherInterval = setInterval(fetchWeatherAlerts, 60000);
+        return () => clearInterval(weatherInterval);
+    }, []);
 
     useEffect(() => {
         const fetchDriverData = async () => {
@@ -25,10 +66,14 @@ const DriverDashboard = () => {
             }
 
             try {
-                // Step 7: Fetch delivery stops
-                const routeRes = await axios.get(`http://localhost:5000/api/driver/route/${driverId}`);
-                if (routeRes.data && routeRes.data.stops) {
-                    setActiveDeliveries(routeRes.data.stops);
+                // Stage 8: Fetch Optimized Delivery Stops (Live Intelligent Sequence)
+                const routeRes = await axios.get(`http://localhost:5000/api/driver/optimized-route/${driverId}`);
+                if (routeRes.data && routeRes.data.optimizedStopSequence) {
+                    setActiveDeliveries(routeRes.data.optimizedStopSequence);
+                    
+                    if (routeRes.data.trafficAlerts) {
+                        setTrafficAlerts(routeRes.data.trafficAlerts);
+                    }
                 }
             } catch (err) {
                 // Fallback to local storage (No hardcoded dummy markers!)
@@ -52,6 +97,7 @@ const DriverDashboard = () => {
                             id: 'mock1',
                             trackingCode: 'MOCK123456',
                             productName: 'Sample Package',
+                            priority: 'High',
                             destination: 'TIDEL Park, Chennai',
                             location: { lat: 12.9897, lng: 80.2458 } 
                         }
@@ -61,7 +107,8 @@ const DriverDashboard = () => {
         };
 
         fetchDriverData();
-        const interval = setInterval(fetchDriverData, 10000); // Poll every 10 seconds
+        // Stage 4: 30-Second Polling Loop for Dynamic Route Recalculation
+        const interval = setInterval(fetchDriverData, 30000); 
         return () => clearInterval(interval);
     }, []);
 
@@ -149,6 +196,22 @@ const DriverDashboard = () => {
                         <div style={{ width: '8px', height: '8px', background: 'var(--accent)', borderRadius: '50%', animation: 'pulse 1.5s infinite' }}></div>
                         LIVE TRAFFIC DATA SYNCED
                     </div>
+
+                    {weatherAlert && (
+                        <div style={{ position: 'absolute', top: '70px', right: '20px', background: 'rgba(0,0,0,0.85)', padding: '12px 20px', borderRadius: '30px', border: `1px solid ${weatherAlert.color}`, color: 'white', display: 'flex', alignItems: 'center', gap: '10px', pointerEvents: 'none', zIndex: 10, boxShadow: `0 4px 15px ${weatherAlert.color}44` }}>
+                            <div style={{ fontWeight: 'bold', color: weatherAlert.color }}>
+                                {weatherAlert.message}
+                            </div>
+                        </div>
+                    )}
+
+                    {trafficAlerts && trafficAlerts.length > 0 && (
+                        <div style={{ position: 'absolute', top: weatherAlert ? '120px' : '70px', right: '20px', background: 'rgba(255,50,50,0.85)', padding: '12px 20px', borderRadius: '30px', border: '1px solid #ff3333', color: 'white', display: 'flex', alignItems: 'flex-start', gap: '10px', pointerEvents: 'none', zIndex: 10, boxShadow: '0 4px 15px rgba(255,50,50,0.3)', flexDirection: 'column' }}>
+                            {trafficAlerts.map((alert, i) => (
+                                <div key={i} style={{ fontWeight: 'bold' }}>⚠ {alert}</div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </main>
 

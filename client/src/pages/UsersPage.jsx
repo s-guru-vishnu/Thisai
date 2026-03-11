@@ -19,7 +19,7 @@ const UsersPage = () => {
 
     const fetchUsers = async () => {
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             // Getting token if needed
             const userInfo = JSON.parse(localStorage.getItem('userInfo'));
             const config = {
@@ -58,7 +58,7 @@ const UsersPage = () => {
 
     const confirmDelete = async () => {
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             const userInfo = JSON.parse(localStorage.getItem('userInfo'));
             const config = {
                 headers: { Authorization: `Bearer ${userInfo?.token}` }
@@ -91,7 +91,7 @@ const UsersPage = () => {
         };
 
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             const userInfo = JSON.parse(localStorage.getItem('userInfo'));
             const config = {
                 headers: { Authorization: `Bearer ${userInfo?.token}` }
