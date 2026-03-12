@@ -22,7 +22,8 @@ const SellerDashboard = () => {
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""
+        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+        libraries: ['places']
     });
 
     const [map, setMap] = useState(null);
@@ -38,12 +39,22 @@ const SellerDashboard = () => {
     // Load initial state from local storage or use defaults
     const [products, setProducts] = useState(() => {
         const saved = localStorage.getItem('sellerProducts');
-        return saved ? JSON.parse(saved) : [{ id: 1, name: 'Sample Watch', category: 'Accessories', weight: '0.1 kg', price: '1999', description: 'Luxury watch' }];
+        try {
+            const parsed = saved ? JSON.parse(saved) : null;
+            return Array.isArray(parsed) ? parsed : [{ id: 1, name: 'Sample Watch', category: 'Accessories', weight: '0.1 kg', price: '1999', description: 'Luxury watch' }];
+        } catch (e) {
+            return [{ id: 1, name: 'Sample Watch', category: 'Accessories', weight: '0.1 kg', price: '1999', description: 'Luxury watch' }];
+        }
     });
 
     const [deliveries, setDeliveries] = useState(() => {
         const saved = localStorage.getItem('sellerDeliveries');
-        return saved ? JSON.parse(saved) : [];
+        try {
+            const parsed = saved ? JSON.parse(saved) : null;
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
+        }
     });
 
     // Sync to localStorage
@@ -99,11 +110,12 @@ const SellerDashboard = () => {
         showToast(`Product "${newProduct.name}" saved to catalog!`);
     };
 
+    const safeDeliveries = Array.isArray(deliveries) ? deliveries : [];
     const stats = {
-        total: deliveries.length,
-        pending: deliveries.filter(d => d.status === 'Pending Pickup' || !d.status).length,
-        transit: deliveries.filter(d => d.status === 'In Transit').length,
-        delivered: deliveries.filter(d => d.status === 'Delivered').length,
+        total: safeDeliveries.length,
+        pending: safeDeliveries.filter(d => d.status === 'Pending Pickup' || !d.status).length,
+        transit: safeDeliveries.filter(d => d.status === 'In Transit').length,
+        delivered: safeDeliveries.filter(d => d.status === 'Delivered').length,
     };
 
     return (

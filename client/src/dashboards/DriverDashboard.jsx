@@ -36,8 +36,14 @@ const DriverDashboard = () => {
                 // Fallback to local storage or mock
                 const saved = localStorage.getItem('sellerDeliveries');
                 if (saved) {
-                    const allDels = JSON.parse(saved);
-                    setActiveDeliveries(allDels.map(d => ({ ...d, status: 'In Transit' })));
+                    try {
+                        const allDels = JSON.parse(saved);
+                        if (Array.isArray(allDels)) {
+                            setActiveDeliveries(allDels.map(d => ({ ...d, status: 'In Transit' })));
+                        }
+                    } catch (e) {
+                        console.error("Error parsing fallback deliveries:", e);
+                    }
                 }
             }
         };

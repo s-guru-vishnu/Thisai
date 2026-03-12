@@ -1,9 +1,10 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { QRCodeSVG } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import Navbar from '../components/Navbar';
-import { Truck, MapPin, Box, ArrowLeft, Navigation, Search, CheckCircle, Download, X } from 'lucide-react';
+import { Truck, MapPin, Box, ArrowLeft, Navigation, Search, CheckCircle, Download, X, Mail, User, Info } from 'lucide-react';
 import '../styles/dashboard.css';
 
 const containerStyle = {
@@ -25,16 +26,34 @@ const SellerManualEntry = () => {
     });
 
     const [map, setMap] = useState(null);
-    const [autocomplete, setAutocomplete] = useState(null);
     const [position, setPosition] = useState(center);
-    const [products] = useState(() => JSON.parse(localStorage.getItem('sellerProducts') || '[]'));
-    const [userInfo] = useState(() => JSON.parse(localStorage.getItem('userInfo') || '{}'));
+    const [products] = useState(() => {
+        const saved = localStorage.getItem('sellerProducts');
+        try {
+            const parsed = saved ? JSON.parse(saved) : null;
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
+        }
+    });
+    const [userInfo] = useState(() => {
+        const saved = localStorage.getItem('userInfo');
+        try {
+            const parsed = saved ? JSON.parse(saved) : null;
+            return (parsed && typeof parsed === 'object') ? parsed : {};
+        } catch (e) {
+            return {};
+        }
+    });
     const [loading, setLoading] = useState(false);
+    const [lookupLoading, setLookupLoading] = useState(false);
     const [showQRSuccess, setShowQRSuccess] = useState(false);
     const [generatedTrk, setGeneratedTrk] = useState('');
+    const [error, setError] = useState('');
 
     const [formData, setFormData] = useState({
         productId: '',
+        customerEmail: '',
         customerName: '',
         deliveryAddress: '',
         deliveryType: 'Standard',
@@ -43,50 +62,63 @@ const SellerManualEntry = () => {
         lng: center.lng
     });
 
-    const onLoad = useCallback(mapInstance => setMap(mapInstance), []);
-    const onAutocompleteLoad = (autocompleteInstance) => setAutocomplete(autocompleteInstance);
-
-    const onPlaceChanged = () => {
-        if (autocomplete) {
-            const place = autocomplete.getPlace();
-            if (place.geometry) {
-                const lat = place.geometry.location.lat();
-                const lng = place.geometry.location.lng();
-                const newPos = { lat, lng };
-                setPosition(newPos);
-                map.panTo(newPos);
-                setFormData(prev => ({
-                    ...prev,
-                    deliveryAddress: place.formatted_address,
-                    lat: lat.toFixed(6),
-                    lng: lng.toFixed(6)
-                }));
-            }
-        }
-    };
-
-    const handleMapClick = (e) => {
-        const lat = e.latLng.lat();
-        const lng = e.latLng.lng();
-        setPosition({ lat, lng });
-        setFormData(prev => ({
-            ...prev,
-            lat: lat.toFixed(6),
-            lng: lng.toFixed(6)
-        }));
-    };
+    const onLoad = useCallback(mapInstance => {
+        setMap(mapInstance);
+    }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleLookupCustomer = async () => {
+        if (!formData.customerEmail) {
+            setError('Please enter a customer email first.');
+            return;
+        }
+
+        setLookupLoading(true);
+        setError('');
+        try {
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const { data } = await axios.get(`${apiBase}/api/auth/find-customer/${formData.customerEmail}`, {
+                headers: { Authorization: `Bearer ${userInfo.token}` }
+            });
+
+            if (data.location && data.location.latitude) {
+                const newPos = { lat: data.location.latitude, lng: data.location.longitude };
+                setPosition(newPos);
+                if (map) map.panTo(newPos);
+
+                setFormData(prev => ({
+                    ...prev,
+                    customerName: data.name,
+                    deliveryAddress: data.location.addressLine1 + (data.location.city ? `, ${data.location.city}` : ''),
+                    destination: data.location.city || '',
+                    lat: data.location.latitude,
+                    lng: data.location.longitude
+                }));
+            } else {
+                setError('Customer found, but they have not set up their location details yet.');
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Customer not found. Please verify the email.');
+        } finally {
+            setLookupLoading(false);
+        }
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        setLoading(true);
+        if (!formData.lat || !formData.lng) {
+            setError('Please fetch customer location using email first.');
+            return;
+        }
 
+        setLoading(true);
         const trk = Math.random().toString(36).substring(2, 12).toUpperCase();
         const product = products.find(p => p.id.toString() === formData.productId);
+
         const newDelivery = {
             id: Date.now(),
             trackingCode: trk,
@@ -98,7 +130,14 @@ const SellerManualEntry = () => {
             createdAt: new Date().toISOString()
         };
 
-        const existing = JSON.parse(localStorage.getItem('sellerDeliveries') || '[]');
+        const savedDels = localStorage.getItem('sellerDeliveries');
+        let existing = [];
+        try {
+            const parsed = savedDels ? JSON.parse(savedDels) : null;
+            existing = Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            existing = [];
+        }
         localStorage.setItem('sellerDeliveries', JSON.stringify([newDelivery, ...existing]));
 
         setGeneratedTrk(trk);
@@ -112,106 +151,147 @@ const SellerManualEntry = () => {
 
             <main className="main-content" style={{ display: 'flex', height: 'calc(100vh - 80px)', gap: 0, padding: 0 }}>
                 {/* Left Panel: Form */}
-                <div style={{ width: '450px', background: 'var(--panel-bg)', p: '2rem', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflowY: 'auto', padding: '2rem' }}>
+                <div style={{ width: '480px', background: 'var(--panel-bg)', p: '2rem', borderRight: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflowY: 'auto', padding: '2rem' }}>
                     <header style={{ marginBottom: '2rem' }}>
                         <button onClick={() => navigate('/seller')} style={{ background: 'transparent', border: 'none', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 'bold', marginBottom: '1rem' }}>
                             <ArrowLeft size={20} /> Back to Hub
                         </button>
-                        <h1 style={{ margin: 0, fontSize: '1.8rem' }}>Dispatch <span>Manual</span></h1>
-                        <p style={{ margin: 0, color: 'var(--text-muted)' }}>Configure delivery route & customer details.</p>
+                        <h1 style={{ margin: 0, fontSize: '1.8rem' }}>Dispatch <span>Portal</span></h1>
+                        <p style={{ margin: 0, color: 'var(--text-muted)' }}>Auto-sync delivery location using Customer ID.</p>
                     </header>
 
-                    {!userInfo.location && (
-                        <div style={{ background: 'rgba(255, 60, 60, 0.1)', border: '1px solid var(--danger)', padding: '1rem', borderRadius: '10px', marginBottom: '2rem' }}>
-                            <h4 style={{ color: 'var(--danger)', margin: '0 0 5px 0' }}>Profile Incomplete</h4>
-                            <p style={{ fontSize: '0.9rem', margin: 0 }}>You must update your Location / Base Address in your profile before you can dispatch products.</p>
-                            <button onClick={() => navigate('/profile')} className="secondary-btn" style={{ marginTop: '10px', fontSize: '0.85rem' }}>Go to Profile</button>
+                    {error && (
+                        <div style={{ background: 'rgba(255, 60, 60, 0.1)', border: '1px solid var(--danger)', padding: '1rem', borderRadius: '10px', marginBottom: '1.5rem', color: 'var(--danger)', fontSize: '0.9rem', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                            <X size={18} /> {error}
                         </div>
                     )}
 
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         <div className="form-group">
-                            <label style={{ display: 'block', mb: '0.5rem', fontWeight: '600' }}>Select Catalog Product</label>
-                            <select name="productId" value={formData.productId} onChange={handleInputChange} required style={{ width: '100%', cursor: 'pointer' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Select Catalog Product</label>
+                            <select name="productId" value={formData.productId} onChange={handleInputChange} required style={{ width: '100%', cursor: 'pointer', padding: '0.8rem' }}>
                                 <option value="">-- Choose Product --</option>
                                 {products.map(p => <option key={p.id} value={p.id}>{p.name} (₹{p.price})</option>)}
                                 <option value="manual">Other / Custom Item</option>
                             </select>
                         </div>
 
-                        <div className="form-group">
-                            <label style={{ display: 'block', mb: '0.5rem', fontWeight: '600' }}>Customer Name</label>
-                            <input name="customerName" value={formData.customerName} onChange={handleInputChange} required placeholder="Full Name" style={{ width: '100%' }} />
+                        <div style={{ padding: '1.5rem', background: 'rgba(255,107,0,0.05)', borderRadius: '16px', border: '1px solid rgba(255,107,0,0.2)' }}>
+                            <h4 style={{ margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Mail size={18} className="brand-accent" /> Customer Lookup
+                            </h4>
+                            <div className="form-group" style={{ position: 'relative' }}>
+                                <input
+                                    name="customerEmail"
+                                    type="email"
+                                    value={formData.customerEmail}
+                                    onChange={handleInputChange}
+                                    placeholder="Enter user@email.com"
+                                    style={{ width: '100%', paddingRight: '100px' }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleLookupCustomer}
+                                    disabled={lookupLoading}
+                                    style={{ position: 'absolute', right: '5px', top: '5px', bottom: '5px', background: 'var(--accent)', border: 'none', color: 'black', fontWeight: 'bold', borderRadius: '8px', cursor: 'pointer', padding: '0 15px', fontSize: '0.8rem' }}
+                                >
+                                    {lookupLoading ? '...' : 'FETCH'}
+                                </button>
+                            </div>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                <Info size={12} style={{ display: 'inline', marginRight: '4px' }} />
+                                Fetches location and name automatically from user profile.
+                            </p>
                         </div>
 
-                        <div className="form-group" style={{ position: 'relative' }}>
-                            <label style={{ display: 'block', mb: '0.5rem', fontWeight: '600' }}>Full Delivery Address</label>
-                            {isLoaded && (
-                                <Autocomplete onLoad={onAutocompleteLoad} onPlaceChanged={onPlaceChanged}>
-                                    <input
-                                        name="deliveryAddress"
-                                        value={formData.deliveryAddress}
-                                        onChange={handleInputChange}
-                                        placeholder="Search for address or drop pin..."
-                                        style={{ width: '100%', paddingRight: '40px' }}
-                                    />
-                                </Autocomplete>
-                            )}
-                            <Search size={18} style={{ position: 'absolute', right: '15px', top: '42px', color: 'var(--text-muted)' }} />
+                        <div className="form-group">
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Customer Name</label>
+                            <input name="customerName" value={formData.customerName} onChange={handleInputChange} required placeholder="Populated from email" style={{ width: '100%' }} readOnly />
+                        </div>
+
+                        <div className="form-group">
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Delivery Address</label>
+                            <textarea
+                                name="deliveryAddress"
+                                value={formData.deliveryAddress}
+                                onChange={handleInputChange}
+                                placeholder="Populated from email"
+                                style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '10px', padding: '1rem', minHeight: '80px', resize: 'none' }}
+                                readOnly
+                            />
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                             <div className="form-group">
-                                <label style={{ display: 'block', mb: '0.5rem', fontWeight: '600' }}>Service</label>
-                                <select name="deliveryType" value={formData.deliveryType} onChange={handleInputChange} style={{ width: '100%' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Service</label>
+                                <select name="deliveryType" value={formData.deliveryType} onChange={handleInputChange} style={{ width: '100%', padding: '0.8rem' }}>
                                     <option value="Standard">Standard</option>
                                     <option value="Express">Express</option>
                                     <option value="Same Day">Same Day</option>
                                 </select>
                             </div>
                             <div className="form-group">
-                                <label style={{ display: 'block', mb: '0.5rem', fontWeight: '600' }}>Destination</label>
-                                <input name="destination" value={formData.destination} onChange={handleInputChange} placeholder="Hub City" style={{ width: '100%' }} />
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Destination</label>
+                                <input name="destination" value={formData.destination} onChange={handleInputChange} placeholder="Hub City" style={{ width: '100%' }} readOnly />
                             </div>
                         </div>
 
-                        <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '10px', border: '1px dashed var(--border-color)' }}>
-                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>📍 Active Coordinates:</p>
-                            <p style={{ margin: '5px 0 0 0', fontWeight: '800', fontFamily: 'monospace', color: 'var(--accent)' }}>{formData.lat}, {formData.lng}</p>
-                        </div>
-
-                        <button type="submit" disabled={loading || !userInfo.location} className="primary-btn pulse-glow" style={{ padding: '1.2rem', borderRadius: '12px', marginTop: '1rem', opacity: (!userInfo.location) ? 0.5 : 1 }}>
+                        <button type="submit" disabled={loading || !formData.lat || formData.lat === center.lat} className="primary-btn pulse-glow" style={{ padding: '1.2rem', borderRadius: '12px', marginTop: '1rem', opacity: (!formData.lat || formData.lat === center.lat) ? 0.5 : 1 }}>
                             <Navigation size={20} style={{ marginRight: '10px' }} />
                             {loading ? 'Processing...' : 'CONFIRM DISPATCH'}
                         </button>
                     </form>
                 </div>
 
-                {/* Right Panel: Map */}
-                <div style={{ flex: 1, position: 'relative' }}>
+                {/* Right Panel: Map Reference */}
+                <div style={{ flex: 1, position: 'relative', background: '#050505' }}>
                     {isLoaded ? (
                         <GoogleMap
                             mapContainerStyle={containerStyle}
                             center={position}
-                            zoom={13}
+                            zoom={14}
                             onLoad={onLoad}
-                            onClick={handleMapClick}
                             options={{
                                 styles: [{ elementType: "geometry", stylers: [{ color: "#242f3e" }] }, { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] }],
-                                streetViewControl: false, mapTypeControl: false
+                                streetViewControl: false,
+                                mapTypeControl: false,
+                                draggable: false,
+                                scrollwheel: false,
+                                disableDoubleClickZoom: true
                             }}
                         >
-                            <Marker position={position} animation={window.google.maps.Animation.DROP} />
+                            <Marker
+                                position={position}
+                                animation={window.google.maps.Animation.DROP}
+                                icon={{
+                                    path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z",
+                                    fillColor: "#ff6600",
+                                    fillOpacity: 1,
+                                    strokeWeight: 2,
+                                    strokeColor: "#ffffff",
+                                    scale: 2,
+                                    anchor: new window.google.maps.Point(12, 12)
+                                }}
+                            />
                         </GoogleMap>
                     ) : (
                         <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111' }}>
-                            <p>Loading Map Terminal...</p>
+                            <p>Loading Map Radar...</p>
                         </div>
                     )}
 
+                    <div style={{ position: 'absolute', bottom: '30px', right: '30px', background: 'rgba(0,0,0,0.85)', padding: '20px', borderRadius: '20px', border: '1px solid var(--border-color)', maxWidth: '300px', backdropFilter: 'blur(10px)' }}>
+                        <h4 style={{ margin: '0 0 10px 0', color: 'var(--accent)' }}>Live Target Sync</h4>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#888' }}>Map is now locked to detected customer coordinates. Manual pinning is disabled for accuracy.</p>
+                        <div style={{ marginTop: '15px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                            <div style={{ width: '10px', height: '10px', background: '#00ff00', borderRadius: '50%', boxShadow: '0 0 10px #00ff00' }}></div>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>COORDS: {formData.lat.toFixed(4)}, {formData.lng.toFixed(4)}</span>
+                        </div>
+                    </div>
+
                     <div style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(0,0,0,0.8)', padding: '10px 20px', borderRadius: '30px', border: '1px solid var(--accent)', color: 'white', display: 'flex', alignItems: 'center', gap: '10px', pointerEvents: 'none' }}>
                         <div style={{ width: '8px', height: '8px', background: 'var(--accent)', borderRadius: '50%', animation: 'pulse 1.5s infinite' }}></div>
-                        Interactive Map Active
+                        Syncing with Global DB
                     </div>
                 </div>
             </main>
@@ -250,21 +330,6 @@ const SellerManualEntry = () => {
                     50% { transform: scale(1.5); opacity: 0.5; }
                     100% { transform: scale(1); opacity: 1; }
                 }
-                .pac-container {
-                    background-color: #1a1a1a !important;
-                    border: 1px solid #333 !important;
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
-                    font-family: inherit !important;
-                    margin-top: 5px !important;
-                }
-                .pac-item {
-                    border-top: 1px solid #222 !important;
-                    color: #fff !important;
-                    padding: 10px !important;
-                    cursor: pointer !important;
-                }
-                .pac-item:hover { background-color: #222 !important; }
-                .pac-item-query { color: #ff6600 !important; }
             `}</style>
         </div>
     );

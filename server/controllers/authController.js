@@ -18,6 +18,8 @@ const loginUser = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                location: user.location,
+                preferences: user.preferences,
                 token: generateToken(user._id)
             });
         } else {
@@ -107,4 +109,17 @@ const deleteAccount = async (req, res) => {
     }
 };
 
-module.exports = { loginUser, registerUser, changePassword, deleteAccount };
+const findCustomerByEmail = async (req, res) => {
+    try {
+        const user = await User.findOne({ email: req.params.email, role: 'customer' }).select('name location email');
+        if (user) {
+            res.json(user);
+        } else {
+            res.status(404).json({ message: 'Customer not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { loginUser, registerUser, changePassword, deleteAccount, findCustomerByEmail };

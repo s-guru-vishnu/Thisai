@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { loginUser, registerUser, changePassword, deleteAccount } = require('../controllers/authController');
+const { loginUser, registerUser, changePassword, deleteAccount, findCustomerByEmail } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const { updateProfile, updatePreferences, updatePlatforms, updateVisibility } = require('../controllers/userSettingsController');
+
+router.get('/find-customer/:email', protect, findCustomerByEmail);
 
 // @route   POST /api/auth/login
 // @desc    Auth user & get token

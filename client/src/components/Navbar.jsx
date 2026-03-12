@@ -31,9 +31,14 @@ const Navbar = () => {
                 }
             };
             
-            let url = `${apiBase}/api/admin/notifications`;
-            if (isCustomer) {
+            let url = '';
+            if (isAdmin) {
+                url = `${apiBase}/api/admin/notifications`;
+            } else if (isCustomer) {
                 url = `${apiBase}/api/parcel/notifications`;
+            } else {
+                // For other roles, we don't have a notification endpoint yet
+                return;
             }
             
             const { data } = await axios.get(url, config);

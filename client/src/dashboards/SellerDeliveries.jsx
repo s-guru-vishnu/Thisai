@@ -9,7 +9,12 @@ import '../styles/seller.css';
 const SellerDeliveries = () => {
     const [deliveries, setDeliveries] = useState(() => {
         const saved = localStorage.getItem('sellerDeliveries');
-        return saved ? JSON.parse(saved) : [];
+        try {
+            const parsed = saved ? JSON.parse(saved) : null;
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
+        }
     });
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -37,18 +42,19 @@ const SellerDeliveries = () => {
         setEditingId(null);
     };
 
+    const safeDeliveries = Array.isArray(deliveries) ? deliveries : [];
     const stats = {
-        total: deliveries.length,
-        pending: deliveries.filter(d => d.status === 'Pending Pickup' || !d.status).length,
-        transit: deliveries.filter(d => d.status === 'In Transit').length,
-        delivered: deliveries.filter(d => d.status === 'Delivered').length,
+        total: safeDeliveries.length,
+        pending: safeDeliveries.filter(d => d.status === 'Pending Pickup' || !d.status).length,
+        transit: safeDeliveries.filter(d => d.status === 'In Transit').length,
+        delivered: safeDeliveries.filter(d => d.status === 'Delivered').length,
     };
-
-    const filteredDeliveries = deliveries.filter(del =>
-        (del.productName && del.productName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (del.id && del.id.toString().includes(searchTerm)) ||
-        (del.customerName && del.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (del.trackingCode && del.trackingCode.toLowerCase().includes(searchTerm.toLowerCase()))
+    
+    const safeFilteredDeliveries = safeDeliveries.filter(del =>
+        (del && del.productName && del.productName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (del && del.id && del.id.toString().includes(searchTerm)) ||
+        (del && del.customerName && del.customerName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (del && del.trackingCode && del.trackingCode.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     return (
@@ -119,7 +125,7 @@ const SellerDeliveries = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredDeliveries.slice(0).reverse().map(del => (
+                                {safeFilteredDeliveries.slice(0).reverse().map(del => (
                                     <tr key={del.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.3s' }}>
                                         <td style={{ padding: '1rem' }}>
                                             <div style={{ fontWeight: 'bold', color: 'var(--accent)', fontSize: '1.1rem', letterSpacing: '1px' }}>
@@ -183,7 +189,7 @@ const SellerDeliveries = () => {
                                         </td>
                                     </tr>
                                 ))}
-                                {filteredDeliveries.length === 0 && (
+                                {safeFilteredDeliveries.length === 0 && (
                                     <tr>
                                         <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No deliveries found.</td>
                                     </tr>
