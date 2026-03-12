@@ -218,7 +218,6 @@ const BasicInfoSettings = ({ userContext, showToast }) => {
             const payload = {
                 name: formData.name,
                 phone: formData.phone,
-                timezone: formData.timezone,
                 avatar: formData.avatarPreview,
                 companyName: formData.companyName,
                 companyType: formData.companyType,
@@ -232,8 +231,17 @@ const BasicInfoSettings = ({ userContext, showToast }) => {
             };
 
             const { data } = await axios.put(`${apiBase}/api/auth/profile`, payload, config);
-            
-            localStorage.setItem('userInfo', JSON.stringify({ ...userContext, ...data }));
+
+            // Store user info in localStorage, handling quota errors gracefully
+            const userInfoToStore = { ...userContext, ...data };
+            try {
+                localStorage.setItem('userInfo', JSON.stringify(userInfoToStore));
+            } catch (quotaError) {
+                console.warn('LocalStorage quota exceeded, storing without avatar');
+                const safeUserInfo = { ...userInfoToStore };
+                delete safeUserInfo.avatar;
+                localStorage.setItem('userInfo', JSON.stringify(safeUserInfo));
+            }
             showToast('Profile and Location updated successfully', 'success');
         } catch (error) {
             console.error('Error updating profile:', error);
@@ -300,22 +308,6 @@ const BasicInfoSettings = ({ userContext, showToast }) => {
                         </div>
                     </div>
 
-                    <div className="form-group">
-                        <label style={{ color: 'var(--text-muted)', marginBottom: '8px', display: 'block', fontSize: '0.9rem' }}>Timezone</label>
-                        <div style={{ position: 'relative' }}>
-                            <Globe size={18} style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                            <select name="timezone" value={formData.timezone} onChange={handleInputChange} className="settings-select" style={{ paddingLeft: '45px' }}>
-                                <option value="UTC">UTC (Universal Coordinated Time)</option>
-                                <option value="America/New_York">Eastern Time (US & Canada)</option>
-                                <option value="America/Chicago">Central Time (US & Canada)</option>
-                                <option value="America/Los_Angeles">Pacific Time (US & Canada)</option>
-                                <option value="Europe/London">London (GMT)</option>
-                                <option value="Asia/Kolkata">India Standard Time (IST)</option>
-                                <option value="Asia/Tokyo">Tokyo (JST)</option>
-                                <option value="Australia/Sydney">Sydney (AEST)</option>
-                            </select>
-                        </div>
-                    </div>
                 </div>
             </section>
 

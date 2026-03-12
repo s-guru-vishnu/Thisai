@@ -43,15 +43,21 @@ const ProfileSettings = ({ userContext }) => {
             const payload = {
                 name: formData.name,
                 phone: formData.phone,
-                timezone: formData.timezone,
                 avatar: formData.avatarPreview
             };
 
             const { data } = await axios.put(`${apiBase}/api/auth/profile`, payload, config);
             
-            // Update local storage context
+            // Update local storage context - handle quota errors gracefully
             const updatedContext = { ...userContext, ...data };
-            localStorage.setItem('userInfo', JSON.stringify(updatedContext));
+            try {
+                localStorage.setItem('userInfo', JSON.stringify(updatedContext));
+            } catch (quotaError) {
+                console.warn('LocalStorage quota exceeded, storing without avatar');
+                const safeContext = { ...updatedContext };
+                delete safeContext.avatar;
+                localStorage.setItem('userInfo', JSON.stringify(safeContext));
+            }
             
             setSuccessMessage('Profile updated successfully');
             setTimeout(() => setSuccessMessage(''), 3000);
@@ -116,22 +122,6 @@ const ProfileSettings = ({ userContext }) => {
                     </div>
                 </div>
 
-                <div className="form-group">
-                    <label style={{ color: 'var(--text-muted)', marginBottom: '8px', display: 'block', fontSize: '0.9rem' }}>Timezone</label>
-                    <div style={{ position: 'relative' }}>
-                        <Globe size={18} style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                        <select name="timezone" value={formData.timezone} onChange={handleInputChange} style={{ width: '100%', padding: '12px 12px 12px 45px', borderRadius: '8px', background: '#1c1c1e', border: '1px solid var(--border-color)', color: 'white', appearance: 'none' }}>
-                            <option value="UTC">UTC (Universal Coordinated Time)</option>
-                            <option value="America/New_York">Eastern Time (US & Canada)</option>
-                            <option value="America/Chicago">Central Time (US & Canada)</option>
-                            <option value="America/Los_Angeles">Pacific Time (US & Canada)</option>
-                            <option value="Europe/London">London (GMT)</option>
-                            <option value="Asia/Kolkata">India Standard Time (IST)</option>
-                            <option value="Asia/Tokyo">Tokyo (JST)</option>
-                            <option value="Australia/Sydney">Sydney (AEST)</option>
-                        </select>
-                    </div>
-                </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem' }}>

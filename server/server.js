@@ -23,6 +23,7 @@ const warehouseRoutes = require('./routes/warehouseRoutes');
 const parcelReceiverRoutes = require('./routes/parcelReceiverRoutes');
 const parcelRoutes = require('./routes/parcelRoutes');
 const predictRoutes = require('./routes/predictRoutes');
+const addressRoutes = require('./routes/addressRoutes');
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
@@ -32,8 +33,9 @@ app.use('/api/driver', protect, authorize('driver'), driverRoutes);
 app.use('/api/manager', protect, authorize('manager'), managerRoutes);
 app.use('/api/warehouse', protect, authorize('warehouse'), warehouseRoutes);
 app.use('/api/parcels', protect, parcelReceiverRoutes); // Assuming parcel receiver can access
-app.use('/api/parcel', parcelRoutes);
+app.use('/api/parcel', customerRoutes);
 app.use('/api/predict', predictRoutes);
+app.use('/api/address', addressRoutes);
 
 app.get('/', (req, res) => {
     res.send('Logistics API is running...');

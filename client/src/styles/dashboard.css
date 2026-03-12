@@ -885,3 +885,237 @@ body {
     opacity: 1;
   }
 }
+
+/* Active Shipment Card */
+.active-shipment-card {
+  background: linear-gradient(135deg, rgba(255, 107, 0, 0.1) 0%, rgba(21, 21, 21, 0.9) 100%);
+  border: 1px solid var(--border-accent);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  animation: slideInUp 0.5s ease-out;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.active-shipment-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 107, 0, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.shipment-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.shipment-icon-container {
+  background: var(--accent);
+  color: white;
+  padding: 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px var(--accent-glow);
+}
+
+.shipment-details h3 {
+  margin: 0 0 4px 0;
+  font-size: 1.2rem;
+}
+
+.shipment-details p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.shipment-status-badge {
+  background: rgba(22, 199, 132, 0.1);
+  color: var(--success);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.active-shipment-actions {
+  display: flex;
+  gap: 10px;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .active-shipment-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .active-shipment-actions {
+    width: 100%;
+  }
+  
+  .active-shipment-actions button {
+    flex: 1;
+  }
+}
+
+/* Premium QR Scanner Overrides */
+#reader {
+  border: none !important;
+  background: var(--bg-panel) !important;
+  padding: 0 !important;
+  position: relative !important;
+  border-radius: 20px !important;
+  overflow: hidden !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 107, 0, 0.1) !important;
+}
+
+#reader__scan_region {
+  background: #000 !important;
+  min-height: 300px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+}
+
+#reader__scan_region video {
+  width: 100% !important;
+  height: auto !important;
+  border-radius: 12px !important;
+  object-fit: cover !important;
+}
+
+/* Scanner Beam Animation */
+.scanner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none;
+  background: linear-gradient(rgba(255, 107, 0, 0.05) 0%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.scanner-beam {
+  width: 100%;
+  height: 4px;
+  background: var(--accent);
+  box-shadow: 0 0 20px var(--accent), 0 0 40px var(--accent);
+  position: absolute;
+  top: 0;
+  left: 0;
+  animation: scanMove 3s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 6;
+}
+
+@keyframes scanMove {
+  0% { top: 0; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* Library UI Elements Styling */
+#reader__dashboard_section {
+  padding: 2rem !important;
+  background: var(--bg-secondary) !important;
+  border-top: 1px solid var(--border-color) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1.5rem !important;
+  align-items: center !important;
+}
+
+#reader__dashboard_section_csr {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1rem !important;
+  width: 100% !important;
+  align-items: center !important;
+}
+
+#reader__dashboard_section_csr button,
+#reader__dashboard_section_fsr button {
+  background: var(--accent) !important;
+  color: white !important;
+  border: none !important;
+  padding: 10px 24px !important;
+  border-radius: 10px !important;
+  font-family: inherit !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s !important;
+  width: auto !important;
+  min-width: 180px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  font-size: 0.85rem !important;
+}
+
+#reader__dashboard_section_csr button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 5px 15px var(--accent-glow) !important;
+  background: var(--accent-hover) !important;
+}
+
+#reader__camera_selection {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--border-color) !important;
+  color: white !important;
+  padding: 12px !important;
+  border-radius: 10px !important;
+  width: 100% !important;
+  max-width: 300px !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  transition: border-color 0.3s !important;
+}
+
+#reader__camera_selection:focus {
+  border-color: var(--accent) !important;
+  outline: none !important;
+}
+
+#reader img[alt="Info icon"] { display: none !important; }
+#reader img[alt="Camera icon"] { display: none !important; }
+
+#reader__status_span {
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  color: var(--text-muted) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  margin-bottom: 1rem !important;
+}

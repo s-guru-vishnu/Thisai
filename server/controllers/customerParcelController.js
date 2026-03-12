@@ -77,12 +77,12 @@ const getParcelByTrackingId = async (req, res) => {
 const getUserParcelHistory = async (req, res) => {
     try {
         const { userId } = req.params;
-        // In reality: await Parcel.find({ customer: userId, status: 'Delivered' })
-        // Return structured list
-        res.json([
-             { trackingId: "1234567890", productName: 'Laptop Stand', pickupLocation: 'Chennai Hub', deliveryAddress: 'Home', deliveredDate: '2023-10-01', status: 'Delivered', timeline: [{title: 'Delivered', time: '02:00 PM', completed: true}], proof: 'Signed by Receiver', receiverName: 'Customer' },
-             { trackingId: "0987654321", productName: 'Wireless Mouse', pickupLocation: 'Bangalore Hub', deliveryAddress: 'Home', deliveredDate: '2023-09-15', status: 'Delivered', timeline: [{title: 'Delivered', time: '11:00 AM', completed: true}], proof: 'Left at Door', receiverName: 'Customer' }
-        ]);
+        const history = await Parcel.find({ 
+            $or: [{ customer: userId }, { receiver: userId }], 
+            status: 'Delivered' 
+        }).populate('driver');
+        
+        res.json(history);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
