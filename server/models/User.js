@@ -63,7 +63,6 @@ const userSchema = mongoose.Schema(
             activeSessions: { type: Array, default: [] }
         },
 
-        // Admin Fields
         companyName: { type: String, default: '' },
         companyType: { type: String, default: '' },
         headOfficeAddress: { type: String, default: '' },
@@ -71,14 +70,12 @@ const userSchema = mongoose.Schema(
         totalDrivers: { type: Number, default: 0 },
         businessRegistrationNumber: { type: String, default: '' },
 
-        // Manager Fields
         assignedWarehouse: { type: String, default: '' },
         teamSize: { type: Number, default: 0 },
         deliveryRegion: { type: String, default: '' },
         operatingShift: { type: String, default: '' },
         department: { type: String, default: '' },
 
-        // Driver Fields
         driverLicenseNumber: { type: String, default: '' },
         vehicleType: { type: String, default: '' },
         vehicleNumber: { type: String, default: '' },
