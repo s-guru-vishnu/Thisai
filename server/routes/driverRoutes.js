@@ -6,13 +6,13 @@ const {
     updateDriverLocation,
     getDriverRoute
 } = require('../controllers/driverController');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const { protect, authorize, checkLocation } = require('../middleware/authMiddleware');
 
 // Get driver's assigned parcels
 router.get('/parcels', protect, authorize('driver'), getDriverParcels);
 
 // Update parcel status
-router.put('/parcels/:id/status', protect, authorize('driver'), updateParcelStatus);
+router.put('/parcels/:id/status', protect, authorize('driver'), checkLocation, updateParcelStatus);
 
 // Update driver location (telemetry)
 router.post('/location', protect, authorize('driver'), updateDriverLocation);

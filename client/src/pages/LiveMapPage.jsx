@@ -78,7 +78,7 @@ const LiveMapPage = () => {
             <main className="main-content">
                 <header className="dashboard-header">
                     <div>
-                        <h1>Live <span>Map</span> Overlay</h1>
+                        <h1>LiveMap <span>Overlay</span></h1>
                         <p className="subtitle">Real-time GPS tracking and transit visualization.</p>
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>

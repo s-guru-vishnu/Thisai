@@ -120,9 +120,53 @@ const getDelayPrediction = async (req, res) => {
     }
 };
 
+// @desc    Get dynamic notifications for customer
+// @route   GET /api/parcel/notifications
+// @access  Private
+const getCustomerNotifications = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const parcels = await Parcel.find({ customer: userId });
+        const notifications = [];
+        
+        parcels.forEach((parcel, index) => {
+            if (parcel.status === 'Delivered') {
+                notifications.push({
+                    id: parcel._id ? parcel._id.toString() + '_del' : index + '_del',
+                    title: 'Package Delivered',
+                    message: `Your package (Code: ${parcel.trackingCode}) has been delivered.`,
+                    type: 'success',
+                    time: parcel.updatedAt ? new Date(parcel.updatedAt).toLocaleTimeString() : 'Recently'
+                });
+            } else if (parcel.status === 'Out For Delivery' || parcel.status === 'In Transit') {
+                notifications.push({
+                    id: parcel._id ? parcel._id.toString() + '_trans' : index + '_trans',
+                    title: 'Driver Approaching',
+                    message: `Driver for package (Code: ${parcel.trackingCode}) is approximately 15 mins away from your location.`,
+                    type: 'warning',
+                    time: '10 mins ago'
+                });
+            } else {
+                notifications.push({
+                    id: parcel._id ? parcel._id.toString() + '_pick' : index + '_pick',
+                    title: 'Package Picked Up',
+                    message: `Your package (Code: ${parcel.trackingCode}) has been picked up from the warehouse.`,
+                    type: 'info',
+                    time: '2 hours ago'
+                });
+            }
+        });
+
+        res.json(notifications);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getParcelByTrackingId,
     getUserParcelHistory,
     getLiveDriverLocation,
-    getDelayPrediction
+    getDelayPrediction,
+    getCustomerNotifications
 };

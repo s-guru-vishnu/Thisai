@@ -4,14 +4,27 @@ import Navbar from '../components/Navbar';
 import CustomerMap from '../components/CustomerMap';
 import { Search, QrCode, Package, Truck, MapPin, CheckCircle, X, ShieldCheck } from 'lucide-react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
+import LocationRequiredModal from '../components/modals/LocationRequiredModal';
 import '../styles/dashboard.css';
 
 const CustomerDashboard = () => {
     const navigate = useNavigate();
+    const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const [trackingInput, setTrackingInput] = useState('');
     const [error, setError] = useState('');
     const [showScanner, setShowScanner] = useState(false);
     const [scanner, setScanner] = useState(null);
+
+    const checkLocationAndProceed = (action) => {
+        const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+        const location = userInfo?.location;
+        
+        if (!location || !location.addressLine1 || !location.city) {
+            setIsLocationModalOpen(true);
+        } else {
+            action();
+        }
+    };
 
     const handleTrack = () => {
         const code = trackingInput.trim().toUpperCase();
@@ -78,7 +91,7 @@ const CustomerDashboard = () => {
                                 maxLength={10}
                             />
                         </div>
-                        <button onClick={handleTrack} className="primary-btn" style={{ padding: '0 2rem' }}>Track</button>
+                        <button onClick={() => checkLocationAndProceed(handleTrack)} className="primary-btn" style={{ padding: '0 2rem' }}>Track</button>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
@@ -173,6 +186,11 @@ const CustomerDashboard = () => {
                     </div>
                 )}
             </main>
+
+            <LocationRequiredModal 
+                isOpen={isLocationModalOpen} 
+                onClose={() => setIsLocationModalOpen(false)} 
+            />
         </div>
     );
 };

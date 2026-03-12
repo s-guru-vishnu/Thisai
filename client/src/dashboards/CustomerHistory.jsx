@@ -16,7 +16,7 @@ const CustomerHistory = () => {
                 return;
             }
             try {
-                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
                 const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
                 // using user _id assuming standard auth structure
                 const { data } = await axios.get(`${apiBase}/api/parcel/history/${userInfo._id}`, config);

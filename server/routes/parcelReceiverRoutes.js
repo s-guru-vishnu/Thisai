@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { createParcel, getParcels, getParcelById, updateParcel, deleteParcel } = require('../controllers/parcelController');
+const { protect, checkLocation } = require('../middleware/authMiddleware');
 
 // Create a new parcel
-router.post('/', createParcel);
+router.post('/', protect, checkLocation, createParcel);
 
 // Get all parcels
 router.get('/', getParcels);

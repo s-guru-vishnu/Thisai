@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { loginUser, registerUser, updateProfile } = require('../controllers/authController');
+const { loginUser, registerUser, changePassword, deleteAccount } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
+const { updateProfile, updatePreferences, updatePlatforms, updateVisibility } = require('../controllers/userSettingsController');
 
 // @route   POST /api/auth/login
 // @desc    Auth user & get token
@@ -11,16 +12,12 @@ router.post('/login', loginUser);
 // @desc    Register a new user
 router.post('/register', registerUser);
 
-// @route   PUT /api/auth/profile
-// @desc    Update user profile & location
-router.put('/profile', protect, updateProfile);
-
 // @route   POST /api/auth/seed
 // @desc    Seed database with dummy users (Admin, Driver, Customer, etc.)
 router.post('/seed', async (req, res) => {
     try {
-        const User = require('../models/User'); // Import dynamically if needed, or at the top
-        await User.deleteMany(); // Clear existing users
+        const User = require('../models/User');
+        await User.deleteMany();
 
         const seedUsers = [
             { name: 'Admin User', email: 'admin@impact.com', password: 'password123', role: 'admin' },
@@ -37,7 +34,6 @@ router.post('/seed', async (req, res) => {
             { name: 'Coastal South Driver', email: 'driver.coastal@logistics.com', password: 'password123', role: 'driver', region: 'Coastal South', hub: 'Tirunelveli' }
         ];
 
-        // Use create in a loop or await Promise.all so Mongoose pre('save') hooks run and hash passwords
         const createdUsers = [];
         for (const userData of seedUsers) {
             const user = await User.create(userData);
@@ -49,5 +45,12 @@ router.post('/seed', async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+
+router.post('/change-password', protect, changePassword);
+router.put('/profile', protect, updateProfile);
+router.put('/preferences', protect, updatePreferences);
+router.put('/platforms', protect, updatePlatforms);
+router.put('/visibility', protect, updateVisibility);
+router.delete('/account', protect, deleteAccount);
 
 module.exports = router;
