@@ -29,7 +29,12 @@ router.post('/seed', async (req, res) => {
             { name: 'Driver John', email: 'driver@impact.com', password: 'password123', role: 'driver' },
             { name: 'Valued Customer', email: 'customer@impact.com', password: 'password123', role: 'customer' },
             { name: 'Parcel Receiver', email: 'receiver@impact.com', password: 'password123', role: 'parcel_receiver' },
-            { name: 'Retail Seller', email: 'seller@impact.com', password: 'password123', role: 'seller' }
+            { name: 'Retail Seller', email: 'seller@impact.com', password: 'password123', role: 'seller' },
+            { name: 'Western Region Driver', email: 'driver.west@logistics.com', password: 'password123', role: 'driver', region: 'Western Tamil Nadu', hub: 'Coimbatore' },
+            { name: 'Northern Region Driver', email: 'driver.north@logistics.com', password: 'password123', role: 'driver', region: 'Northern Tamil Nadu', hub: 'Chennai' },
+            { name: 'Central Region Driver', email: 'driver.central@logistics.com', password: 'password123', role: 'driver', region: 'Central Tamil Nadu', hub: 'Trichy' },
+            { name: 'Southern Region Driver', email: 'driver.south@logistics.com', password: 'password123', role: 'driver', region: 'Southern Tamil Nadu', hub: 'Madurai' },
+            { name: 'Coastal South Driver', email: 'driver.coastal@logistics.com', password: 'password123', role: 'driver', region: 'Coastal South', hub: 'Tirunelveli' }
         ];
 
         // Use create in a loop or await Promise.all so Mongoose pre('save') hooks run and hash passwords

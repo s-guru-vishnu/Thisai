@@ -44,7 +44,9 @@ const registerUser = async (req, res) => {
             name,
             email,
             password,
-            role: role || 'customer'
+            role: role || 'customer',
+            region: req.body.region,
+            hub: req.body.hub
         });
 
         if (user) {
@@ -53,6 +55,8 @@ const registerUser = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                region: user.region,
+                hub: user.hub,
                 location: user.location,
                 token: generateToken(user._id)
             });
