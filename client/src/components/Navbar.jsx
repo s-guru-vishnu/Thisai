@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { LayoutDashboard, Users, Map, Package, Truck, BrainCircuit, User, LogOut, Menu, X, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, Map, Package, Truck, BrainCircuit, User, LogOut, Menu, X, Bell, MapPin } from 'lucide-react';
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -179,10 +179,19 @@ const Navbar = () => {
                             fontWeight: '700',
                             color: 'var(--accent)',
                             fontSize: '0.9rem',
-                            boxShadow: isProfileOpen ? '0 0 12px var(--accent-glow)' : 'none'
+                            boxShadow: isProfileOpen ? '0 0 12px var(--accent-glow)' : 'none',
+                            overflow: 'hidden'
                         }}
                     >
-                        {firstLetter}
+                        {userInfo.avatar ? (
+                            <img 
+                                src={userInfo.avatar} 
+                                alt="Profile" 
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                            />
+                        ) : (
+                            firstLetter
+                        )}
                     </div>
 
                     {isProfileOpen && (
