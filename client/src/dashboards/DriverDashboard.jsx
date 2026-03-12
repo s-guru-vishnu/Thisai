@@ -8,54 +8,36 @@ import '../styles/dashboard.css';
 const DriverDashboard = () => {
     const [map, setMap] = useState(null);
     const [activeDeliveries, setActiveDeliveries] = useState([]);
-    const [driverLocation, setDriverLocation] = useState({ lat: 13.0827, lng: 80.2707 });
+    const [driverLocation, setDriverLocation] = useState({ lat: 11.0168, lng: 76.9558 }); // Default Coimbatore
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
 
     useEffect(() => {
         const fetchDriverData = async () => {
-            const driverId = 'CURRENT_DRIVER_ID'; // Can be replaced with actual logged-in user ID
-            
-            try {
-                // Step 6: Fetch driver location
-                const locRes = await axios.get(`http://localhost:5000/api/driver/location/${driverId}`);
-                if (locRes.data && locRes.data.location) {
-                    setDriverLocation(locRes.data.location);
-                }
-            } catch (err) {
-                // If API fails, keep current location
-            }
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const driverId = userInfo._id;
+
+            if (!driverId) return;
 
             try {
-                // Step 7: Fetch delivery stops
-                const routeRes = await axios.get(`http://localhost:5000/api/driver/route/${driverId}`);
+                // Fetch driver route / stops from assigned parcels
+                const routeRes = await axios.get(`${apiBase}/api/driver/route/${driverId}`, {
+                    headers: { Authorization: `Bearer ${userInfo.token}` }
+                });
+
                 if (routeRes.data && routeRes.data.stops) {
                     setActiveDeliveries(routeRes.data.stops);
+                    // If we have stops, focus on the first one as initial location fallback
+                    if (routeRes.data.stops.length > 0 && !driverLocation) {
+                        setDriverLocation(routeRes.data.stops[0].location);
+                    }
                 }
             } catch (err) {
-                // Fallback to local storage (No hardcoded dummy markers!)
+                console.error("API Fetch Error", err);
+                // Fallback to local storage or mock
                 const saved = localStorage.getItem('sellerDeliveries');
                 if (saved) {
                     const allDels = JSON.parse(saved);
-                    // Assume first item is pickup, rest are deliveries
-                    if (allDels.length > 0) {
-                        const pickup = allDels[0];
-                        setDriverLocation(pickup.location);
-                        setActiveDeliveries(allDels.slice(1).map(d => ({ ...d, status: 'In Transit' })));
-                    } else {
-                        setActiveDeliveries([]);
-                    }
-                } else {
-                    // Mock pickup (Chennai Central) and a single delivery (TIDEL Park)
-                    const pickupLocation = { lat: 13.0827, lng: 80.2707 }; // Chennai Central
-                    setDriverLocation(pickupLocation);
-                    setActiveDeliveries([
-                        {
-                            id: 'mock1',
-                            trackingCode: 'MOCK123456',
-                            productName: 'Sample Package',
-                            destination: 'TIDEL Park, Chennai',
-                            location: { lat: 12.9897, lng: 80.2458 } 
-                        }
-                    ]);
+                    setActiveDeliveries(allDels.map(d => ({ ...d, status: 'In Transit' })));
                 }
             }
         };
