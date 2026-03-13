@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import { MapPin, Plus, Trash2, Edit3, Home, Building, Briefcase, Info, CheckCircle2, ChevronRight, Map as MapIcon } from 'lucide-react';
+import LoadingScreen from '../components/LoadingScreen';
 import Toast from '../components/Toast';
 
 const AddressBook = () => {
@@ -98,7 +99,9 @@ const AddressBook = () => {
                     </Link>
 
                     {loading ? (
-                        [1, 2].map(i => <div key={i} className="skeleton-loader" style={{ height: '220px', borderRadius: '20px' }}></div>)
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <LoadingScreen fullScreen={false} message="Mapping Your Locations..." />
+                        </div>
                     ) : (
                         addresses.map(addr => (
                             <div key={addr._id} className="dashboard-card" style={{ 

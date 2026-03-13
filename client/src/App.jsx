@@ -11,9 +11,12 @@ import CustomerRoutes from './routes/customerRoutes';
 import ParcelReceiverRoutes from './routes/parcelReceiverRoutes';
 import SellerRoutes from './routes/sellerRoutes';
 import SettingsRoutes from './routes/settingsRoutes';
+import LoadingScreen from './components/LoadingScreen';
+import NotFoundPage from './pages/NotFoundPage';
 import './styles/dashboard.css';
 
 function AppContent() {
+    const [initialLoading, setInitialLoading] = useState(true);
     const [showLocationModal, setShowLocationModal] = useState(false);
     const location = useLocation();
 
@@ -96,6 +99,11 @@ function AppContent() {
     }, [location.pathname]);
 
     useEffect(() => {
+        // Initial app load simulation for UX
+        const timer = setTimeout(() => {
+            setInitialLoading(false);
+        }, 1500);
+
         checkLocation();
         applyTheme();
 
@@ -106,12 +114,19 @@ function AppContent() {
         };
 
         window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            clearTimeout(timer);
+        };
     }, [location.pathname]);
 
     const handleLocationSaved = () => {
         setShowLocationModal(false);
     };
+
+    if(initialLoading) {
+        return <LoadingScreen fullScreen={true} />;
+    }
 
     return (
         <div className="app-main-wrapper">
@@ -132,6 +147,9 @@ function AppContent() {
 
                 {/* Universal Settings Route */}
                 <Route path="/settings/*" element={<SettingsRoutes />} />
+
+                {/* Catch-all 404 Route */}
+                <Route path="*" element={<NotFoundPage />} />
             </Routes>
         </div>
     );

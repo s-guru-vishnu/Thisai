@@ -5,6 +5,7 @@ import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-m
 import { QRCodeSVG } from 'qrcode.react';
 import Navbar from '../components/Navbar';
 import { Package, MapPin, User, Scale, Tag, ArrowLeft, Save, Crosshair, Search, ShieldAlert, CheckCircle, Download, X } from 'lucide-react';
+import LoadingScreen from '../components/LoadingScreen';
 import '../styles/dashboard.css';
 
 const containerStyle = {
@@ -226,7 +227,7 @@ const ReceiverManualEntry = () => {
                                             <Marker position={position} />
                                         </GoogleMap>
                                     ) : (
-                                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading Maps...</div>
+                                        <LoadingScreen fullScreen={false} message="Synchronising Global Maps..." />
                                     )}
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>

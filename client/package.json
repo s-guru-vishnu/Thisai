@@ -9,6 +9,7 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@lottiefiles/dotlottie-react": "^0.18.6",
         "@react-google-maps/api": "^2.20.8",
         "axios": "^1.13.6",
         "html5-qrcode": "^2.3.8",
