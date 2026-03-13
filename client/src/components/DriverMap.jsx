@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, DirectionsService, DirectionsRenderer, TrafficLayer } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, DirectionsService, DirectionsRenderer, TrafficLayer, Circle, InfoWindow, OverlayView } from '@react-google-maps/api';
 
 const containerStyle = {
     width: '100%',
@@ -7,37 +7,70 @@ const containerStyle = {
     minHeight: '500px'
 };
 
-const DriverMap = ({ driverLocation, stops, onMapLoad }) => {
+// Safe InfoWindow offset helper - returns literal object which Maps API accepts
+const getOffset = (w, h) => {
+    return { width: w, height: h };
+};
+
+const DriverMap = ({ driverLocation, warehouseLocation, stops, onMapLoad, driverName, warehouseName }) => {
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""
     });
 
     const mapRef = useRef(null);
-    const [directionsResponse, setDirectionsResponse] = useState(null);
+    const [pickupDirections, setPickupDirections] = useState(null);
+    const [deliveryDirections, setDeliveryDirections] = useState(null);
     const [showTraffic, setShowTraffic] = useState(false);
     const [mapType, setMapType] = useState("roadmap");
     
-    // Track the active zoom and center of the user so it doesn't snap back when the backend polls
+    // Zoom/Center stabilization
     const [mapZoom, setMapZoom] = useState(12);
-    const [mapCenter, setMapCenter] = useState({ lat: 13.0827, lng: 80.2707 });
+    const [mapCenter, setMapCenter] = useState({ lat: 12.9341, lng: 79.1367 });
     const [isCenterInitialized, setIsCenterInitialized] = useState(false);
     
     const driverMarkerIcon = useMemo(() => ({
-        path: "M 0,0 m -5,-5 L 5,-5 L 5,5 L -5,5 Z",
-        fillColor: "#ff6600",
+        path: "M 0,0 m -12,0 a 12,12 0 1,0 24,0 a 12,12 0 1,0 -24,0", 
+        fillColor: "#ff4400",
         fillOpacity: 1,
-        strokeColor: "#000",
+        strokeColor: "#ffffff",
+        strokeWeight: 2,
+        scale: 1.5
+    }), []);
+
+    const warehouseMarkerIcon = useMemo(() => ({
+        path: "M 0,0 m -12,0 a 12,12 0 1,0 24,0 a 12,12 0 1,0 -24,0",
+        fillColor: "#0066ff",
+        fillOpacity: 1,
+        strokeColor: "#ffffff",
         strokeWeight: 2,
         scale: 2
     }), []);
 
-    const directionsOptions = useMemo(() => ({
-        directions: directionsResponse,
+    const pickupOptions = useMemo(() => ({
+        directions: pickupDirections,
         suppressMarkers: true,
+        suppressInfoWindows: true,
         preserveViewport: true,
-        polylineOptions: { strokeColor: '#ffbb00', strokeWeight: 5 }
-    }), [directionsResponse]);
+        polylineOptions: { 
+            strokeColor: '#ff6600', 
+            strokeWeight: 6,
+            strokeOpacity: 0.8
+        }
+    }), [pickupDirections]);
+
+    const deliveryOptions = useMemo(() => ({
+        directions: deliveryDirections,
+        suppressMarkers: true,
+        suppressInfoWindows: true,
+        preserveViewport: true,
+        polylineOptions: { 
+            strokeColor: '#00ffff', 
+            strokeWeight: 5,
+            strokeOpacity: 0.9,
+            lineDashArray: [10, 5] 
+        }
+    }), [deliveryDirections]);
 
     const mapOptions = useMemo(() => ({
         styles: (mapType === "roadmap" && !showTraffic) ? [
@@ -50,11 +83,11 @@ const DriverMap = ({ driverLocation, stops, onMapLoad }) => {
             { featureType: "poi", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
             { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] }
         ] : [],
-        disableDefaultUI: true, // Hides the duplicate native Map/Satellite buttons
-        zoomControl: true,      // Keeps only the native +/- zoom buttons
+        disableDefaultUI: true, 
+        zoomControl: true,      
     }), [mapType, showTraffic]);
 
-    // Center gracefully only once
+    // Initialize center once
     useEffect(() => {
         if (driverLocation && !isCenterInitialized) {
             setMapCenter(driverLocation);
@@ -62,23 +95,24 @@ const DriverMap = ({ driverLocation, stops, onMapLoad }) => {
         }
     }, [driverLocation, isCenterInitialized]);
 
-    // Force map to recalculate route whenever stops or driver coordinates really change
+    // Force route recalculation
     const stopsStr = JSON.stringify(stops);
     const driverLocStr = JSON.stringify(driverLocation);
+    const warehouseLocStr = JSON.stringify(warehouseLocation);
     useEffect(() => {
-        setDirectionsResponse(null);
-    }, [stopsStr, driverLocStr]);
+        setPickupDirections(null);
+        setDeliveryDirections(null);
+    }, [stopsStr, driverLocStr, warehouseLocStr]);
 
-    const onLoad = useCallback(function callback(mapInstance) {
+    const onLoad = useCallback((mapInstance) => {
         mapRef.current = mapInstance;
         if (onMapLoad) onMapLoad(mapInstance);
     }, [onMapLoad]);
 
-    const onUnmount = useCallback(function callback() {
+    const onUnmount = useCallback(() => {
         mapRef.current = null;
     }, []);
 
-    // Safely update React with the user's latest zoom strictly only if distinct, blocking infinite render loops
     const handleZoomChanged = useCallback(() => {
         if (mapRef.current) {
             const newZoom = mapRef.current.getZoom();
@@ -86,7 +120,6 @@ const DriverMap = ({ driverLocation, stops, onMapLoad }) => {
         }
     }, []);
 
-    // Safely update React with camera position preventing hard snapping
     const handleDragEnd = useCallback(() => {
         if (mapRef.current) {
             const center = mapRef.current.getCenter();
@@ -98,14 +131,20 @@ const DriverMap = ({ driverLocation, stops, onMapLoad }) => {
         }
     }, []);
 
-    const directionsCallback = useCallback((response) => {
+    const pickupCallback = useCallback((response) => {
         if (response !== null && response.status === 'OK') {
-            setDirectionsResponse(response);
+            setPickupDirections(response);
+        }
+    }, []);
+
+    const deliveryCallback = useCallback((response) => {
+        if (response !== null && response.status === 'OK') {
+            setDeliveryDirections(response);
         }
     }, []);
 
     if (loadError) return <div style={{ minHeight: '500px' }}>Error loading Google Maps</div>;
-    if (!isLoaded) return <div style={{ minHeight: '500px' }}>Initializing Cyber Road Map...</div>;
+    if (!isLoaded) return <div style={{ minHeight: '500px' }}>Initializing Intelligent Route Map...</div>;
 
     return (
         <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: '500px' }}>
@@ -120,44 +159,156 @@ const DriverMap = ({ driverLocation, stops, onMapLoad }) => {
                 onZoomChanged={handleZoomChanged}
                 onDragEnd={handleDragEnd}
             >
-                {/* Traffic Layer */}
                 {showTraffic && <TrafficLayer />}
 
-                {/* Directions Route */}
-                {stops && stops.length > 0 && driverLocation && directionsResponse === null && (
+                {/* Pickup Leg: Driver -> Warehouse (Orange) */}
+                {driverLocation && warehouseLocation && pickupDirections === null && (
                     <DirectionsService
                         options={{
                             origin: driverLocation,
+                            destination: warehouseLocation,
+                            travelMode: 'DRIVING'
+                        }}
+                        callback={pickupCallback}
+                    />
+                )}
+                {pickupDirections && (
+                    <DirectionsRenderer 
+                        options={pickupOptions} 
+                        suppressMarkers={true} 
+                        suppressInfoWindows={true} 
+                    />
+                )}
+
+                {/* Delivery Leg: Warehouse -> Stops (Cyan) */}
+                {warehouseLocation && stops && stops.length > 0 && deliveryDirections === null && (
+                    <DirectionsService
+                        options={{
+                            origin: warehouseLocation,
                             destination: stops[stops.length - 1].location,
                             waypoints: stops.slice(0, -1).map(stop => ({ location: stop.location, stopover: true })),
                             travelMode: 'DRIVING'
                         }}
-                        callback={directionsCallback}
+                        callback={deliveryCallback}
+                    />
+                )}
+                {deliveryDirections && (
+                    <DirectionsRenderer 
+                        options={deliveryOptions} 
+                        suppressMarkers={true} 
+                        suppressInfoWindows={true} 
                     />
                 )}
 
-                {stops && stops.length > 0 && directionsResponse && (
-                    <DirectionsRenderer options={directionsOptions} />
+                {/* Warehouse Marker & High-Visibility Pulse */}
+                {warehouseLocation && warehouseLocation.lat && (
+                    <React.Fragment>
+                        <Circle
+                            center={warehouseLocation}
+                            radius={400}
+                            options={{
+                                fillColor: "#0066ff",
+                                fillOpacity: 0.15,
+                                strokeColor: "#0066ff",
+                                strokeOpacity: 0.5,
+                                strokeWeight: 2
+                            }}
+                        />
+                        <Marker
+                            position={warehouseLocation}
+                            icon={warehouseMarkerIcon}
+                            title="Warehouse Hub"
+                            zIndex={9999}
+                            label={{ text: "WH", color: "#fff", fontWeight: "bold" }}
+                        />
+                        <OverlayView
+                            position={warehouseLocation}
+                            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+                        >
+                            <div style={{ 
+                                transform: 'translate(-50%, -65px)',
+                                background: '#0066ff', color: '#fff', 
+                                padding: '5px 12px', borderRadius: '5px', 
+                                fontWeight: 'bold', whiteSpace: 'nowrap',
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+                                pointerEvents: 'none',
+                                fontSize: '11px',
+                                border: '2px solid #fff'
+                            }}>
+                                HUB: {warehouseName?.toUpperCase() || 'LOGISTICS HUB'}
+                            </div>
+                        </OverlayView>
+                    </React.Fragment>
                 )}
 
-                {/* Driver Marker */}
-                {driverLocation && (
-                    <Marker
-                        position={driverLocation}
-                        icon={driverMarkerIcon}
-                        title="Driver Current Location"
-                    />
+                {/* Driver Marker & Pulse */}
+                {driverLocation && driverLocation.lat && (
+                    <React.Fragment>
+                        <Circle
+                            center={driverLocation}
+                            radius={200}
+                            options={{
+                                fillColor: "#ff4400",
+                                fillOpacity: 0.1,
+                                strokeColor: "#ff4400",
+                                strokeOpacity: 0.4,
+                                strokeWeight: 1
+                            }}
+                        />
+                        <Marker
+                            position={driverLocation}
+                            icon="https://maps.google.com/mapfiles/ms/icons/red-dot.png"
+                            title="Driver Current Location"
+                            zIndex={2000}
+                        />
+                        <OverlayView
+                            position={driverLocation}
+                            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+                        >
+                            <div style={{ 
+                                transform: 'translate(-50%, -60px)',
+                                background: '#333', color: '#fff', 
+                                padding: '4px 10px', borderRadius: '4px', 
+                                fontWeight: 'bold', fontSize: '10px',
+                                whiteSpace: 'nowrap',
+                                border: '2px solid #ff4400',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                                pointerEvents: 'none'
+                            }}>
+                                DRIVER: {driverName?.toUpperCase() || 'YOU'}
+                            </div>
+                        </OverlayView>
+                    </React.Fragment>
                 )}
 
-                {/* Stop Markers */}
+                {/* Delivery Stops */}
                 {stops && stops.map((stop, idx) => (
-                    <Marker
-                        key={stop.id || idx}
-                        position={stop.location}
-                        icon="https://maps.google.com/mapfiles/ms/icons/green-dot.png"
-                        title={stop.productName || 'Delivery Stop'}
-                        onClick={() => mapRef.current && mapRef.current.panTo(stop.location)}
-                    />
+                    stop.location && stop.location.lat && (
+                        <React.Fragment key={stop.id || idx}>
+                            <Marker
+                                position={stop.location}
+                                icon="https://maps.google.com/mapfiles/ms/icons/green-dot.png"
+                                title={stop.productName || 'Stop'}
+                            />
+                            <OverlayView
+                                position={stop.location}
+                                mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+                            >
+                                <div style={{ 
+                                    transform: 'translate(-50%, -70px)',
+                                    background: '#00cc66', color: '#fff', 
+                                    padding: '5px 12px', borderRadius: '5px', 
+                                    fontWeight: 'bold', fontSize: '10px', 
+                                    whiteSpace: 'nowrap',
+                                    boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+                                    pointerEvents: 'none',
+                                    border: '1px solid #fff'
+                                }}>
+                                    STOP: {stop.productName || 'PARCEL'} ({stop.trackingCode || 'N/A'})
+                                </div>
+                            </OverlayView>
+                        </React.Fragment>
+                    )
                 ))}
             </GoogleMap>
 

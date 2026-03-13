@@ -98,9 +98,10 @@ const ReceiverManualEntry = () => {
         e.preventDefault();
         setLoading(true);
         try {
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             const trk = 'M-' + Math.random().toString(36).substring(2, 8).toUpperCase();
             const payload = { ...newProduct, trackingCode: trk, status: 'Received' };
-            await axios.post('http://localhost:5000/api/parcels', payload);
+            await axios.post(`${apiBase}/api/parcels`, payload);
             setGeneratedTracking(trk);
             setShowQRModal(true);
         } catch (err) {

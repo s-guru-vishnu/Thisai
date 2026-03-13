@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getUsers, deleteUser, getWarehouses, createWarehouse, getAllParcels, createParcel, getDashboardStats, getLiveMapData, getNotifications } = require('../controllers/adminController');
+const { getUsers, deleteUser, getWarehouses, createWarehouse, getAllParcels, createParcel, getDashboardStats, getLiveMapData, getNotifications, getReassignmentSuggestions } = require('../controllers/adminController');
 const { checkLocation } = require('../middleware/authMiddleware');
 
 // Get all users
@@ -29,5 +29,8 @@ router.get('/live-map', getLiveMapData);
 
 // Get notifications
 router.get('/notifications', getNotifications);
+
+// Get load balancing reassignment suggestions
+router.get('/reassignment-suggestions', getReassignmentSuggestions);
 
 module.exports = router;
