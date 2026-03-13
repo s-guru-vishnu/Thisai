@@ -1,115 +1,104 @@
 const Parcel = require('../models/Parcel');
-const { calculatePickupRoute, getCachedOrComputeRoute, smoothETA, filterGPSDrift } = require('../services/routingEngine');
+const { 
+    calculatePickupRoute, 
+    getCachedOrComputeRoute, 
+    getSmoothedETA, 
+    filterGPSDrift,
+    formatDuration 
+} = require('../services/routingEngine');
+const { trackDriverLocation, getDriverStats } = require('../services/dynamicSpeedService');
+const User = require('../models/User');
 
-// @desc    Get driver's assigned parcels
-// @route   GET /api/driver/parcels
-// @access  Private/Driver
-const getDriverParcels = async (req, res) => {
+// @desc    Update driver location stream
+const updateLocation = async (req, res) => {
     try {
-        const parcels = await Parcel.find({ assignedDriver: req.user._id });
-        res.json(parcels);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
-// @desc    Update parcel status
-// @route   PUT /api/driver/parcels/:id/status
-// @access  Private/Driver
-const updateParcelStatus = async (req, res) => {
-    try {
-        const { status } = req.body;
-        const parcel = await Parcel.findOne({ _id: req.params.id, assignedDriver: req.user._id });
-        if (parcel) {
-            parcel.status = status;
-            const updatedParcel = await parcel.save();
-            res.json(updatedParcel);
-        } else {
-            res.status(404).json({ message: 'Parcel not found' });
+        const { driverId, lat, lng, timestamp } = req.body;
+        if (!driverId || lat === undefined || lng === undefined) {
+            return res.status(400).json({ message: "Invalid payload." });
         }
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+        trackDriverLocation(driverId, lat, lng, timestamp);
+        await User.findByIdAndUpdate(driverId, {
+            'location.latitude': lat,
+            'location.longitude': lng
+        });
+        res.json({ success: true });
+    } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
 // @desc    Get Optimized Route for Driver
-// @route   GET /api/driver/optimized-route/:driverId
-// @access  Private/Driver
 const getOptimizedRoute = async (req, res) => {
     try {
         const driverId = req.params.driverId;
-        
-        // 1. Fetch assigned parcels logically
-        const parcels = await Parcel.find({ assignedDriver: driverId, status: { $ne: 'Delivered' } }).populate('warehouse');
+        const parcels = await Parcel.find({ 
+            assignedDriver: driverId, 
+            status: { $ne: 'Delivered' } 
+        }).populate('warehouse');
         
         if (!parcels || parcels.length === 0) {
-            return res.json({ message: "No active parcels assigned." });
+            return res.json({ message: "No active tasks." });
         }
 
-        // Setup mock locations based on database (would use actual GPS ping from app normally)
-        const currentLoc = { lat: 13.0827, lng: 80.2707 }; // Chennai Central mock
+        const driver = await User.findById(driverId);
+        if (!driver || !driver.location.latitude) {
+            return res.status(400).json({ message: "Driver location unavailable." });
+        }
+
+        const driverStats = getDriverStats(driverId);
+        const currentLoc = { lat: driver.location.latitude, lng: driver.location.longitude };
         
-        // Assuming all parcels originate from the same warehouse for this driver's current run
+        // 1. PHASE DETECTION
+        const hasUnpicked = parcels.some(p => ['Received', 'Processed'].includes(p.status));
+        const routingPhase = hasUnpicked ? "PICKUP" : "DELIVERY";
+
         const warehouse = parcels[0].warehouse;
-        // Mock warehouse location or extract if warehouse model was populated with geo
-        const warehouseLoc = { lat: 12.9897, lng: 80.2458 }; // TIDEL mock
+        const warehouseLoc = { lat: warehouse.latitude, lng: warehouse.longitude };
 
-        // Stage 8: GPS Drift Filter (mocking old val vs new)
-        const smoothedLoc = filterGPSDrift(currentLoc, currentLoc); // Pass live coords here normally
-        
-        // 2. Stage 2: Calculate Pickup Route
-        const pickupRouteInfo = await calculatePickupRoute(smoothedLoc, warehouseLoc);
-        
-        if (pickupRouteInfo.isUnsafe) {
-            return res.status(403).json({ message: "EXTREME Weather: Route Blocked", activeAlerts: ["⚠ EXTREME WEATHER - SHELTER IN PLACE"] });
+        const stopsArr = parcels.map(p => ({
+            id: p._id,
+            trackingCode: p.parcelId,
+            status: p.status,
+            priority: p.category === 'Electronics' ? 'Urgent' : 'Normal', 
+            location: { lat: p.latitude, lng: p.longitude },
+            addressLabel: p.deliveryAddress,
+            productName: p.productName
+        }));
+
+        // 2. SEQUENCE & SEGMENT CALCULATION
+        const sequenceData = await getCachedOrComputeRoute(driverId, warehouseLoc, stopsArr, driverStats);
+
+        let finalETA = "-";
+        let targetLabel = "";
+
+        if (routingPhase === "PICKUP") {
+            const pickupInfo = await calculatePickupRoute(currentLoc, warehouseLoc, driverStats);
+            const smoothedMins = getSmoothedETA(driverId, pickupInfo.travelTimeMins);
+            finalETA = formatDuration(smoothedMins);
+            targetLabel = "TO WAREHOUSE";
+        } else {
+            // Target is first stop in optimized sequence
+            const nextStop = sequenceData.sequence[0];
+            const routeToNext = await calculatePickupRoute(currentLoc, nextStop.location, driverStats);
+            const smoothedMins = getSmoothedETA(driverId, routeToNext.travelTimeMins);
+            finalETA = formatDuration(smoothedMins);
+            targetLabel = nextStop.addressLabel?.split(',')[0] || "NEXT STOP";
         }
-
-        // Format stops array for heuristic algorithm
-        const stopsArr = parcels.map((p, idx) => {
-            return {
-                id: p._id,
-                trackingCode: p.parcelId,
-                productName: p.productName,
-                status: p.status, // Pass real lifecycle status
-                priority: p.category === 'Electronics' ? 'Urgent' : 'Normal', 
-                location: { lat: 13.0 + (Math.random() * 0.1), lng: 80.2 + (Math.random() * 0.1) },
-                serviceDurationMinutes: p.category === 'Electronics' ? 10 : 5 // heavier items take longer to drop
-            };
-        });
-
-        // 3. Stage 4 & 5 & 11: Cached Smart Sequence
-        const sequenceData = await getCachedOrComputeRoute(driverId, warehouseLoc, stopsArr);
-
-        // Calculate expected ETA cascade (Stage 3 & 7)
-        let runningMinutes = pickupRouteInfo.travelTimeMins;
-
-        const estimatedArrivalTimes = sequenceData.sequence.map((stop, i) => {
-            // Stage 7: Add travel to next stop + service time
-            // For mock, just assuming 5 min travel between local nodes
-            runningMinutes += 5 + (stop.serviceDurationMinutes || 5);
-            
-            // Stage 3: Smooth ETA UI jumpiness
-            const smoothedMins = smoothETA(stop.id, runningMinutes);
-            
-            let etaMarker = new Date();
-            etaMarker.setMinutes(etaMarker.getMinutes() + smoothedMins);
-            
-            return {
-                stopId: stop.id,
-                eta: new Date(etaMarker).toLocaleTimeString(),
-                status: stop.status
-            };
-        });
-
-        const activeAlerts = [];
-        if (pickupRouteInfo.weatherRiskLevel > 1.0) activeAlerts.push(`Weather Risk: ${pickupRouteInfo.riskLevelStr}`);
-        if (pickupRouteInfo.travelTimeMins > 45) activeAlerts.push('Heavy traffic delays ahead');
 
         res.json({
-            pickupRouteScore: pickupRouteInfo,
-            optimizedStopSequence: sequenceData.sequence,
-            estimatedArrivalTimes,
-            trafficAlerts: activeAlerts
+            optimizedStopSequence: sequenceData.sequence.map(s => ({
+                ...s,
+                formattedLegTime: formatDuration(s.legDurationMins)
+            })),
+            routingPhase,
+            targetLabel,
+            nextActionETA: driverStats.status === 'NOT_STARTED' ? "-" : finalETA,
+            liveSpeed: driverStats.avgSpeed,
+            driverStatus: driverStats.status,
+            heading: driverStats.heading,
+            warehouseLocation: warehouseLoc,
+            driverLocation: currentLoc,
+            warehouseAddress: warehouse.location,
+            warehouseName: warehouse.name,
+            driverName: driver.name
         });
 
     } catch (error) {
@@ -118,4 +107,41 @@ const getOptimizedRoute = async (req, res) => {
     }
 };
 
-module.exports = { getDriverParcels, updateParcelStatus, getOptimizedRoute };
+// @desc    Get driver's assigned parcels
+const getDriverParcels = async (req, res) => {
+    try {
+        const parcels = await Parcel.find({ assignedDriver: req.user?._id || req.params.driverId });
+        res.json(parcels);
+    } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
+// @desc    Update parcel status
+const updateParcelStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        const parcel = await Parcel.findById(req.params.id);
+        if (parcel) {
+            parcel.status = status;
+            const updatedParcel = await parcel.save();
+            res.json(updatedParcel);
+        } else { res.status(404).json({ message: 'Parcel not found' }); }
+    } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
+// @desc    Get Driver Location
+const getDriverLocation = async (req, res) => {
+    try {
+        const d = await User.findById(req.params.driverId);
+        res.json({ location: { lat: d?.location?.latitude, lng: d?.location?.longitude } });
+    } catch (error) { res.status(500).json({ message: error.message }); }
+};
+
+module.exports = { 
+    getOptimizedRoute, 
+    updateLocation, 
+    getDriverParcels, 
+    updateParcelStatus, 
+    getDriverLocation 
+};
+
+

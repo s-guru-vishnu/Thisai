@@ -1,216 +1,214 @@
+const axios = require('axios');
 const { getLiveWeather } = require('./weatherService');
 
 // In-Memory cache for route matrix API calls and states
 const driverRouteCache = new Map();
 const prevETAs = new Map();
+const prevDisplayETAs = new Map();
+
+const BASE_CITY_SPEED = 20; // km/h fallback
+const BASE_HIGHWAY_SPEED = 60; // km/h fallback for inter-city
 
 /**
- * PRODUCTION-READY ROUTING ENGINE
- * Contains extended heuristic algorithms, stability caches, and lifecycle safety models.
+ * INTELLIGENT ROUTING ENGINE (REBUILT)
+ * Optimized for:
+ * 1. Multi-Stop TSP via Nearest Neighbor.
+ * 2. Hybrid Dynamic ETA (Traffic + Behavior).
+ * 3. EMA Smoothing for Stability.
  */
 
-// Helper: Calculate standard Euclidean distance (Haversine formula for geo)
-const getHaversineDistance = (loc1, loc2) => {
-    const toRad = (value) => (value * Math.PI) / 180;
-    const R = 6371; // km
+/**
+ * Helper: Calculate Haversine distance between two coordinates in KM
+ */
+const getDistance = (loc1, loc2) => {
+    if (!loc1 || !loc2 || !loc1.lat || !loc1.lng || !loc2.lat || !loc2.lng) return Infinity;
+    const toRad = (v) => (v * Math.PI) / 180;
+    const R = 6371; // Earth radius in km
     const dLat = toRad(loc2.lat - loc1.lat);
     const dLng = toRad(loc2.lng - loc1.lng);
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(toRad(loc1.lat)) * Math.cos(toRad(loc2.lat)) *
-              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        Math.cos(toRad(loc1.lat)) * Math.cos(toRad(loc2.lat)) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
 };
 
-// Stage 8: GPS Noise Filtering
-const filterGPSDrift = (oldLoc, newLoc) => {
-    if (!oldLoc) return newLoc;
-    const dist = getHaversineDistance(oldLoc, newLoc);
-    if (dist < 0.05) return oldLoc; // Ignore jumps < 50 meters
-    return newLoc;
-};
-
-// Stage 3: ETA Stability Engine
-const smoothETA = (stopId, newETAMins) => {
-    const alpha = 0.2; 
-    if (!prevETAs.has(stopId)) {
-        prevETAs.set(stopId, newETAMins);
-        return Math.round(newETAMins);
-    }
-    const oldETA = prevETAs.get(stopId);
-    if (Math.abs(newETAMins - oldETA) > 3) { // Only update if deviation > 3 mins
-        const smoothed = (alpha * newETAMins) + ((1 - alpha) * oldETA);
-        prevETAs.set(stopId, smoothed);
-        return Math.round(smoothed);
-    }
-    return Math.round(oldETA);
-};
-
-// Stage 1: Delivery Lifecycle
-const filterActiveStops = (stops) => {
-    const active = stops.filter(s => s.status !== 'DELIVERED');
-    const failed = active.filter(s => s.status === 'FAILED');
-    const pending = active.filter(s => s.status !== 'FAILED');
-    return { pending, failed };
-};
-
-// Stage 2: Urgent Delivery Local Insertion
-const insertUrgentDelivery = (currentSequence, newStop, currentLoc) => {
-    let bestIndex = 0;
-    let minAddedDelay = Infinity;
-
-    for (let i = 0; i <= currentSequence.length; i++) {
-        const prevLoc = i === 0 ? currentLoc : currentSequence[i - 1].location;
-        const nextLoc = i === currentSequence.length ? null : currentSequence[i].location;
-        
-        let originalDist = nextLoc ? getHaversineDistance(prevLoc, nextLoc) : 0;
-        let newDist = getHaversineDistance(prevLoc, newStop.location) + 
-                     (nextLoc ? getHaversineDistance(newStop.location, nextLoc) : 0);
-                     
-        let addedDelay = newDist - originalDist;
-        if (addedDelay < minAddedDelay) {
-            minAddedDelay = addedDelay;
-            bestIndex = i;
-        }
-    }
-    
-    const newSeq = [...currentSequence];
-    newSeq.splice(bestIndex, 0, newStop);
-    return newSeq;
-};
-
-// Stage 2: Pickup Route Intelligence
-const calculatePickupRoute = async (driverLoc, warehouseLoc) => {
-    const distanceKm = getHaversineDistance(driverLoc, warehouseLoc);
-    let travelTimeMins = distanceKm * 2; 
-    let trafficDelayPercent = 1.0; 
-    
-    const hour = new Date().getHours();
-    if ((hour >= 8 && hour <= 10) || (hour >= 17 && hour <= 20)) {
-        trafficDelayPercent = 1.5; 
-        travelTimeMins *= 1.5; 
+/**
+ * Fetch Real Road Distance and Traffic Duration from Google Maps
+ */
+const getGoogleRouteData = async (origin, destination) => {
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+        // Fallback to Haversine-based estimations if no key
+        const distKm = getDistance(origin, destination);
+        return {
+            distanceMeters: Math.round(distKm * 1000),
+            durationInTrafficSeconds: Math.round(distKm * 1.8 * 60) // Rough estimate
+        };
     }
 
-    // Weather Risk Component (Stage 6 Hard Rule implementation & Stage 10)
-    let weather;
     try {
-        weather = await getLiveWeather(driverLoc.lat, driverLoc.lng);
-    } catch (e) {
-        weather = { riskLevel: 'UNKNOWN', message: 'API Timeout' }; // Resilience
+        const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}&traffic_model=best_guess&departure_time=now&key=${apiKey}`;
+        const res = await axios.get(url);
+
+        if (res.data.status === 'OK') {
+            const leg = res.data.routes[0].legs[0];
+            return {
+                distanceMeters: leg.distance.value,
+                durationInTrafficSeconds: leg.duration_in_traffic ? leg.duration_in_traffic.value : leg.duration.value
+            };
+        }
+    } catch (err) {
+        console.error("[Router] Google API Error:", err.message);
     }
+
+    // Secondary fallback
+    const distKm = getDistance(origin, destination);
+    return { distanceMeters: Math.round(distKm * 1000), durationInTrafficSeconds: Math.round(distKm * 2 * 60) };
+};
+
+/**
+ * Format minutes into "X hr Y mins" or "Y mins"
+ */
+const formatDuration = (totalMins) => {
+    if (totalMins === null || totalMins === undefined || isNaN(totalMins)) return "-";
+    const mins = Math.round(totalMins);
+    if (mins < 60) return `${mins} mins`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m > 0 ? `${h} hr ${m} mins` : `${h} hr`;
+};
+
+/**
+ * Compute Hybrid Dynamic ETA
+ */
+const computeHybridETA = (roadDistMeters, trafficSecs, avgSpeedKmh, status) => {
+    if (status === 'NOT_STARTED') return null;
+
+    const distKm = roadDistMeters / 1000;
+    const trafficETA = trafficSecs / 60;
     
-    let weatherRiskLevel = 1.0;
-    let isUnsafe = false;
-
-    if (weather.riskLevel === 'EXTREME') { // Stage 6
-        weatherRiskLevel = 5.0;
-        isUnsafe = true;
-    } else if (weather.riskLevel === 'HIGH') {
-        weatherRiskLevel = 1.6;
-    } else if (weather.riskLevel === 'MEDIUM') {
-        weatherRiskLevel = 1.25;
+    let speedToUse = avgSpeedKmh;
+    if (status === 'STOPPED' || avgSpeedKmh < 5) {
+        // ADAPTIVE FALLBACK: Use highway speed for long distances to avoid ETA explosion
+        speedToUse = distKm > 20 ? BASE_HIGHWAY_SPEED : BASE_CITY_SPEED;
     }
 
-    const routeScore = (0.5 * travelTimeMins) * (1 + 0.3 * trafficDelayPercent) * (1 + 0.2 * weatherRiskLevel);
+    const speedETA = (distKm / speedToUse) * 60;
+    const finalETA = (0.7 * trafficETA) + (0.3 * speedETA);
+    return Math.round(finalETA);
+};
+
+/**
+ * GPS Noise Filtering
+ */
+const filterGPSDrift = (oldLoc, newLoc) => {
+    if (!oldLoc || !newLoc) return newLoc;
+    const dist = getDistance(oldLoc, newLoc);
+    return dist < 0.03 ? oldLoc : newLoc;
+};
+
+/**
+ * EMA Smoothing
+ */
+const getSmoothedETA = (driverId, newFinalETA) => {
+    if (newFinalETA === null || newFinalETA === undefined) return null;
+    if (!prevDisplayETAs.has(driverId)) {
+        prevDisplayETAs.set(driverId, newFinalETA);
+        return newFinalETA;
+    }
+    const prev = prevDisplayETAs.get(driverId);
+    const smoothed = (prev * 0.7) + (newFinalETA * 0.3);
+    prevDisplayETAs.set(driverId, smoothed);
+    return Math.round(smoothed);
+};
+
+/**
+ * Pickup Route Intelligence
+ */
+const calculatePickupRoute = async (driverLoc, warehouseLoc, driverStats = {}) => {
+    const routeData = await getGoogleRouteData(driverLoc, warehouseLoc);
+    const rawETA = computeHybridETA(
+        routeData.distanceMeters, 
+        routeData.durationInTrafficSeconds, 
+        driverStats.avgSpeed || 0, 
+        driverStats.status || 'MOVING'
+    );
 
     return {
-        distanceKm: distanceKm.toFixed(2),
-        travelTimeMins: Math.round(travelTimeMins),
-        routeScore: routeScore.toFixed(2),
-        weatherRiskLevel,
-        riskLevelStr: weather.riskLevel,
-        isUnsafe
+        distanceKm: (routeData.distanceMeters / 1000).toFixed(2),
+        travelTimeMins: rawETA,
+        routeData 
     };
 };
 
-// Stage 3 & 7: Smart Multi-Delivery Sequencing + Service Time Modeling
-const optimizeDeliverySequence = async (currentLoc, pendingStops) => {
-    const { pending, failed } = filterActiveStops(pendingStops);
-    if (!pending || pending.length === 0) return failed;
-
-    let unvisited = [...pending];
-    let optimizedSequence = [];
-    let currentPos = currentLoc;
+/**
+ * optimizeDeliverySequence
+ */
+const optimizeDeliverySequence = async (startLoc, rawStops) => {
+    if (!rawStops || rawStops.length === 0) return [];
+    let unvisited = rawStops.filter(s => s.status !== 'Delivered' && s.location && s.location.lat);
+    let sequence = [];
+    let currentPos = startLoc;
 
     while (unvisited.length > 0) {
-        let bestStopIndex = -1;
-        let lowestCost = Infinity;
-
+        let bestScore = Infinity;
+        let bestIdx = -1;
         for (let i = 0; i < unvisited.length; i++) {
             const stop = unvisited[i];
-            const dist = getHaversineDistance(currentPos, stop.location);
-            
-            let priorityDiscount = 1.0; 
-            if (stop.priority === 'Urgent') priorityDiscount = 0.5;
-            else if (stop.priority === 'High') priorityDiscount = 0.8;
-
-            const cost = dist * priorityDiscount;
-
-            if (cost < lowestCost) {
-                lowestCost = cost;
-                bestStopIndex = i;
-            }
+            const dist = getDistance(currentPos, stop.location);
+            let pWeight = stop.priority === 'Urgent' ? 0.4 : 1.0;
+            const score = dist * pWeight;
+            if (score < bestScore) { bestScore = score; bestIdx = i; }
         }
-
-        const nextStop = unvisited.splice(bestStopIndex, 1)[0];
-        const corridorStops = unvisited.filter(s => getHaversineDistance(nextStop.location, s.location) <= 2.0);
-        
-        // Stage 7 Model: Add Base Service Duration
-        nextStop.serviceDurationMinutes = nextStop.serviceDurationMinutes || 5;
-        optimizedSequence.push(nextStop);
+        const nextStop = unvisited.splice(bestIdx, 1)[0];
+        sequence.push(nextStop);
         currentPos = nextStop.location;
-
-        if (corridorStops.length > 0) {
-            corridorStops.sort((a, b) => getHaversineDistance(currentPos, a.location) - getHaversineDistance(currentPos, b.location));
-            
-            for (const clusterStop of corridorStops) {
-                clusterStop.serviceDurationMinutes = clusterStop.serviceDurationMinutes || 5;
-                optimizedSequence.push(clusterStop);
-                currentPos = clusterStop.location;
-                unvisited = unvisited.filter(u => u.id !== clusterStop.id);
-            }
-        }
     }
-
-    // Append failed stops to the tail (Stage 1)
-    return [...optimizedSequence, ...failed];
+    return sequence;
 };
 
-// Stage 4 & 5 & 11: Route Cache & Stability Guard
-const getCachedOrComputeRoute = async (driverId, currentLoc, stops) => {
+/**
+ * Caching & Segmented ETA Calculation
+ */
+const getCachedOrComputeRoute = async (driverId, startLoc, stops, driverStats = {}) => {
     const now = Date.now();
-    const CACHE_WINDOW = 20000; // 20s prevent recompute burst
+    const CACHE_TTL = 30000;
 
     if (driverRouteCache.has(driverId)) {
         const cached = driverRouteCache.get(driverId);
-        if (now - cached.timestamp < CACHE_WINDOW) {
-            return cached.data;
-        }
+        if (now - cached.timestamp < CACHE_TTL) return cached.data;
     }
 
-    const sequence = await optimizeDeliverySequence(currentLoc, stops);
-    const data = { sequence };
+    const sequence = await optimizeDeliverySequence(startLoc, stops);
     
-    driverRouteCache.set(driverId, { timestamp: now, data });
-    return data;
-};
+    // Calculate Segmented Leg Durations
+    let currentPoint = startLoc;
+    for (let stop of sequence) {
+        const legData = await getGoogleRouteData(currentPoint, stop.location);
+        const legMins = computeHybridETA(
+            legData.distanceMeters, 
+            legData.durationInTrafficSeconds, 
+            driverStats.avgSpeed || 25, 
+            'MOVING'
+        );
+        stop.legDurationMins = legMins;
+        stop.legDistanceKm = (legData.distanceMeters / 1000).toFixed(2);
+        currentPoint = stop.location;
+    }
 
-// Stage 9: Driver Load Balancing
-const calculateBurdenScore = (todayDistance, activeStops, cumulativeDelay) => {
-    const normalizedDistance = todayDistance / 50; 
-    const normalizedStops = activeStops / 20; 
-    const normalizedDelay = cumulativeDelay > 0 ? (cumulativeDelay / 60) : 0.1; 
-
-    const burdenScore = (normalizedDistance + normalizedStops + normalizedDelay) / 3;
-    return burdenScore.toFixed(2); 
+    const result = { sequence };
+    driverRouteCache.set(driverId, { timestamp: now, data: result });
+    return result;
 };
 
 module.exports = {
     calculatePickupRoute,
     optimizeDeliverySequence,
-    calculateBurdenScore,
     filterGPSDrift,
-    smoothETA,
-    insertUrgentDelivery,
-    getCachedOrComputeRoute
+    getSmoothedETA,
+    getCachedOrComputeRoute,
+    computeHybridETA,
+    formatDuration
 };
+

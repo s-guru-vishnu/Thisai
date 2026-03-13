@@ -10,6 +10,8 @@ const parcelSchema = new mongoose.Schema({
     customer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     customerName: { type: String, required: true },
     deliveryAddress: { type: String, required: true },
+    latitude: { type: Number, default: null },
+    longitude: { type: Number, default: null },
     origin: { type: String, default: 'Not specified' },
     deliveryType: { type: String, required: true },
     status: { type: String, default: 'Received' },
