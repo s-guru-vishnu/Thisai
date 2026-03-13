@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import axios from 'axios';
 import { Package, Truck, MapPin, CheckCircle, PlusCircle, Tag, Navigation, Box, ExternalLink, X } from 'lucide-react';
 import LocationRequiredModal from '../components/modals/LocationRequiredModal';
+import DashboardTabs from '../components/DashboardTabs';
 import '../styles/dashboard.css';
 import '../styles/seller.css';
 
@@ -156,6 +157,8 @@ const SellerDashboard = () => {
                         </Link>
                     </div>
                 </header>
+
+                <DashboardTabs />
 
                 <div className="stats-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
                     <div className="stat-widget" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '5px' }}>

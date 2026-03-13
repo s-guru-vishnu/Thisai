@@ -9,6 +9,7 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@lottiefiles/dotlottie-react": "^0.18.6",
         "@react-google-maps/api": "^2.20.8",
         "axios": "^1.13.6",
         "html5-qrcode": "^2.3.8",
@@ -17,6 +18,7 @@
         "qrcode.react": "^4.2.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
+        "react-is": "^19.2.4",
         "react-leaflet": "^4.2.1",
         "react-router-dom": "^7.13.1",
         "recharts": "^3.8.0"
@@ -26,6 +28,6 @@
         "@types/react-dom": "^18.2.17",
         "@vitejs/plugin-react": "^4.2.1",
         "react-is": "^19.2.4",
-        "vite": "^5.0.8"
+        "vite": "^5.4.21"
     }
 }

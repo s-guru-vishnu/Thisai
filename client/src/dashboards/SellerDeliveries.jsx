@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
 import Navbar from '../components/Navbar';
 import axios from 'axios';
+import DashboardTabs from '../components/DashboardTabs';
 import { Package, Truck, MapPin, CheckCircle, ArrowLeft, MoreVertical, Edit2, QrCode, X } from 'lucide-react';
 import '../styles/dashboard.css';
 import '../styles/seller.css';
@@ -90,6 +91,8 @@ const SellerDeliveries = () => {
                         </div>
                     </div>
                 </header>
+
+                <DashboardTabs />
 
                 <div className="stats-row">
                     <div className="stat-widget" style={{ padding: '1rem 1.5rem' }}>

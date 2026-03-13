@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
 import { Truck, Star, Phone, MapPin, MoreHorizontal, UserCheck, ShieldCheck, Search, Plus } from 'lucide-react';
+import LoadingScreen from '../components/LoadingScreen';
 
 const DriversPage = () => {
     const [drivers, setDrivers] = useState([]);
@@ -9,7 +10,7 @@ const DriversPage = () => {
     React.useEffect(() => {
         const fetchDrivers = async () => {
             try {
-                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
                 const userInfo = JSON.parse(localStorage.getItem('userInfo'));
                 const config = { headers: { Authorization: `Bearer ${userInfo?.token}` } };
                 // Fetch all users and filter drivers
@@ -66,7 +67,11 @@ const DriversPage = () => {
                 </div>
 
                 <div className="driver-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-                    {drivers.map((driver) => {
+                    {loading ? (
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <LoadingScreen fullScreen={false} message="Scanning Fleet Status..." />
+                        </div>
+                    ) : drivers.map((driver) => {
                         const style = getStatusStyle(driver.status);
                         return (
                             <div key={driver.id} className="dashboard-card" style={{ padding: '1.5rem' }}>

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import { Truck, MapPin, Box, ArrowLeft, Navigation, Search, CheckCircle, Download, X, Mail, User, Info } from 'lucide-react';
+import LoadingScreen from '../components/LoadingScreen';
 import '../styles/dashboard.css';
 
 const containerStyle = {
@@ -398,9 +399,7 @@ const SellerManualEntry = () => {
                             />
                         </GoogleMap>
                     ) : (
-                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111' }}>
-                            <p>Loading Map Radar...</p>
-                        </div>
+                        <LoadingScreen fullScreen={false} message="Calibrating Delivery Radar..." />
                     )}
 
                     <div style={{ position: 'absolute', bottom: '30px', right: '30px', background: 'rgba(0,0,0,0.85)', padding: '20px', borderRadius: '20px', border: '1px solid var(--border-color)', maxWidth: '300px', backdropFilter: 'blur(10px)' }}>

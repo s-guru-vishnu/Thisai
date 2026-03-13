@@ -5,6 +5,7 @@ import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-m
 import { QRCodeSVG } from 'qrcode.react';
 import Navbar from '../components/Navbar';
 import { Package, MapPin, User, Scale, Tag, ArrowLeft, Save, Crosshair, Search, ShieldAlert, CheckCircle, Download, X } from 'lucide-react';
+import LoadingScreen from '../components/LoadingScreen';
 import '../styles/dashboard.css';
 
 const containerStyle = {
@@ -98,9 +99,10 @@ const ReceiverManualEntry = () => {
         e.preventDefault();
         setLoading(true);
         try {
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             const trk = 'M-' + Math.random().toString(36).substring(2, 8).toUpperCase();
             const payload = { ...newProduct, trackingCode: trk, status: 'Received' };
-            await axios.post('http://localhost:5000/api/parcels', payload);
+            await axios.post(`${apiBase}/api/parcels`, payload);
             setGeneratedTracking(trk);
             setShowQRModal(true);
         } catch (err) {
@@ -225,7 +227,7 @@ const ReceiverManualEntry = () => {
                                             <Marker position={position} />
                                         </GoogleMap>
                                     ) : (
-                                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading Maps...</div>
+                                        <LoadingScreen fullScreen={false} message="Synchronising Global Maps..." />
                                     )}
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>

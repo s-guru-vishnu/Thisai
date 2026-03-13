@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { MapPin, Plus, Trash2, Home, Building, Briefcase, Info, CheckCircle2, Phone, Map as MapIcon, PlusCircle, ArrowLeft, Navigation, Loader2, Save, Crosshair, ChevronRight } from 'lucide-react';
+import LoadingScreen from '../components/LoadingScreen';
 import LocationPickerModal from '../modals/LocationPickerModal';
 
 const AddressesSettings = ({ userContext, showToast }) => {
@@ -402,7 +403,9 @@ const AddressesSettings = ({ userContext, showToast }) => {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
                 {loading ? (
-                    [1, 2].map(i => <div key={i} className="skeleton-loader" style={{ height: '180px', borderRadius: '16px' }}></div>)
+                    <div style={{ gridColumn: '1 / -1' }}>
+                        <LoadingScreen fullScreen={false} message="Accessing Address Vault..." />
+                    </div>
                 ) : addresses.length === 0 ? (
                     <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed var(--border-color)' }}>
                         <MapPin size={40} style={{ color: 'var(--text-muted)', marginBottom: '1rem' }} />

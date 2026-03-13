@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import DataTable from '../components/DataTable';
 import { UserPlus, Search, Filter, X, Shield, Mail, Calendar, Key, User, Trash2 } from 'lucide-react';
+import LoadingScreen from '../components/LoadingScreen';
 import axios from 'axios';
 
 const UsersPage = () => {
@@ -19,7 +20,7 @@ const UsersPage = () => {
 
     const fetchUsers = async () => {
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             // Getting token if needed
             const userInfo = JSON.parse(localStorage.getItem('userInfo'));
             const config = {
@@ -58,7 +59,7 @@ const UsersPage = () => {
 
     const confirmDelete = async () => {
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             const userInfo = JSON.parse(localStorage.getItem('userInfo'));
             const config = {
                 headers: { Authorization: `Bearer ${userInfo?.token}` }
@@ -91,7 +92,7 @@ const UsersPage = () => {
         };
 
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             const userInfo = JSON.parse(localStorage.getItem('userInfo'));
             const config = {
                 headers: { Authorization: `Bearer ${userInfo?.token}` }
@@ -158,7 +159,7 @@ const UsersPage = () => {
                 </div>
 
                 {loading ? (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Loading users...</div>
+                    <LoadingScreen fullScreen={false} message="Parsing User Database..." />
                 ) : (
                     <DataTable 
                         headers={['Full Name', 'Email Address', 'Role', 'Joined Date']}

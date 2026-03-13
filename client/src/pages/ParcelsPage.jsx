@@ -4,6 +4,7 @@ import DataTable from '../components/DataTable';
 import { Package, Search, Filter, Plus, Truck, MapPin, User, ChevronRight, X, Save } from 'lucide-react';
 import axios from 'axios';
 import LocationRequiredModal from '../components/modals/LocationRequiredModal';
+import LoadingScreen from '../components/LoadingScreen';
 
 const ParcelsPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -35,7 +36,7 @@ const ParcelsPage = () => {
 
     const fetchParcels = async () => {
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             const userInfo = JSON.parse(localStorage.getItem('userInfo'));
             const config = { headers: { Authorization: `Bearer ${userInfo?.token}` } };
             const { data } = await axios.get(`${apiBase}/api/admin/parcels`, config);
@@ -49,7 +50,7 @@ const ParcelsPage = () => {
 
     const fetchDropdownData = async () => {
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             const userInfo = JSON.parse(localStorage.getItem('userInfo'));
             const config = { headers: { Authorization: `Bearer ${userInfo?.token}` } };
             
@@ -101,7 +102,7 @@ const ParcelsPage = () => {
         };
 
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
             const userInfo = JSON.parse(localStorage.getItem('userInfo'));
             const config = { headers: { Authorization: `Bearer ${userInfo?.token}` } };
             await axios.post(`${apiBase}/api/admin/parcels`, parcelData, config);
@@ -178,11 +179,10 @@ const ParcelsPage = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredParcels.length === 0 && !loading && (
-                                <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No parcels found.</td></tr>
-                            )}
                             {loading ? (
-                                <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading parcels...</td></tr>
+                                <tr><td colSpan="6" style={{ padding: '0' }}>
+                                    <LoadingScreen fullScreen={false} message="Synchronizing Parcel Pipeline..." />
+                                </td></tr>
                             ) : filteredParcels.map((parcel) => {
                                 const st = getStatusStyle(parcel.status || 'Pending');
                                 return (

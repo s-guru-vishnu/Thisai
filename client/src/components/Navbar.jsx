@@ -9,18 +9,26 @@ const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const [userInfo, setUserInfo] = useState(JSON.parse(localStorage.getItem('userInfo') || '{}'));
 
-    // Get user info from localStorage to determine role
-    const userInfo = (() => {
-        try {
-            const saved = localStorage.getItem('userInfo');
-            const parsed = saved ? JSON.parse(saved) : null;
-            return (parsed && typeof parsed === 'object') ? parsed : {};
-        } catch (e) {
-            console.error("Auth session corrupted", e);
-            return {};
-        }
-    })();
+    useEffect(() => {
+        const handleStorage = () => {
+            const fresh = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            setUserInfo(fresh);
+        };
+        window.addEventListener('storage', handleStorage);
+        window.addEventListener('userInfoChanged', handleStorage);
+        
+        // Also check on mount in case App synced before Navbar mounted
+        handleStorage();
+        
+        return () => {
+            window.removeEventListener('storage', handleStorage);
+            window.removeEventListener('userInfoChanged', handleStorage);
+        };
+    }, []);
+
+
     const isAdmin = userInfo.role === 'admin';
     const isSeller = userInfo.role === 'seller';
     const isCustomer = userInfo.role === 'customer';
@@ -82,7 +90,6 @@ const Navbar = () => {
         { name: 'Live Map', path: '/dashboard/map', icon: <Map size={18} />, show: isAdmin },
         { name: 'Parcels', path: '/dashboard/parcels', icon: <Package size={18} />, show: isAdmin || isReceiver },
         { name: 'Drivers', path: '/dashboard/drivers', icon: <Truck size={18} />, show: isAdmin },
-        { name: 'AI Predictions', path: '/dashboard/predictions', icon: <BrainCircuit size={18} />, show: isAdmin },
         // Seller specific
         { name: 'My Deliveries', path: '/seller/deliveries', icon: <Package size={18} />, show: isSeller },
 
