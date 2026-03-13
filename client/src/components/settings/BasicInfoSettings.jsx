@@ -126,6 +126,9 @@ const BasicInfoSettings = ({ userContext, showToast }) => {
                 delete safeUserInfo.avatar;
                 localStorage.setItem('userInfo', JSON.stringify(safeUserInfo));
             }
+
+            // Dispatch event so other components (like Navbar) update immediately
+            window.dispatchEvent(new Event('userInfoChanged'));
             showToast('Profile and Location updated successfully', 'success');
         } catch (error) {
             console.error('Error updating profile:', error);

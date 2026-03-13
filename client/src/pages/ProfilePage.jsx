@@ -38,7 +38,21 @@ const ProfilePage = () => {
                 console.error("Failed to fetch fresh profile:", err);
             }
         };
+
+        const handleSync = () => {
+            const fresh = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            setUserInfo(fresh);
+        };
+
+        window.addEventListener('userInfoChanged', handleSync);
+        window.addEventListener('storage', handleSync);
+        
         fetchProfile();
+        
+        return () => {
+            window.removeEventListener('userInfoChanged', handleSync);
+            window.removeEventListener('storage', handleSync);
+        };
     }, []);
 
     const showToast = (message, type = 'success') => {
