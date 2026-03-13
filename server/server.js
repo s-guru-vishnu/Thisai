@@ -25,8 +25,10 @@ const parcelRoutes = require('./routes/parcelRoutes');
 const predictRoutes = require('./routes/predictRoutes');
 const addressRoutes = require('./routes/addressRoutes');
 const logisticsRoutes = require('./routes/logisticsRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 // Mount Routes
+
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', protect, authorize('admin'), adminRoutes);
 app.use('/api/customer', protect, authorize('customer'), customerRoutes);
@@ -35,6 +37,7 @@ app.use('/api/manager', protect, authorize('manager'), managerRoutes);
 app.use('/api/warehouse', protect, authorize('warehouse'), warehouseRoutes);
 app.use('/api/parcels', protect, parcelReceiverRoutes);
 app.use('/api/parcel', parcelRoutes);
+app.use('/api/ai', aiRoutes);
 app.use('/api/predict', predictRoutes);
 app.use('/api/address', addressRoutes);
 app.use('/api/logistics', logisticsRoutes);

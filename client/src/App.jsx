@@ -16,14 +16,18 @@ import LoadingScreen from './components/LoadingScreen';
 import NotFoundPage from './pages/NotFoundPage';
 import './styles/dashboard.css';
 
+import ChatBot from './components/ChatBot';
+
 function AppContent() {
     const [initialLoading, setInitialLoading] = useState(true);
     const [showLocationModal, setShowLocationModal] = useState(false);
     const location = useLocation();
 
+    const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/';
+
     const checkLocation = () => {
         // If the user is on the login or register page, don't show the modal
-        if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/') {
+        if (isAuthPage) {
             setShowLocationModal(false);
             return;
         }
@@ -175,6 +179,7 @@ function AppContent() {
     return (
         <div className="app-main-wrapper">
             {showLocationModal && <LocationEnforcementModal onLocationSaved={handleLocationSaved} />}
+            <ChatBot />
 
             <Routes>
                 <Route path="/" element={<Navigate to="/login" />} />

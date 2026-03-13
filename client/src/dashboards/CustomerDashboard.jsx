@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import CustomerMap from '../components/CustomerMap';
-import { Search, QrCode, Package, Truck, MapPin, CheckCircle, X, ShieldCheck, Navigation, Phone } from 'lucide-react';
+import { Search, QrCode, Package, Truck, MapPin, CheckCircle, X, ShieldCheck, Navigation, Phone, Clock, AlertTriangle } from 'lucide-react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import LocationRequiredModal from '../components/modals/LocationRequiredModal';
 import DashboardTabs from '../components/DashboardTabs';
@@ -233,9 +233,21 @@ const CustomerDashboard = () => {
                                 <div className="shipment-details">
                                     <h3>{activeShipment.productName}</h3>
                                     <p>Tracker: <span style={{ color: 'white' }}>{activeShipment.trackingId}</span></p>
-                                    <div className="shipment-status-badge" style={{ marginTop: '5px' }}>
-                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 10px var(--success)' }}></div>
-                                        {activeShipment.status}
+                                    <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
+                                        <div className="shipment-status-badge">
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 10px var(--success)' }}></div>
+                                            {activeShipment.status}
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.85rem', color: 'var(--accent)', fontWeight: 'bold' }}>
+                                            <Clock size={16} />
+                                            ETA: {activeShipment.eta}
+                                        </div>
+                                        {activeShipment.delayMinutes > 0 && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.85rem', color: '#ff4444', fontWeight: 'bold' }}>
+                                                <AlertTriangle size={16} />
+                                                Delay: {activeShipment.delayMinutes}m
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
