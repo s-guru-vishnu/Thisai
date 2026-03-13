@@ -29,7 +29,7 @@ const addressRoutes = require('./routes/addressRoutes');
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', protect, authorize('admin'), adminRoutes);
 app.use('/api/customer', protect, authorize('customer'), customerRoutes);
-app.use('/api/driver', protect, authorize('driver'), driverRoutes);
+app.use('/api/driver', driverRoutes);
 app.use('/api/manager', protect, authorize('manager'), managerRoutes);
 app.use('/api/warehouse', protect, authorize('warehouse'), warehouseRoutes);
 app.use('/api/parcels', protect, parcelReceiverRoutes);

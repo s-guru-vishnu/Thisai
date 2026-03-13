@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Warehouse = require('../models/Warehouse');
 const Parcel = require('../models/Parcel');
+const { calculateBurdenScore } = require('../services/routingEngine');
 
 // @desc    Get all users
 // @route   GET /api/admin/users
@@ -145,8 +146,7 @@ const getDashboardStats = async (req, res) => {
         const aiTips = [
             "Optimizing routes in the North zone could reduce overall delay probability by 8% today.",
             "Dispatching more drivers to Warehouse A recommended based on incoming parcel volume.",
-            "Current delay rate is unusually low. Maintenance is optimal today.",
-            "Weather conditions may decrease driver efficiency by 5% in the evening."
+            "Current delay rate is unusually low. Maintenance is optimal today."
         ];
         const aiTip = aiTips[Math.floor(Math.random() * aiTips.length)];
         
@@ -197,7 +197,6 @@ const getLiveMapData = async (req, res) => {
         // Random procedural alerts
         const alerts = [
             { type: 'Traffic Anomaly', desc: 'Heavy congestion detected on Mount Road.' },
-            { type: 'Weather Alert', desc: 'Heavy rain expected in Guindy zone in 30m.' },
             { type: 'Route Blocked', desc: 'Construction on OMR affecting 3 drivers.' },
             { type: 'Hub Optimal', desc: 'Central hub operating at peak efficiency.' }
         ];
@@ -219,7 +218,6 @@ const getNotifications = async (req, res) => {
         // 1. Check for traffic/weather alerts from map data logic
         const alerts = [
             { type: 'Traffic Alert', title: 'Traffic Anomaly', message: 'Heavy congestion detected on Mount Road', typeKey: 'warning' },
-            { type: 'Weather Alert', title: 'Weather Alert', message: 'Heavy rain expected in Guindy zone', typeKey: 'warning' },
             { type: 'Info', title: 'New Hub', message: 'Central hub is now operating at peak efficiency', typeKey: 'info' }
         ];
         const randomAlert = alerts[Math.floor(Math.random() * alerts.length)];
@@ -261,4 +259,61 @@ const getNotifications = async (req, res) => {
     }
 };
 
-module.exports = { getUsers, deleteUser, getWarehouses, createWarehouse, getAllParcels, createParcel, getDashboardStats, getLiveMapData, getNotifications };
+// @desc    Get routing reassignment suggestions (Stage 9 Load Balancing)
+// @route   GET /api/admin/reassignment-suggestions
+// @access  Private/Admin
+const getReassignmentSuggestions = async (req, res) => {
+    try {
+        const drivers = await User.find({ role: 'driver' });
+        
+        let driverStats = await Promise.all(drivers.map(async (driver) => {
+            const activeStops = await Parcel.countDocuments({ assignedDriver: driver._id, status: { $ne: 'Delivered' } });
+            
+            // Mocking runtime GPS/Delay arrays for statistical demonstration
+            const todayDistance = Math.floor(Math.random() * 80); 
+            const cumulativeDelay = Math.floor(Math.random() * 45); 
+
+            const burdenScore = parseFloat(calculateBurdenScore(todayDistance, activeStops, cumulativeDelay));
+
+            return {
+                id: driver._id,
+                name: driver.name,
+                activeStops,
+                todayDistance,
+                cumulativeDelay,
+                burdenScore
+            };
+        }));
+
+        // Sort by burden descending
+        driverStats.sort((a, b) => b.burdenScore - a.burdenScore);
+
+        if (driverStats.length < 2) {
+            return res.json({ message: "Not enough drivers for load balancing" });
+        }
+
+        const overloadedDriver = driverStats[0];
+        const underloadedDriver = driverStats[driverStats.length - 1];
+
+        // Stage 9 Threshold logic
+        if (overloadedDriver.burdenScore > 0.8 && underloadedDriver.burdenScore < 0.5) {
+            res.json({
+                status: "REASSIGNMENT_RECOMMENDED",
+                overloadedDriver,
+                suggestedDriver: underloadedDriver,
+                recommendation: `Transfer 2 pending deliveries from ${overloadedDriver.name} to ${underloadedDriver.name} to balance regional load.`
+            });
+        } else {
+            res.json({
+                status: "OPTIMAL",
+                driverStats,
+                message: "All driver workloads are currently within optimal thresholds."
+            });
+        }
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { getUsers, deleteUser, getWarehouses, createWarehouse, getAllParcels, createParcel, getDashboardStats, getLiveMapData, getNotifications, getReassignmentSuggestions };

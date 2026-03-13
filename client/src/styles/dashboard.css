@@ -1119,3 +1119,46 @@ body {
   background: rgba(255, 255, 255, 0.03) !important;
   margin-bottom: 1rem !important;
 }
+
+/* Dashboard Tabs */
+.dashboard-tabs-container {
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    padding-bottom: 5px;
+}
+
+.dashboard-tabs {
+    display: inline-flex;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.5rem;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dashboard-tabs .tab-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.7rem 1.4rem;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dashboard-tabs .tab-item:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.dashboard-tabs .tab-item.active {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
+}

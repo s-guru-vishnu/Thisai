@@ -52,7 +52,7 @@ const ProfilePage = () => {
         { id: 'visibility', label: 'Visibility', icon: <Eye size={18} />, allowed: userInfo.role === 'admin' || userInfo.role === 'manager' || userInfo.role === 'seller' || userInfo.role === 'warehouse' },
         { id: 'accounts', label: 'Accounts', icon: <Shield size={18} />, allowed: true },
         { id: 'addresses', label: 'Addresses', icon: <MapPin size={18} />, allowed: true },
-        { id: 'appearance', label: 'Appearance', icon: <Palette size={18} />, allowed: userInfo.role === 'admin' || userInfo.role === 'manager' || userInfo.role === 'seller' || userInfo.role === 'customer' }
+        { id: 'appearance', label: 'Appearance', icon: <Palette size={18} />, allowed: true }
     ].filter(tab => tab.allowed);
 
     // Redirect fallback if accessing a disallowed route or invalid tab
