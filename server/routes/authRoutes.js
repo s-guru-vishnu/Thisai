@@ -1,8 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { loginUser, registerUser, changePassword, deleteAccount } = require('../controllers/authController');
-const { protect } = require('../middleware/authMiddleware');
+const { loginUser, registerUser, changePassword, deleteAccount, findCustomerByEmail, getAllUsers, updateUserRole, getWarehouses } = require('../controllers/authController');
+const { protect, authorize } = require('../middleware/authMiddleware');
 const { updateProfile, updatePreferences, updatePlatforms, updateVisibility } = require('../controllers/userSettingsController');
+
+router.get('/users', protect, authorize('admin', 'manager'), getAllUsers);
+router.put('/users/:id/role', protect, authorize('admin', 'manager'), updateUserRole);
+router.get('/warehouses', protect, getWarehouses);
+router.get('/find-customer/:email', protect, findCustomerByEmail);
 
 // @route   POST /api/auth/login
 // @desc    Auth user & get token
@@ -26,7 +31,12 @@ router.post('/seed', async (req, res) => {
             { name: 'Driver John', email: 'driver@impact.com', password: 'password123', role: 'driver' },
             { name: 'Valued Customer', email: 'customer@impact.com', password: 'password123', role: 'customer' },
             { name: 'Parcel Receiver', email: 'receiver@impact.com', password: 'password123', role: 'parcel_receiver' },
-            { name: 'Retail Seller', email: 'seller@impact.com', password: 'password123', role: 'seller' }
+            { name: 'Retail Seller', email: 'seller@impact.com', password: 'password123', role: 'seller' },
+            { name: 'Western Region Driver', email: 'driver.west@logistics.com', password: 'password123', role: 'cargo_driver', region: 'Western Tamil Nadu', hub: 'Coimbatore' },
+            { name: 'Northern Region Driver', email: 'driver.north@logistics.com', password: 'password123', role: 'cargo_driver', region: 'Northern Tamil Nadu', hub: 'Chennai' },
+            { name: 'Central Region Driver', email: 'driver.central@logistics.com', password: 'password123', role: 'cargo_driver', region: 'Central Tamil Nadu', hub: 'Trichy' },
+            { name: 'Southern Region Driver', email: 'driver.south@logistics.com', password: 'password123', role: 'cargo_driver', region: 'Southern Tamil Nadu', hub: 'Madurai' },
+            { name: 'Coastal South Driver', email: 'driver.coastal@logistics.com', password: 'password123', role: 'cargo_driver', region: 'Coastal South', hub: 'Tirunelveli' }
         ];
 
         const createdUsers = [];

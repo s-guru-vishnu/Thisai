@@ -3,6 +3,8 @@ import { Routes, Route } from 'react-router-dom';
 import CustomerDashboard from '../dashboards/CustomerDashboard';
 import CustomerTrack from '../dashboards/CustomerTrack';
 import CustomerHistory from '../dashboards/CustomerHistory';
+import AddressBook from '../dashboards/AddressBook';
+import AddAddress from '../dashboards/AddAddress';
 
 const CustomerRoutes = () => {
     return (
@@ -10,6 +12,8 @@ const CustomerRoutes = () => {
             <Route path="/" element={<CustomerDashboard />} />
             <Route path="track" element={<CustomerTrack />} />
             <Route path="history" element={<CustomerHistory />} />
+            <Route path="addresses" element={<AddressBook />} />
+            <Route path="addresses/add" element={<AddAddress />} />
         </Routes>
     );
 };

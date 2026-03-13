@@ -12,7 +12,9 @@ const getParcelByTrackingId = async (req, res) => {
         // In reality: await Parcel.findOne({ trackingCode: trackingId })
         // Returning mock structure as defined in instructions for immediate frontend integration testing
         
-        let parcel = await Parcel.findOne({ trackingCode: trackingId }).populate('driver');
+        let parcel = await Parcel.findOne({ 
+            $or: [{ trackingCode: trackingId }, { parcelId: trackingId }] 
+        }).populate('assignedDriver');
         
         if (!parcel) {
             // Mock failover if actual DB record doesn't exist yet but UI needs testing
@@ -44,7 +46,7 @@ const getParcelByTrackingId = async (req, res) => {
             deliveryAddress: parcel.deliveryAddress,
             eta: "15 min",
             status: parcel.status,
-            driverName: parcel.driver ? parcel.driver.name : 'Unassigned',
+            driverName: parcel.assignedDriver ? parcel.assignedDriver.name : 'Unassigned',
             driverLocation: parcel.currentLocation || { lat: 13.0827, lng: 80.2707 },
             timeline: [
                 { title: 'Order Created', time: '10:00 AM', completed: true },
@@ -65,12 +67,12 @@ const getParcelByTrackingId = async (req, res) => {
 const getUserParcelHistory = async (req, res) => {
     try {
         const { userId } = req.params;
-        // In reality: await Parcel.find({ customer: userId, status: 'Delivered' })
-        // Return structured list
-        res.json([
-             { trackingId: "1234567890", productName: 'Laptop Stand', pickupLocation: 'Chennai Hub', deliveryAddress: 'Home', deliveredDate: '2023-10-01', status: 'Delivered', timeline: [{title: 'Delivered', time: '02:00 PM', completed: true}], proof: 'Signed by Receiver', receiverName: 'Customer' },
-             { trackingId: "0987654321", productName: 'Wireless Mouse', pickupLocation: 'Bangalore Hub', deliveryAddress: 'Home', deliveredDate: '2023-09-15', status: 'Delivered', timeline: [{title: 'Delivered', time: '11:00 AM', completed: true}], proof: 'Left at Door', receiverName: 'Customer' }
-        ]);
+        const history = await Parcel.find({ 
+            customer: userId, 
+            status: 'Delivered' 
+        }).populate('assignedDriver');
+        
+        res.json(history);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -204,10 +206,52 @@ const getCustomerNotifications = async (req, res) => {
     }
 };
 
+// @desc    Get active (latest non-delivered) shipment for customer
+// @route   GET /api/parcel/active
+// @access  Private
+const getActiveShipment = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const parcel = await Parcel.findOne({
+            customer: userId,
+            status: { $ne: 'Delivered' }
+        }).sort({ createdAt: -1 })
+        .populate('assignedDriver')
+        .populate('originWarehouse', 'name hub region')
+        .populate('destinationWarehouse', 'name hub region')
+        .populate('intermediateHubs', 'name hub region');
+
+        if (!parcel) {
+            return res.json(null);
+        }
+
+        res.json({
+            trackingId: parcel.parcelId,
+            productName: parcel.productName,
+            status: parcel.status,
+            eta: "Calculating...",
+            driverName: parcel.assignedDriver ? parcel.assignedDriver.name : 'Unassigned',
+            logisticsPath: {
+                origin: parcel.originWarehouse?.name || 'Local Pickup',
+                destination: parcel.destinationWarehouse?.name || 'Final Delivery Hub',
+                hubs: parcel.intermediateHubs?.map(h => h.name) || [],
+                fullRoute: [
+                    parcel.originWarehouse?.name,
+                    ...(parcel.intermediateHubs?.map(h => h.name) || []),
+                    parcel.destinationWarehouse?.name
+                ].filter(Boolean)
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getParcelByTrackingId,
     getUserParcelHistory,
     getLiveDriverLocation,
     getDelayPrediction,
-    getCustomerNotifications
+    getCustomerNotifications,
+    getActiveShipment
 };

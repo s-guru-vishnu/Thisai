@@ -46,7 +46,7 @@ const LocationRequiredModal = ({ isOpen, onClose }) => {
                     <button 
                         onClick={() => {
                             onClose();
-                            navigate('/profile/settings/basic-info');
+                            navigate('/settings/addresses');
                         }}
                         className="primary-btn flex items-center justify-center gap-2"
                         style={{ height: '50px', fontSize: '1.1rem' }}

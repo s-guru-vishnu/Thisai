@@ -23,6 +23,7 @@ const protect = async (req, res, next) => {
 const authorize = (...roles) => {
     return (req, res, next) => {
         if (!roles.includes(req.user.role)) {
+            console.log(`Authorization failed: User ${req.user.email} has role ${req.user.role}, but roles ${roles} are required.`);
             return res.status(403).json({ message: `User role ${req.user.role} is not authorized to access this route` });
         }
         next();

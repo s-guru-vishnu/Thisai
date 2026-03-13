@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { LayoutDashboard, Users, Map, Package, Truck, BrainCircuit, User, LogOut, Menu, X, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, Map, Package, Truck, BrainCircuit, User, LogOut, Menu, X, Bell, MapPin } from 'lucide-react';
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -17,6 +17,7 @@ const Navbar = () => {
     const isCustomer = userInfo.role === 'customer';
     const isReceiver = userInfo.role === 'parcel_receiver';
     const isManager = userInfo.role === 'manager';
+    const isDriver = ['driver', 'cargo_driver', 'delivery_driver'].includes(userInfo.role);
 
     const firstLetter = userInfo.name ? userInfo.name.charAt(0).toUpperCase() : '?';
 
@@ -31,9 +32,14 @@ const Navbar = () => {
                 }
             };
             
-            let url = `${apiBase}/api/admin/notifications`;
-            if (isCustomer) {
+            let url = '';
+            if (isAdmin) {
+                url = `${apiBase}/api/admin/notifications`;
+            } else if (isCustomer) {
                 url = `${apiBase}/api/parcel/notifications`;
+            } else {
+                // For other roles, we don't have a notification endpoint yet
+                return;
             }
             
             const { data } = await axios.get(url, config);
@@ -76,6 +82,7 @@ const Navbar = () => {
 
         // Manager specific
         { name: 'Parcels', path: '/manager', icon: <Package size={18} />, show: isManager },
+        { name: 'User Management', path: '/manager/users', icon: <Users size={18} />, show: isManager },
         { name: 'Scan QR', path: '/manager/scan', icon: <LayoutDashboard size={18} />, show: isManager },
         { name: 'Manual Entry', path: '/manager/manual', icon: <LayoutDashboard size={18} />, show: isManager },
 
@@ -83,6 +90,9 @@ const Navbar = () => {
         { name: 'Dashboard', path: '/customer', icon: <LayoutDashboard size={18} />, show: isCustomer },
         { name: 'Track', path: '/customer/track', icon: <Map size={18} />, show: isCustomer },
         { name: 'History', path: '/customer/history', icon: <Package size={18} />, show: isCustomer },
+        
+        // Driver specific
+        { name: 'Dashboard', path: '/driver', icon: <LayoutDashboard size={18} />, show: isDriver },
     ];
 
     return (
@@ -179,10 +189,19 @@ const Navbar = () => {
                             fontWeight: '700',
                             color: 'var(--accent)',
                             fontSize: '0.9rem',
-                            boxShadow: isProfileOpen ? '0 0 12px var(--accent-glow)' : 'none'
+                            boxShadow: isProfileOpen ? '0 0 12px var(--accent-glow)' : 'none',
+                            overflow: 'hidden'
                         }}
                     >
-                        {firstLetter}
+                        {userInfo.avatar ? (
+                            <img 
+                                src={userInfo.avatar} 
+                                alt="Profile" 
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                            />
+                        ) : (
+                            firstLetter
+                        )}
                     </div>
 
                     {isProfileOpen && (

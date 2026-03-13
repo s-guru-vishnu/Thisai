@@ -8,111 +8,47 @@ import '../styles/dashboard.css';
 const DriverDashboard = () => {
     const [map, setMap] = useState(null);
     const [activeDeliveries, setActiveDeliveries] = useState([]);
-    const [driverLocation, setDriverLocation] = useState({ lat: 12.9341, lng: 79.1367 });
-    const [warehouseLocation, setWarehouseLocation] = useState(null);
-    const [routingPhase, setRoutingPhase] = useState("PICKUP"); // PICKUP or DELIVERY
-    const [nextETA, setNextETA] = useState("-");
-    const [targetLabel, setTargetLabel] = useState("");
-    const [liveSpeed, setLiveSpeed] = useState(0);
-    const [heading, setHeading] = useState("N");
-    const [driverStatus, setDriverStatus] = useState("NOT_STARTED");
-    const [driverName, setDriverName] = useState("Driver");
-    const [warehouseName, setWarehouseName] = useState("Hub");
-    const [driverAddress, setDriverAddress] = useState("");
-    const [warehouseAddress, setWarehouseAddress] = useState("");
-    const [weatherAlert, setWeatherAlert] = useState(null);
-    const [trafficAlerts, setTrafficAlerts] = useState([]);
-    const [isWeatherSafe, setIsWeatherSafe] = useState(true);
-    const [isTrafficClear, setIsTrafficClear] = useState(true);
-    const locationRef = useRef(driverLocation);
+    const [driverLocation, setDriverLocation] = useState({ lat: 11.0168, lng: 76.9558 }); // Default Coimbatore
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
 
     // Stage 1: Dynamic GPS Streaming Engine
     useEffect(() => {
-        if (!navigator.geolocation) return;
+        const fetchDriverData = async () => {
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const driverId = userInfo._id;
 
-        const driverId = '69b11da377e9b9ba50767c50';
-        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-
-        const watchId = navigator.geolocation.watchPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-                try {
-                    await axios.post(`${apiBase}/api/driver/location`, {
-                        driverId,
-                        lat: latitude,
-                        lng: longitude,
-                        timestamp: position.timestamp
-                    });
-                } catch (err) {
-                    console.error("GPS_STREAM_ERR:", err);
-                }
-            },
-            (err) => console.warn("GEOLOC_ERR:", err),
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-        );
-
-        return () => navigator.geolocation.clearWatch(watchId);
-    }, []);
-
-    useEffect(() => {
-        locationRef.current = driverLocation;
-    }, [driverLocation]);
-
-    // Live Weather Polling
-    useEffect(() => {
-        const fetchWeatherAlerts = async () => {
-            try {
-                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-                const { lat, lng } = locationRef.current;
-                const res = await axios.get(`${apiBase}/api/weather/live?lat=${lat}&lng=${lng}`);
-                if (res.data) {
-                    let alertString = `☀ Clear weather — optimal travel`;
-                    let iconColor = "#00cc66";
-                    if (res.data.riskLevel === 'HIGH') {
-                        alertString = `⚠ Severe weather detected near route: ${res.data.weatherDescription}`;
-                        iconColor = "#ff3333";
-                    } else if (res.data.riskLevel === 'MEDIUM') {
-                        alertString = `🌬 High wind/weather warning: ${res.data.weatherDescription}`;
-                        iconColor = "#ffaa00";
-                    }
-                    setWeatherAlert({ message: alertString, color: iconColor });
-                }
-            } catch (err) {
-                console.error('Failed to fetch live weather:', err);
-                setWeatherAlert({ message: '⚠ Weather API Offline', color: '#555' });
-            }
-        };
-        fetchWeatherAlerts();
-        const weatherInterval = setInterval(fetchWeatherAlerts, 60000);
-        return () => clearInterval(weatherInterval);
-    }, []);
+            if (!driverId) return;
 
     useEffect(() => {
         const fetchDriverData = async () => {
             const driverId = '69b11da377e9b9ba50767c50';
             const apiBase = 'http://localhost:5000';
             try {
-                const routeRes = await axios.get(`${apiBase}/api/driver/optimized-route/${driverId}`);
-                if (routeRes.data && routeRes.data.optimizedStopSequence) {
-                    setActiveDeliveries(routeRes.data.optimizedStopSequence || []);
-                    setRoutingPhase(routeRes.data.routingPhase || "PICKUP");
-                    setWarehouseLocation(routeRes.data.warehouseLocation);
-                    setNextETA(routeRes.data.nextActionETA || "-");
-                    setTargetLabel(routeRes.data.targetLabel || "");
-                    setLiveSpeed(routeRes.data.liveSpeed || 0);
-                    setHeading(routeRes.data.heading || "N");
-                    setDriverStatus(routeRes.data.driverStatus || "NOT_STARTED");
-                    setWarehouseAddress(routeRes.data.warehouseAddress || "Logistics Hub");
-                    setDriverName(routeRes.data.driverName || "Driver");
-                    setWarehouseName(routeRes.data.warehouseName || "Hub");
+                // Fetch driver route / stops from assigned parcels
+                const routeRes = await axios.get(`${apiBase}/api/driver/route/${driverId}`, {
+                    headers: { Authorization: `Bearer ${userInfo.token}` }
+                });
 
-                    if (routeRes.data.driverLocation) {
-                        setDriverLocation(routeRes.data.driverLocation);
-                        locationRef.current = routeRes.data.driverLocation;
+                if (routeRes.data && routeRes.data.stops) {
+                    setActiveDeliveries(routeRes.data.stops);
+                    // If we have stops, focus on the first one as initial location fallback
+                    if (routeRes.data.stops.length > 0 && !driverLocation) {
+                        setDriverLocation(routeRes.data.stops[0].location);
                     }
-                    if (routeRes.data.trafficAlerts) setTrafficAlerts(routeRes.data.trafficAlerts);
-                    if (routeRes.data.isWeatherSafe !== undefined) setIsWeatherSafe(routeRes.data.isWeatherSafe);
-                    if (routeRes.data.isTrafficClear !== undefined) setIsTrafficClear(routeRes.data.isTrafficClear);
+                }
+            } catch (err) {
+                console.error("API Fetch Error", err);
+                // Fallback to local storage or mock
+                const saved = localStorage.getItem('sellerDeliveries');
+                if (saved) {
+                    try {
+                        const allDels = JSON.parse(saved);
+                        if (Array.isArray(allDels)) {
+                            setActiveDeliveries(allDels.map(d => ({ ...d, status: 'In Transit' })));
+                        }
+                    } catch (e) {
+                        console.error("Error parsing fallback deliveries:", e);
+                    }
                 }
             } catch (err) {
                 console.error("Dashboard Sync Error:", err);
@@ -197,6 +133,32 @@ const DriverDashboard = () => {
                                 </p>
                             </div>
                         ))}
+                    </div>
+
+                    <div 
+                        onClick={() => window.location.href = '/settings/addresses'}
+                        style={{ 
+                            marginTop: '2rem',
+                            padding: '15px', 
+                            borderRadius: '12px', 
+                            background: 'rgba(255,255,255,0.03)', 
+                            border: '1px solid var(--border-color)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            transition: 'all 0.3s'
+                        }}
+                        onMouseOver={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+                    >
+                        <div style={{ background: 'rgba(255,107,0,0.1)', color: 'var(--accent)', padding: '8px', borderRadius: '10px' }}>
+                            <MapPin size={20} />
+                        </div>
+                        <div>
+                            <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Managed Locations</h4>
+                            <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: '#888' }}>Quick access to saved addresses.</p>
+                        </div>
                     </div>
                 </div>
 

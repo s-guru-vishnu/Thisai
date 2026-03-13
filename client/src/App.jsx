@@ -1,6 +1,8 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './components/Login';
+import Register from './components/Register';
+import LocationEnforcementModal from './components/LocationEnforcementModal';
 
 import AdminRoutes from './routes/adminRoutes';
 import ManagerRoutes from './routes/managerRoutes';
@@ -9,44 +11,116 @@ import CustomerRoutes from './routes/customerRoutes';
 import ParcelReceiverRoutes from './routes/parcelReceiverRoutes';
 import SellerRoutes from './routes/sellerRoutes';
 import SettingsRoutes from './routes/settingsRoutes';
+import './styles/dashboard.css';
 
-function App() {
-    useEffect(() => {
+function AppContent() {
+    const [showLocationModal, setShowLocationModal] = useState(false);
+    const location = useLocation();
+
+    const checkLocation = () => {
+        // If the user is on the login or register page, don't show the modal
+        if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/') {
+            setShowLocationModal(false);
+            return;
+        }
+
         const userInfoRaw = localStorage.getItem('userInfo');
-        if (userInfoRaw) {
+        if (userInfoRaw && userInfoRaw !== 'undefined' && userInfoRaw !== 'null') {
+            try {
+                const userInfo = JSON.parse(userInfoRaw);
+                if (userInfo && typeof userInfo === 'object') {
+                    // Check for existence of coordinates. 
+                    // We check specifically for latitude not being null/undefined to avoid issues with 0 coordinates.
+                    const loc = userInfo.location;
+                    const hasLocation = loc && (loc.latitude !== null && loc.latitude !== undefined) && (loc.addressLine1 || loc.city);
+
+                    if (!hasLocation && userInfo.role === 'customer') {
+                        // User requested to remove this mandatory popup
+                        setShowLocationModal(false);
+                    } else {
+                        setShowLocationModal(false);
+                    }
+                }
+            } catch (e) {
+                console.error("Error parsing userInfo:", e);
+                setShowLocationModal(false);
+            }
+        } else {
+            setShowLocationModal(false);
+        }
+    };
+
+    const applyTheme = () => {
+        const userInfoRaw = localStorage.getItem('userInfo');
+        const standaloneTheme = localStorage.getItem('theme');
+        let activeTheme = standaloneTheme;
+
+        if (userInfoRaw && userInfoRaw !== 'undefined' && userInfoRaw !== 'null') {
             try {
                 const userInfo = JSON.parse(userInfoRaw);
                 const prefs = userInfo.preferences;
                 if (prefs && prefs.accentColor) {
-                    document.documentElement.style.setProperty('--accent', prefs.accentColor);
-                    document.documentElement.style.setProperty('--accent-glow', `${prefs.accentColor}40`);
-                    document.documentElement.style.setProperty('--border-accent', `${prefs.accentColor}66`); // 40% opacity
+                    const root = document.documentElement;
+                    root.style.setProperty('--accent', prefs.accentColor);
+                    root.style.setProperty('--accent-glow', `${prefs.accentColor}40`);
+                    root.style.setProperty('--border-accent', `${prefs.accentColor}66`);
                 }
-                if (prefs && prefs.theme) {
-                    const savedTheme = prefs.theme;
-                    if (savedTheme === 'dark') {
-                        document.body.classList.add('dark-mode');
-                        document.body.classList.remove('light-mode');
-                    } else if (savedTheme === 'light') {
-                        document.body.classList.add('light-mode');
-                        document.body.classList.remove('dark-mode');
-                    } else {
-                        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                            document.body.classList.add('dark-mode');
-                        } else {
-                            document.body.classList.add('light-mode');
-                        }
-                    }
+                
+                // If logged in and no manual override on current session, use prefs
+                if (prefs && prefs.theme && !standaloneTheme) {
+                    activeTheme = prefs.theme;
                 }
-            } catch(e) {}
+            } catch (e) { }
         }
-    }, []);
+
+        if (activeTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+            document.body.classList.remove('light-mode');
+        } else if (activeTheme === 'light') {
+            document.body.classList.add('light-mode');
+            document.body.classList.remove('dark-mode');
+        } else {
+            // OS Default
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.body.classList.add('dark-mode');
+                document.body.classList.remove('light-mode');
+            } else {
+                document.body.classList.add('light-mode');
+                document.body.classList.remove('dark-mode');
+            }
+        }
+    };
+
+    useEffect(() => {
+        applyTheme();
+    }, [location.pathname]);
+
+    useEffect(() => {
+        checkLocation();
+        applyTheme();
+
+        // Listen for storage changes (like theme toggle on login page)
+        const handleStorageChange = () => {
+            checkLocation();
+            applyTheme();
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, [location.pathname]);
+
+    const handleLocationSaved = () => {
+        setShowLocationModal(false);
+    };
 
     return (
-        <Router>
+        <div className="app-main-wrapper">
+            {showLocationModal && <LocationEnforcementModal onLocationSaved={handleLocationSaved} />}
+
             <Routes>
                 <Route path="/" element={<Navigate to="/login" />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
 
                 {/* Role-based Independent Routers */}
                 <Route path="/dashboard/*" element={<AdminRoutes />} />
@@ -55,11 +129,55 @@ function App() {
                 <Route path="/customer/*" element={<CustomerRoutes />} />
                 <Route path="/receiver/*" element={<ParcelReceiverRoutes />} />
                 <Route path="/seller/*" element={<SellerRoutes />} />
-                
+
                 {/* Universal Settings Route */}
                 <Route path="/settings/*" element={<SettingsRoutes />} />
             </Routes>
-        </Router>
+        </div>
+    );
+}
+
+class ErrorBoundary extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error("ErrorBoundary caught an error", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{ padding: '50px', textAlign: 'center', color: 'white', background: '#0b0b0c', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <h1 style={{ color: 'var(--accent, #ff6b00)' }}>Something went wrong.</h1>
+                    <p>The dashboard encountered a runtime error. Please try refreshing the page.</p>
+                    <button onClick={() => window.location.reload()} className="primary-btn" style={{ marginTop: '20px' }}>
+                        Refresh Page
+                    </button>
+                    <button onClick={() => { localStorage.clear(); window.location.href = '/login'; }} className="secondary-btn" style={{ marginTop: '10px', maxWidth: '200px' }}>
+                        Clear Cache & Logout
+                    </button>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}
+
+function App() {
+    return (
+        <ErrorBoundary>
+            <Router>
+                <AppContent />
+            </Router>
+        </ErrorBoundary>
     );
 }
 

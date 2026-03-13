@@ -130,8 +130,11 @@ const CustomerMap = ({ deliveryDetails }) => {
                 {/* Customer Location Marker */}
                 <Marker
                     position={customerLocation}
-                    icon="https://maps.google.com/mapfiles/ms/icons/red-dot.png"
-                    title="Your Location"
+                    icon={{
+                        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="20">📍</text></svg>')}`,
+                        anchor: new window.google.maps.Point(20, 20)
+                    }}
+                    title="Delivery Location"
                 />
             </GoogleMap>
         </div>

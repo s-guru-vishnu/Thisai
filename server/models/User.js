@@ -45,7 +45,7 @@ const userSchema = mongoose.Schema(
         role: {
             type: String,
             required: true,
-            enum: ['admin', 'manager', 'warehouse', 'driver', 'customer', 'parcel_receiver', 'seller'],
+            enum: ['admin', 'manager', 'warehouse', 'driver', 'customer', 'parcel_receiver', 'seller', 'cargo_driver', 'delivery_driver'],
             default: 'customer',
         },
         phone: { type: String, default: '' },
@@ -58,12 +58,14 @@ const userSchema = mongoose.Schema(
             theme: { type: String, default: 'system' },
             accentColor: { type: String, default: 'default' }
         },
+        nearestWarehouse: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        region: { type: String, default: '' },
+        hub: { type: String, default: '' },
         security: {
             twoFactorEnabled: { type: Boolean, default: false },
             activeSessions: { type: Array, default: [] }
         },
 
-        // Admin Fields
         companyName: { type: String, default: '' },
         companyType: { type: String, default: '' },
         headOfficeAddress: { type: String, default: '' },
@@ -71,14 +73,12 @@ const userSchema = mongoose.Schema(
         totalDrivers: { type: Number, default: 0 },
         businessRegistrationNumber: { type: String, default: '' },
 
-        // Manager Fields
         assignedWarehouse: { type: String, default: '' },
         teamSize: { type: Number, default: 0 },
         deliveryRegion: { type: String, default: '' },
         operatingShift: { type: String, default: '' },
         department: { type: String, default: '' },
 
-        // Driver Fields
         driverLicenseNumber: { type: String, default: '' },
         vehicleType: { type: String, default: '' },
         vehicleNumber: { type: String, default: '' },

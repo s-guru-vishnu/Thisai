@@ -14,7 +14,7 @@ const regionsMapping = [
     {
         region: 'Northern Tamil Nadu',
         hub: 'Chennai',
-        districts: ['Chennai', 'Thiruvallur', 'Tiruvallur', 'Kancheepuram', 'Kanchipuram', 'Chengalpattu', 'Vellore', 'Ranipet', 'Tirupathur', 'Tirupattur']
+        districts: ['Chennai', 'Thiruvallur', 'Tiruvallur', 'Kancheepuram', 'Kanchipuram', 'Chengalpattu', 'Vellore', 'Ranipet', 'Tirupathur', 'Tirupattur', 'Tiruvannamalai']
     },
     {
         region: 'Central Tamil Nadu',

@@ -22,7 +22,8 @@ const SellerDashboard = () => {
     const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ""
+        googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "",
+        libraries: ['places']
     });
 
     const [map, setMap] = useState(null);
@@ -38,12 +39,22 @@ const SellerDashboard = () => {
     // Load initial state from local storage or use defaults
     const [products, setProducts] = useState(() => {
         const saved = localStorage.getItem('sellerProducts');
-        return saved ? JSON.parse(saved) : [{ id: 1, name: 'Sample Watch', category: 'Accessories', weight: '0.1 kg', price: '1999', description: 'Luxury watch' }];
+        try {
+            const parsed = saved ? JSON.parse(saved) : null;
+            return Array.isArray(parsed) ? parsed : [{ id: 1, name: 'Sample Watch', category: 'Accessories', weight: '0.1 kg', price: '1999', description: 'Luxury watch' }];
+        } catch (e) {
+            return [{ id: 1, name: 'Sample Watch', category: 'Accessories', weight: '0.1 kg', price: '1999', description: 'Luxury watch' }];
+        }
     });
 
     const [deliveries, setDeliveries] = useState(() => {
         const saved = localStorage.getItem('sellerDeliveries');
-        return saved ? JSON.parse(saved) : [];
+        try {
+            const parsed = saved ? JSON.parse(saved) : null;
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+            return [];
+        }
     });
 
     // Sync to localStorage
@@ -99,11 +110,12 @@ const SellerDashboard = () => {
         showToast(`Product "${newProduct.name}" saved to catalog!`);
     };
 
+    const safeDeliveries = Array.isArray(deliveries) ? deliveries : [];
     const stats = {
-        total: deliveries.length,
-        pending: deliveries.filter(d => d.status === 'Pending Pickup' || !d.status).length,
-        transit: deliveries.filter(d => d.status === 'In Transit').length,
-        delivered: deliveries.filter(d => d.status === 'Delivered').length,
+        total: safeDeliveries.length,
+        pending: safeDeliveries.filter(d => d.status === 'Pending Pickup' || !d.status).length,
+        transit: safeDeliveries.filter(d => d.status === 'In Transit').length,
+        delivered: safeDeliveries.filter(d => d.status === 'Delivered').length,
     };
 
     return (
@@ -158,7 +170,7 @@ const SellerDashboard = () => {
                     </div>
                 </div>
 
-                <div className="dashboard-grid seller-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <div className="dashboard-grid seller-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
 
                     {/* Action Cards */}
                     <div className="action-module" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }} onClick={() => checkLocationAndProceed(() => setShowProductModal(true))}>
@@ -175,6 +187,14 @@ const SellerDashboard = () => {
                         </div>
                         <h2 style={{ margin: 0, paddingInline: '20px' }}>Dispatch Delivery</h2>
                         <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '10px', paddingInline: '40px' }}>Select an existing product and map it to a delivery location for immediate tracking using Google Maps.</p>
+                    </div>
+
+                    <div className="action-module" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }} onClick={() => navigate('/settings/addresses')}>
+                        <div className="icon-container" style={{ background: 'rgba(0,122,255,0.1)', padding: '2rem', borderRadius: '50%', marginBottom: '1rem', color: '#007aff' }}>
+                            <Navigation size={48} />
+                        </div>
+                        <h2 style={{ margin: 0, paddingInline: '20px' }}>Manage Addresses</h2>
+                        <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '10px', paddingInline: '40px' }}>Manage and set your default collection and delivery addresses for quick selection during dispatch.</p>
                     </div>
                 </div>
 

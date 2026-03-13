@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
-import { User, ClipboardList, Link, Eye, Shield, Palette, ArrowLeft } from 'lucide-react';
+import { User, ClipboardList, Link, Eye, Shield, Palette, ArrowLeft, MapPin } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 // Import all sub-components (stubs or actual)
@@ -10,6 +10,7 @@ import PlatformSettings from '../components/settings/PlatformSettings';
 import VisibilitySettings from '../components/settings/VisibilitySettings';
 import AccountsSettings from '../components/settings/AccountsSettings';
 import AppearanceSettings from '../components/settings/AppearanceSettings';
+import AddressSettings from '../components/settings/AddressSettings';
 import SkeletonLoader from '../components/SkeletonLoader';
 import Toast from '../components/Toast';
 
@@ -50,7 +51,8 @@ const ProfilePage = () => {
         { id: 'platform', label: 'Platform', icon: <Link size={18} />, allowed: userInfo.role === 'admin' || userInfo.role === 'manager' || userInfo.role === 'warehouse' || userInfo.role === 'seller' },
         { id: 'visibility', label: 'Visibility', icon: <Eye size={18} />, allowed: userInfo.role === 'admin' || userInfo.role === 'manager' || userInfo.role === 'seller' || userInfo.role === 'warehouse' },
         { id: 'accounts', label: 'Accounts', icon: <Shield size={18} />, allowed: true },
-        { id: 'appearance', label: 'Appearance', icon: <Palette size={18} />, allowed: true }
+        { id: 'addresses', label: 'Addresses', icon: <MapPin size={18} />, allowed: true },
+        { id: 'appearance', label: 'Appearance', icon: <Palette size={18} />, allowed: userInfo.role === 'admin' || userInfo.role === 'manager' || userInfo.role === 'seller' || userInfo.role === 'customer' }
     ].filter(tab => tab.allowed);
 
     // Redirect fallback if accessing a disallowed route or invalid tab
@@ -122,6 +124,7 @@ const ProfilePage = () => {
                                 {activeTab === 'platform' && <PlatformSettings userContext={userInfo} showToast={showToast} />}
                                 {activeTab === 'visibility' && <VisibilitySettings userContext={userInfo} showToast={showToast} />}
                                 {activeTab === 'accounts' && <AccountsSettings userContext={userInfo} showToast={showToast} />}
+                                {activeTab === 'addresses' && <AddressSettings userContext={userInfo} showToast={showToast} />}
                                 {activeTab === 'appearance' && <AppearanceSettings userContext={userInfo} showToast={showToast} />}
                             </>
                         )}

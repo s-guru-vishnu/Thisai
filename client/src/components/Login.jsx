@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
@@ -10,7 +10,6 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -38,6 +37,8 @@ const Login = () => {
                     navigate('/warehouse');
                     break;
                 case 'driver':
+                case 'cargo_driver':
+                case 'delivery_driver':
                     navigate('/driver');
                     break;
                 case 'customer':
@@ -73,8 +74,11 @@ const Login = () => {
         }
     };
 
+    const navigate = useNavigate();
+
     return (
         <div className="login-container">
+
             <div className="login-box">
                 <div className="login-header">
                     <img src="/Thisai.png" alt="Thisai Logo" className="logo-orb large-orb" />
@@ -135,6 +139,7 @@ const Login = () => {
                 </form>
 
                 <div className="seed-section">
+                    <p className="seed-text" style={{ marginBottom: '10px' }}>Don't have an account? <span onClick={() => navigate('/register')} style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 'bold' }}>Register as Customer</span></p>
                     <p className="seed-text">First time setup? Need test accounts?</p>
                     <button onClick={handleSeedDatabase} className="secondary-btn" disabled={loading}>
                         Seed Default Database
