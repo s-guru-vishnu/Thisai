@@ -1,30 +1,89 @@
 const Parcel = require('../models/Parcel');
+const User = require('../models/User');
+const Address = require('../models/Address');
 
 // @desc    Create a new parcel
 // @route   POST /api/parcels
 // @access  Private (Parcel Receiver)
 const createParcel = async (req, res) => {
     try {
-        const { customer, customerName, deliveryAddress, destination } = req.body;
-        const seller = req.user; // Assuming req.user is populated by authentication middleware
-
-        // 1. Find Customer Profile
+        let { customer, customerName, deliveryAddress, destination } = req.body;
+        
+        // 1. Find Full Profiles
+        const sellerProfile = await User.findById(req.user._id);
+        if (!sellerProfile) {
+            return res.status(404).json({ message: 'Seller profile not found' });
+        }
         const customerProfile = await User.findById(customer);
+        
         if (!customerProfile) {
             return res.status(404).json({ message: 'Customer not found' });
         }
 
-        // 2. Determine Warehouses from explicit user preferences
-        // Assuming seller.nearestWarehouse and customerProfile.nearestWarehouse store User IDs of warehouse roles
-        const originWarehouse = await User.findById(seller.nearestWarehouse);
-        const destinationWarehouse = await User.findById(customerProfile.nearestWarehouse);
+        // Safety fallback for destination
+        if (!destination) {
+            destination = customerProfile.location?.city || customerProfile.city || 'Chennai';
+            req.body.destination = destination;
+        }
 
-        if (!originWarehouse || originWarehouse.role !== 'warehouse') {
-            return res.status(400).json({ message: 'Seller\'s nearest warehouse not found or invalid.' });
+        // 2. Determine Warehouses (Manual Specification Prioritized)
+        const sellerAddr = await Address.findOne({ userId: sellerProfile._id }).sort({ isDefault: -1, createdAt: -1 });
+        const customerAddr = await Address.findOne({ userId: customerProfile._id }).sort({ isDefault: -1, createdAt: -1 });
+
+        let originWH = null;
+        let destWH = null;
+
+        // Resolve Origin Hub
+        if (sellerAddr?.nearestHub) {
+            const manualHub = await User.findById(sellerAddr.nearestHub);
+            if (manualHub) {
+                // If they picked a manager, find the warehouse in same hub city
+                originWH = manualHub.role === 'warehouse' ? manualHub : await User.findOne({ role: 'warehouse', hub: manualHub.hub });
+            }
         }
-        if (!destinationWarehouse || destinationWarehouse.role !== 'warehouse') {
-            return res.status(400).json({ message: 'Customer\'s nearest warehouse not found or invalid.' });
+        
+        if (!originWH) {
+            originWH = await User.findOne({ 
+                role: 'warehouse', 
+                $or: [
+                    { hub: sellerProfile?.hub },
+                    { city: sellerProfile?.city },
+                    { city: sellerAddr?.townCity },
+                    { name: /Chennai/i }
+                ]
+            }).sort({ createdAt: 1 });
         }
+
+        // Resolve Destination Hub
+        if (customerAddr?.nearestHub) {
+            const manualHub = await User.findById(customerAddr.nearestHub);
+            if (manualHub) {
+                destWH = manualHub.role === 'warehouse' ? manualHub : await User.findOne({ role: 'warehouse', hub: manualHub.hub });
+            }
+        }
+
+        if (!destWH) {
+            destWH = await User.findOne({ 
+                role: 'warehouse', 
+                $or: [
+                    { city: destination },
+                    { hub: customerProfile.hub },
+                    { city: customerProfile.location?.city },
+                    { city: customerAddr?.townCity },
+                    { name: /Madurai/i }
+                ]
+            }).sort({ createdAt: 1 });
+        }
+
+        if (!originWH) {
+            return res.status(400).json({ message: 'No suitable origin warehouse found. Please set your hub in profile.' });
+        }
+        if (!destWH) {
+            return res.status(400).json({ message: 'No suitable destination warehouse found for this customer.' });
+        }
+
+        const originWarehouse = originWH;
+        const destinationWarehouse = destWH;
 
         // 3. Automated Hub Routing (if regions differ)
         const intermediateHubs = [];
@@ -55,8 +114,9 @@ const createParcel = async (req, res) => {
         
         const newParcel = new Parcel({
             ...req.body,
+            destination, // Ensure the resolved destination is used
             parcelId,
-            seller: seller.name,
+            seller: sellerProfile.name,
             customer: customerProfile._id,
             originWarehouse: originWarehouse._id,
             destinationWarehouse: destinationWarehouse._id,
@@ -65,10 +125,13 @@ const createParcel = async (req, res) => {
             status: req.body.status || 'Dispatched'
         });
 
+        console.log('Attempting to save parcel with destination:', newParcel.destination);
         const savedParcel = await newParcel.save();
+        console.log(`Parcel created successfully: ${parcelId}`);
         res.status(201).json(savedParcel);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Error in createParcel:', err);
+        res.status(500).json({ message: err.message });
     }
 };
 
@@ -77,7 +140,14 @@ const createParcel = async (req, res) => {
 // @access  Private
 const getParcels = async (req, res) => {
     try {
-        const parcels = await Parcel.find().sort({ createdAt: -1 });
+        let query = {};
+        
+        // If user is a seller, only show their own parcels
+        if (req.user && req.user.role === 'seller') {
+            query.seller = req.user.name;
+        }
+
+        const parcels = await Parcel.find(query).sort({ createdAt: -1 });
         res.status(200).json(parcels);
     } catch (err) {
         res.status(500).json({ error: err.message });

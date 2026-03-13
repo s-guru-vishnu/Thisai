@@ -1,4 +1,5 @@
 const Address = require('../models/Address');
+const User = require('../models/User');
 
 // @desc    Add a new address
 // @route   POST /api/address
@@ -11,6 +12,23 @@ const addAddress = async (req, res) => {
         });
 
         const createdAddress = await address.save();
+
+        // Sync to User location if it's the first/default address
+        if (createdAddress.isDefault) {
+            await User.findByIdAndUpdate(req.user._id, {
+                location: {
+                    addressLine1: createdAddress.area,
+                    city: createdAddress.townCity,
+                    state: createdAddress.state,
+                    country: createdAddress.country,
+                    postalCode: createdAddress.pincode,
+                    latitude: createdAddress.latitude,
+                    longitude: createdAddress.longitude
+                },
+                nearestWarehouse: createdAddress.nearestHub
+            });
+        }
+
         res.status(201).json(createdAddress);
     } catch (error) {
         res.status(400).json({ message: error.message });
@@ -50,6 +68,23 @@ const updateAddress = async (req, res) => {
             });
 
             const updatedAddress = await address.save();
+
+            // Sync to User location if it's set as default
+            if (updatedAddress.isDefault) {
+                await User.findByIdAndUpdate(req.user._id, {
+                    location: {
+                        addressLine1: updatedAddress.area,
+                        city: updatedAddress.townCity,
+                        state: updatedAddress.state,
+                        country: updatedAddress.country,
+                        postalCode: updatedAddress.pincode,
+                        latitude: updatedAddress.latitude,
+                        longitude: updatedAddress.longitude
+                    },
+                    nearestWarehouse: updatedAddress.nearestHub
+                });
+            }
+
             res.json(updatedAddress);
         } else {
             res.status(404);

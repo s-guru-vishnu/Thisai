@@ -4,7 +4,7 @@ const { createParcel, getParcels, getParcelById, updateParcel, deleteParcel } = 
 const { protect, checkLocation } = require('../middleware/authMiddleware');
 
 // Create a new parcel
-router.post('/', protect, checkLocation, createParcel);
+router.post('/', protect, createParcel);
 
 // Get all parcels
 router.get('/', getParcels);

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { QRCodeSVG } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
@@ -36,7 +36,7 @@ const SellerManualEntry = () => {
             return [];
         }
     });
-    const [userInfo] = useState(() => {
+    const [userInfo, setUserInfo] = useState(() => {
         const saved = localStorage.getItem('userInfo');
         try {
             const parsed = saved ? JSON.parse(saved) : null;
@@ -45,6 +45,60 @@ const SellerManualEntry = () => {
             return {};
         }
     });
+
+    // Check for origin location if missing in profile
+    const [sellerLocation, setSellerLocation] = useState(userInfo.location);
+    const [nearestHub, setNearestHub] = useState(null);
+    
+    useEffect(() => {
+        const fetchSellerLocation = async () => {
+            try {
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+                const { data: addresses } = await axios.get(`${apiBase}/api/address`, {
+                    headers: { Authorization: `Bearer ${userInfo.token}` }
+                });
+                
+                if (addresses && addresses.length > 0) {
+                    const def = addresses.find(a => a.isDefault) || addresses[0];
+                    const loc = {
+                        addressLine1: def.houseNumber + ', ' + def.area,
+                        city: def.townCity,
+                        state: def.state,
+                        postalCode: def.pincode,
+                        latitude: def.latitude,
+                        longitude: def.longitude
+                    };
+                    setSellerLocation(loc);
+
+                    // Find Nearest Hub (Manual Specification Prioritized)
+                    try {
+                        const { data: hubs } = await axios.get(`${apiBase}/api/auth/warehouses`, {
+                            headers: { Authorization: `Bearer ${userInfo.token}` }
+                        });
+                        
+                        let foundHub = null;
+                        if (def.nearestHub) {
+                            foundHub = hubs.find(h => h._id === def.nearestHub);
+                        }
+
+                        if (!foundHub) {
+                            const matchedHubs = hubs.filter(h => h.hub?.toLowerCase() === loc.city.toLowerCase() || h.city?.toLowerCase() === loc.city.toLowerCase());
+                            foundHub = matchedHubs.find(h => h.role === 'manager') || matchedHubs.find(h => h.role === 'warehouse');
+                        }
+                        
+                        if (foundHub) {
+                            setNearestHub(foundHub.name);
+                        }
+                    } catch (hubErr) {
+                        console.error("Failed to fetch hubs", hubErr);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch seller addresses", err);
+            }
+        };
+        fetchSellerLocation();
+    }, [userInfo.token]);
     const [loading, setLoading] = useState(false);
     const [lookupLoading, setLookupLoading] = useState(false);
     const [showQRSuccess, setShowQRSuccess] = useState(false);
@@ -103,8 +157,8 @@ const SellerManualEntry = () => {
                 }));
 
                 // Fetch Logistics Path
-                const startHub = userInfo.hub || 'Chennai'; // Fallback
-                const endHub = data.location.city || 'Madurai'; // Fallback
+                const startHub = sellerLocation?.city || userInfo.hub || 'Chennai';
+                const endHub = data.location?.city || 'Madurai';
                 
                 try {
                     const pathRes = await axios.get(`${apiBase}/api/logistics/path?startHub=${startHub}&endHub=${endHub}`, {
@@ -117,7 +171,12 @@ const SellerManualEntry = () => {
                     console.error("Path calculation failed", pathErr);
                 }
             } else {
-                setError('Customer found, but they have not set up their location details yet.');
+                setError('Customer found, but location details are missing. Please enter the delivery address manually.');
+                setFormData(prev => ({
+                    ...prev,
+                    customerName: data.name,
+                    customerId: data._id
+                }));
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Customer not found. Please verify the email.');
@@ -128,8 +187,8 @@ const SellerManualEntry = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.lat || !formData.lng) {
-            setError('Please fetch customer location using email first.');
+        if (!formData.customerId || !formData.deliveryAddress || !formData.destination) {
+            setError('Please find a customer and provide both a delivery address and a destination city.');
             return;
         }
 
@@ -164,7 +223,8 @@ const SellerManualEntry = () => {
             setGeneratedTrk(trk);
             setShowQRSuccess(true);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to dispatch product. Please try again.');
+            const msg = err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to dispatch product. Please try again.';
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -192,6 +252,25 @@ const SellerManualEntry = () => {
                     )}
 
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <Truck size={14} /> DISPATCHING FROM:
+                            </p>
+                            <p style={{ margin: '5px 0 0 0', fontWeight: 'bold' }}>
+                                {sellerLocation?.addressLine1 ? `${sellerLocation.addressLine1}, ${sellerLocation.city}` : 'No Origin Location Detected'}
+                            </p>
+                            {nearestHub && (
+                                <p style={{ margin: '5px 0 0 0', fontSize: '0.85rem', color: 'var(--accent)', fontWeight: '600' }}>
+                                    Nearest Hub: {nearestHub}
+                                </p>
+                            )}
+                            {!sellerLocation?.addressLine1 && (
+                                <p style={{ margin: '5px 0 0 0', fontSize: '0.75rem', color: 'var(--danger)' }}>
+                                    Warning: No dispatch hub set. Please add an address in your profile.
+                                </p>
+                            )}
+                        </div>
+
                         <div className="form-group">
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Select Catalog Product</label>
                             <select name="productId" value={formData.productId} onChange={handleInputChange} required style={{ width: '100%', cursor: 'pointer', padding: '0.8rem' }}>
@@ -231,7 +310,7 @@ const SellerManualEntry = () => {
 
                         <div className="form-group">
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Customer Name</label>
-                            <input name="customerName" value={formData.customerName} onChange={handleInputChange} required placeholder="Populated from email" style={{ width: '100%' }} readOnly />
+                            <input name="customerName" value={formData.customerName} onChange={handleInputChange} required placeholder="Enter customer name or fetch by email" style={{ width: '100%' }} />
                         </div>
 
                         <div className="form-group">
@@ -240,9 +319,8 @@ const SellerManualEntry = () => {
                                 name="deliveryAddress"
                                 value={formData.deliveryAddress}
                                 onChange={handleInputChange}
-                                placeholder="Populated from email"
+                                placeholder="Enter full delivery address"
                                 style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '10px', padding: '1rem', minHeight: '80px', resize: 'none' }}
-                                readOnly
                             />
                         </div>
 
@@ -256,12 +334,12 @@ const SellerManualEntry = () => {
                                 </select>
                             </div>
                             <div className="form-group">
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Destination</label>
-                                <input name="destination" value={formData.destination} onChange={handleInputChange} placeholder="Hub City" style={{ width: '100%' }} readOnly />
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Destination City</label>
+                                <input name="destination" value={formData.destination} onChange={handleInputChange} required placeholder="e.g. Madurai" style={{ width: '100%' }} />
                             </div>
                         </div>
 
-                        <button type="submit" disabled={loading || !formData.lat || formData.lat === center.lat} className="primary-btn pulse-glow" style={{ padding: '1.2rem', borderRadius: '12px', marginTop: '1rem', opacity: (!formData.lat || formData.lat === center.lat) ? 0.5 : 1 }}>
+                        <button type="submit" disabled={loading || !formData.customerId || !formData.deliveryAddress} className="primary-btn pulse-glow" style={{ padding: '1.2rem', borderRadius: '12px', marginTop: '1rem', opacity: (!formData.customerId || !formData.deliveryAddress) ? 0.5 : 1 }}>
                             <Navigation size={20} style={{ marginRight: '10px' }} />
                             {loading ? 'Processing...' : 'CONFIRM DISPATCH'}
                         </button>

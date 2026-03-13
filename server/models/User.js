@@ -61,6 +61,8 @@ const userSchema = mongoose.Schema(
         nearestWarehouse: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         region: { type: String, default: '' },
         hub: { type: String, default: '' },
+        isRegionalHub: { type: Boolean, default: false },
+        isBorderHub: { type: Boolean, default: false },
         security: {
             twoFactorEnabled: { type: Boolean, default: false },
             activeSessions: { type: Array, default: [] }

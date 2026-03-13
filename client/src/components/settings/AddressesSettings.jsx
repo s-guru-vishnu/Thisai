@@ -9,8 +9,9 @@ const AddressesSettings = ({ userContext, showToast }) => {
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [formLoading, setFormLoading] = useState(false);
-    const [locationLoading, setLocationLoading] = useState(false);
     const [showMap, setShowMap] = useState(false);
+    const [hubs, setHubs] = useState([]);
+    const [nearestHub, setNearestHub] = useState('');
 
     const [formData, setFormData] = useState({
         pincode: '',
@@ -24,7 +25,23 @@ const AddressesSettings = ({ userContext, showToast }) => {
         longitude: null,
         addressType: 'House',
         isDefault: false,
+        nearestHub: '',
     });
+
+    useEffect(() => {
+        const fetchHubs = async () => {
+            try {
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+                const { data } = await axios.get(`${apiBase}/api/auth/warehouses`, {
+                    headers: { Authorization: `Bearer ${userContext.token}` }
+                });
+                setHubs(data.filter(h => h.role === 'manager'));
+            } catch (err) {
+                console.error("Failed to fetch hubs", err);
+            }
+        };
+        fetchHubs();
+    }, [userContext.token]);
 
     const fetchAddresses = async () => {
         try {
@@ -65,6 +82,7 @@ const AddressesSettings = ({ userContext, showToast }) => {
             longitude: addr.longitude || null,
             addressType: addr.addressType || 'House',
             isDefault: addr.isDefault || false,
+            nearestHub: addr.nearestHub || '',
         });
         setEditingId(addr._id);
         setShowForm(true);
@@ -290,17 +308,38 @@ const AddressesSettings = ({ userContext, showToast }) => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '2.5rem' }}>
-                        <input 
-                            type="checkbox" 
-                            name="isDefault" 
-                            checked={formData.isDefault} 
-                            onChange={handleInputChange} 
-                            id="isDefault" 
-                            style={{ width: '20px', height: '20px', accentColor: 'var(--accent)' }} 
-                        />
-                        <label htmlFor="isDefault" style={{ fontSize: '0.95rem', color: 'var(--text-main)', cursor: 'pointer' }}>Make this my default address</label>
-                    </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem' }}>
+                            <input 
+                                type="checkbox" 
+                                name="isDefault" 
+                                checked={formData.isDefault} 
+                                onChange={handleInputChange} 
+                                id="isDefault" 
+                                style={{ width: '20px', height: '20px', accentColor: 'var(--accent)' }} 
+                            />
+                            <label htmlFor="isDefault" style={{ fontSize: '0.95rem', color: 'var(--text-main)', cursor: 'pointer' }}>Make this my default address</label>
+                        </div>
+
+                        <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '15px', border: '1px solid var(--border-color)', marginBottom: '2rem' }}>
+                             <label style={{ color: 'var(--text-muted)', marginBottom: '12px', display: 'block', fontSize: '0.9rem' }}>Specify Nearest Logistics Hub (Regional Manager)</label>
+                             <select 
+                                name="nearestHub" 
+                                value={formData.nearestHub} 
+                                onChange={handleInputChange} 
+                                style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white' }}
+                                required
+                            >
+                                <option value="">Select Nearest Distribution Hub</option>
+                                {hubs.map(hub => (
+                                    <option key={hub._id} value={hub._id}>
+                                        {hub.name} ({hub.hub || hub.city})
+                                    </option>
+                                ))}
+                            </select>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '8px' }}>
+                                Explicitly specifying a hub allows for faster routing through your preferred regional district.
+                            </p>
+                        </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginTop: '2rem', borderTop: '1px solid var(--border-color)', paddingTop: '2rem' }}>
                         <button type="button" onClick={() => setShowForm(false)} className="secondary-btn" style={{ padding: '14px' }}>Cancel</button>
@@ -348,6 +387,7 @@ const AddressesSettings = ({ userContext, showToast }) => {
                             longitude: null,
                             addressType: 'House',
                             isDefault: false,
+                            nearestHub: '',
                         });
                         handleUseCurrentLocation(); // Immediately open map
                     }}

@@ -12,13 +12,33 @@ const loginUser = async (req, res) => {
         const user = await User.findOne({ email });
 
         if (user && (await user.matchPassword(password))) {
+            let userLocation = user.location;
+            
+            // Fallback: If location is not set, try to fetch from Address collection
+            if (!userLocation || !userLocation.addressLine1) {
+                const Address = require('../models/Address');
+                const defaultAddress = await Address.findOne({ userId: user._id }).sort({ isDefault: -1, createdAt: -1 });
+                
+                if (defaultAddress) {
+                    userLocation = {
+                        addressLine1: defaultAddress.houseNumber + ', ' + defaultAddress.area,
+                        city: defaultAddress.townCity,
+                        state: defaultAddress.state,
+                        country: defaultAddress.country,
+                        postalCode: defaultAddress.pincode,
+                        latitude: defaultAddress.latitude,
+                        longitude: defaultAddress.longitude
+                    };
+                }
+            }
+
             res.json({
                 _id: user._id,
                 userId: user.userId,
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                location: user.location,
+                location: userLocation,
                 preferences: user.preferences,
                 token: generateToken(user._id)
             });
@@ -114,6 +134,23 @@ const findCustomerByEmail = async (req, res) => {
     try {
         const user = await User.findOne({ email: req.params.email, role: 'customer' }).select('name location email');
         if (user) {
+            // Fallback: If location is not set, try to fetch from Address collection
+            if (!user.location || !user.location.latitude) {
+                const Address = require('../models/Address');
+                const defaultAddress = await Address.findOne({ userId: user._id }).sort({ isDefault: -1, createdAt: -1 });
+                
+                if (defaultAddress) {
+                    user.location = {
+                        addressLine1: defaultAddress.houseNumber + ', ' + defaultAddress.area,
+                        city: defaultAddress.townCity,
+                        state: defaultAddress.state,
+                        country: defaultAddress.country,
+                        postalCode: defaultAddress.pincode,
+                        latitude: defaultAddress.latitude,
+                        longitude: defaultAddress.longitude
+                    };
+                }
+            }
             res.json(user);
         } else {
             res.status(404).json({ message: 'Customer not found' });
@@ -182,7 +219,7 @@ const updateUserRole = async (req, res) => {
 // @access  Public (or semi-public)
 const getWarehouses = async (req, res) => {
     try {
-        const warehouses = await User.find({ role: 'warehouse' }).select('name _id city region hub');
+        const warehouses = await User.find({ role: { $in: ['warehouse', 'manager'] } }).select('name _id city region hub role');
         res.json(warehouses);
     } catch (error) {
         res.status(500).json({ message: error.message });

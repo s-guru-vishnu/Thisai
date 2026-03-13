@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import axios from 'axios';
 import { Package, Truck, MapPin, CheckCircle, PlusCircle, Tag, Navigation, Box, ExternalLink, X } from 'lucide-react';
 import LocationRequiredModal from '../components/modals/LocationRequiredModal';
 import '../styles/dashboard.css';
@@ -47,24 +48,32 @@ const SellerDashboard = () => {
         }
     });
 
-    const [deliveries, setDeliveries] = useState(() => {
-        const saved = localStorage.getItem('sellerDeliveries');
+    const [deliveries, setDeliveries] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchDeliveries = async () => {
         try {
-            const parsed = saved ? JSON.parse(saved) : null;
-            return Array.isArray(parsed) ? parsed : [];
-        } catch (e) {
-            return [];
+            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const { data } = await axios.get(`${apiBase}/api/parcels`, {
+                headers: { Authorization: `Bearer ${userInfo.token}` }
+            });
+            setDeliveries(data);
+        } catch (err) {
+            console.error("Error fetching deliveries:", err);
+        } finally {
+            setLoading(false);
         }
-    });
+    };
+
+    useEffect(() => {
+        fetchDeliveries();
+    }, []);
 
     // Sync to localStorage
     useEffect(() => {
         localStorage.setItem('sellerProducts', JSON.stringify(products));
     }, [products]);
-
-    useEffect(() => {
-        localStorage.setItem('sellerDeliveries', JSON.stringify(deliveries));
-    }, [deliveries]);
 
 
 
@@ -113,7 +122,7 @@ const SellerDashboard = () => {
     const safeDeliveries = Array.isArray(deliveries) ? deliveries.filter(d => d && typeof d === 'object') : [];
     const stats = {
         total: safeDeliveries.length,
-        pending: safeDeliveries.filter(d => d.status === 'Pending Pickup' || !d.status).length,
+        pending: safeDeliveries.filter(d => d.status === 'Pending Pickup' || d.status === 'Dispatched' || d.status === 'Received' || !d.status).length,
         transit: safeDeliveries.filter(d => d.status === 'In Transit').length,
         delivered: safeDeliveries.filter(d => d.status === 'Delivered').length,
     };
@@ -175,10 +184,10 @@ const SellerDashboard = () => {
                     </div>
                 </div>
 
-                <div className="dashboard-grid seller-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <div className="dashboard-grid seller-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
 
                     {/* Action Cards */}
-                    <div className="action-module" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }} onClick={() => checkLocationAndProceed(() => setShowProductModal(true))}>
+                    <div className="action-module" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }} onClick={() => setShowProductModal(true)}>
                         <div className="icon-container" style={{ background: 'rgba(255,102,0,0.1)', padding: '2rem', borderRadius: '50%', marginBottom: '1rem', color: 'var(--accent)' }}>
                             <PlusCircle size={48} />
                         </div>
@@ -186,14 +195,62 @@ const SellerDashboard = () => {
                         <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '10px', paddingInline: '40px' }}>Register a new item into your digital inventory catalog to allow quick dispatching later.</p>
                     </div>
 
-                    <div className="action-module" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }} onClick={() => checkLocationAndProceed(() => navigate('/seller/dispatch'))}>
+                    <div className="action-module" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }} onClick={() => navigate('/seller/dispatch')}>
                         <div className="icon-container" style={{ background: 'rgba(0,204,102,0.1)', padding: '2rem', borderRadius: '50%', marginBottom: '1rem', color: 'var(--success)' }}>
                             <MapPin size={48} />
                         </div>
                         <h2 style={{ margin: 0, paddingInline: '20px' }}>Dispatch Delivery</h2>
                         <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '10px', paddingInline: '40px' }}>Select an existing product and map it to a delivery location for immediate tracking using Google Maps.</p>
                     </div>
+
+                    <div className="action-module" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }} onClick={() => navigate('/settings/addresses')}>
+                        <div className="icon-container" style={{ background: 'rgba(0,122,255,0.1)', padding: '2rem', borderRadius: '50%', marginBottom: '1rem', color: '#007aff' }}>
+                            <Navigation size={48} />
+                        </div>
+                        <h2 style={{ margin: 0, paddingInline: '20px' }}>Manage Addresses</h2>
+                        <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '10px', paddingInline: '40px' }}>Manage and set your default collection and delivery addresses for quick selection during dispatch.</p>
+                    </div>
                 </div>
+
+                {/* Interactive visual product list */}
+                {deliveries.length > 0 && (
+                    <div className="deliveries-wrapper" style={{ marginTop: '3rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px', marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0 }}>Recent Deliveries Tracker</h3>
+                            <Link to="/seller/deliveries" style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                View All <ExternalLink size={14} />
+                            </Link>
+                        </div>
+                        <div className="orders-table-container">
+                            <table className="orders-table" style={{ width: '100%' }}>
+                                <thead>
+                                    <tr>
+                                        <th style={{ textAlign: 'left', padding: '1rem' }}>Tracking ID</th>
+                                        <th style={{ textAlign: 'left', padding: '1rem' }}>Destination</th>
+                                        <th style={{ textAlign: 'left', padding: '1rem' }}>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {deliveries.slice(0, 3).map(del => (
+                                        <tr key={del._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <td style={{ padding: '1rem', fontWeight: 'bold', color: 'var(--accent)' }}>{del.parcelId}</td>
+                                            <td style={{ padding: '1rem' }}>{del.destination}</td>
+                                            <td style={{ padding: '1rem' }}>
+                                                <span className="status-badge" style={{ 
+                                                    background: del.status === 'Delivered' ? 'rgba(0,204,102,0.1)' : 'rgba(255,165,0,0.1)',
+                                                    color: del.status === 'Delivered' ? 'var(--success)' : 'orange',
+                                                    padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem'
+                                                }}>
+                                                    {del.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
 
                 {/* Interactive visual product list */}
                 {products.length > 0 && (

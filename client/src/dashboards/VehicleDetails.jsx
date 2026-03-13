@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import { 
     Truck, Shield, ShieldCheck, Gauge, 
-    Calendar, ClipboardCheck, Tool, 
+    Calendar, ClipboardCheck, 
     ArrowLeft, Save, AlertTriangle, 
     Activity, FileText, Zap, Settings2
 } from 'lucide-react';

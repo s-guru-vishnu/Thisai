@@ -34,7 +34,8 @@ function AppContent() {
                         const hasLocation = loc && (loc.latitude !== null && loc.latitude !== undefined) && (loc.addressLine1 || loc.city);
 
                         if (!hasLocation && userInfo.role === 'customer') {
-                            setShowLocationModal(true);
+                            // User requested to remove this mandatory popup
+                            setShowLocationModal(false);
                         } else {
                             setShowLocationModal(false);
                         }

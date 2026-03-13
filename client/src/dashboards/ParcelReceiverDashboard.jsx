@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import DashboardCard from '../components/DashboardCard';
-import { Box, X, CheckSquare, Package, Truck, Search, QrCode } from 'lucide-react';
+import { Box, X, CheckSquare, Package, Truck, Search, QrCode, MapPin } from 'lucide-react';
 
 const ParcelReceiverDashboard = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -46,6 +46,31 @@ const ParcelReceiverDashboard = () => {
                     <DashboardCard title="In Transit to Warehouse" value={inTransit.toLocaleString()} trend="-50 from yesterday" icon="🚚" trendPositive={true} />
                     <DashboardCard title="Seller Issues/Returns" value={issues.toLocaleString()} trend="+2 new issues" icon="⚠️" trendPositive={false} />
                 </section>
+
+                <div style={{ marginTop: '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                    <div 
+                        onClick={() => window.location.href = '/settings/addresses'}
+                        style={{ 
+                            background: 'rgba(255,255,255,0.03)', 
+                            padding: '1.5rem', 
+                            borderRadius: '15px', 
+                            border: '1px solid var(--border-color)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '15px',
+                            transition: 'all 0.3s'
+                        }}
+                    >
+                        <div style={{ background: 'rgba(0,122,255,0.1)', color: '#007aff', padding: '12px', borderRadius: '12px' }}>
+                            <MapPin size={24} />
+                        </div>
+                        <div>
+                            <h4 style={{ margin: 0, fontSize: '1.1rem' }}>Collection Points</h4>
+                            <p style={{ margin: '5px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Manage receiver and collection point addresses.</p>
+                        </div>
+                    </div>
+                </div>
 
                 <section className="product-table-section" style={{ marginTop: '2rem' }}>
                     <div className="panel" style={{ background: 'var(--panel-bg)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>

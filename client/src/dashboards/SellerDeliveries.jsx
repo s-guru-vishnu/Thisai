@@ -2,20 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
 import Navbar from '../components/Navbar';
+import axios from 'axios';
 import { Package, Truck, MapPin, CheckCircle, ArrowLeft, MoreVertical, Edit2, QrCode, X } from 'lucide-react';
 import '../styles/dashboard.css';
 import '../styles/seller.css';
 
 const SellerDeliveries = () => {
-    const [deliveries, setDeliveries] = useState(() => {
-        const saved = localStorage.getItem('sellerDeliveries');
+    const [deliveries, setDeliveries] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchDeliveries = async () => {
         try {
-            const parsed = saved ? JSON.parse(saved) : null;
-            return Array.isArray(parsed) ? parsed : [];
-        } catch (e) {
-            return [];
+            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const { data } = await axios.get(`${apiBase}/api/parcels`, {
+                headers: { Authorization: `Bearer ${userInfo.token}` }
+            });
+            setDeliveries(data);
+        } catch (err) {
+            console.error("Error fetching deliveries:", err);
+        } finally {
+            setLoading(false);
         }
-    });
+    };
+
+    useEffect(() => {
+        fetchDeliveries();
+    }, []);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [editingId, setEditingId] = useState(null);
@@ -27,19 +40,23 @@ const SellerDeliveries = () => {
     }, [deliveries]);
 
     const handleEditStatus = (delivery) => {
-        setEditingId(delivery.id);
+        setEditingId(delivery._id || delivery.id);
         setStatusVal(delivery.status || 'Pending Pickup');
     };
 
-    const saveStatus = (id) => {
-        const updatedDeliveries = deliveries.map(del => {
-            if (del.id === id) {
-                return { ...del, status: statusVal };
-            }
-            return del;
-        });
-        setDeliveries(updatedDeliveries);
-        setEditingId(null);
+    const saveStatus = async (id, parcelId) => {
+        try {
+            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            await axios.put(`${apiBase}/api/parcels/${id}`, { status: statusVal }, {
+                headers: { Authorization: `Bearer ${userInfo.token}` }
+            });
+            fetchDeliveries();
+            setEditingId(null);
+        } catch (err) {
+            console.error("Failed to update status", err);
+            alert("Failed to update status on server.");
+        }
     };
 
     const safeDeliveries = Array.isArray(deliveries) ? deliveries : [];
@@ -126,12 +143,12 @@ const SellerDeliveries = () => {
                             </thead>
                             <tbody>
                                 {safeFilteredDeliveries.slice(0).reverse().map(del => (
-                                    <tr key={del.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.3s' }}>
+                                    <tr key={del._id || del.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.3s' }}>
                                         <td style={{ padding: '1rem' }}>
                                             <div style={{ fontWeight: 'bold', color: 'var(--accent)', fontSize: '1.1rem', letterSpacing: '1px' }}>
-                                                {del.trackingCode || 'N/A'}
+                                                {del.parcelId || 'N/A'}
                                             </div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: #{del.id.toString().slice(-6)}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Created: {new Date(del.createdAt).toLocaleDateString()}</div>
                                         </td>
                                         <td style={{ padding: '1rem' }}>
                                             <div style={{ fontWeight: '600', color: '#fff' }}>{del.productName}</div>
@@ -176,8 +193,8 @@ const SellerDeliveries = () => {
                                                     <QrCode size={18} />
                                                 </button>
 
-                                                {editingId === del.id ? (
-                                                    <button onClick={() => saveStatus(del.id)} className="primary-btn" style={{ padding: '0.4rem 1rem', fontSize: '0.9rem', borderRadius: '6px' }}>
+                                                {editingId === (del._id || del.id) ? (
+                                                    <button onClick={() => saveStatus(del._id || del.id)} className="primary-btn" style={{ padding: '0.4rem 1rem', fontSize: '0.9rem', borderRadius: '6px' }}>
                                                         Save
                                                     </button>
                                                 ) : (
@@ -207,11 +224,11 @@ const SellerDeliveries = () => {
                         <button className="close-modal-btn" onClick={() => setSelectedQR(null)}><X size={24} /></button>
                         <h2 style={{ marginBottom: '1rem' }}>Delivery QR Code</h2>
                         <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', display: 'inline-block', marginBottom: '1.5rem' }}>
-                            <QRCodeCanvas value={selectedQR.trackingCode} size={200} />
+                            <QRCodeCanvas value={selectedQR.parcelId || selectedQR.trackingCode || selectedQR.id} size={200} />
                         </div>
                         <div style={{ marginBottom: '1.5rem' }}>
                             <p style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Tracking Code</p>
-                            <h3 style={{ color: 'var(--accent)', letterSpacing: '2px', margin: 0 }}>{selectedQR.trackingCode}</h3>
+                            <h3 style={{ color: 'var(--accent)', letterSpacing: '2px', margin: 0 }}>{selectedQR.parcelId || selectedQR.trackingCode}</h3>
                         </div>
                         <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                             Receiver can scan this QR or enter the code manually to track and confirm delivery.

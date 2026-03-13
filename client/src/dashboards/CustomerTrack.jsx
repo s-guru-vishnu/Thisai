@@ -157,145 +157,29 @@ const CustomerTrack = () => {
                     </div>
                 </header>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                     
-                    {/* Left Column: Information */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                        
-                        {/* Parcel Info Card */}
-                        <div className="dashboard-card" style={{ padding: '1.5rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', marginBottom: '1rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                    <div style={{ background: 'var(--accent)', color: 'white', padding: '12px', borderRadius: '12px' }}>
-                                        <Package size={24} />
-                                    </div>
-                                    <div>
-                                        <h3 style={{ margin: '0 0 5px 0' }}>{parcelData.productName}</h3>
-                                        <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>Tracking: <span style={{ color: 'white', fontWeight: 'bold' }}>{parcelData.trackingId}</span></p>
-                                    </div>
+                    {/* Section 1: Top Full-Width Map */}
+                    <div className="dashboard-card" style={{ padding: '1rem', minHeight: '450px', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', padding: '0 10px' }}>
+                            <h4 style={{ margin: 0 }}>Live Driver View</h4>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <div className="status-badge" style={{ background: 'rgba(255,165,0,0.1)', color: 'orange', padding: '4px 12px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                    Driver: {parcelData.driverName}
                                 </div>
-                                <div className="status-badge" style={{
-                                    background: parcelData.status === 'Delivered' ? 'rgba(0,204,102,0.1)' : 'rgba(255,165,0,0.1)',
-                                    color: parcelData.status === 'Delivered' ? 'var(--success)' : 'orange',
-                                    padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold'
-                                }}>
-                                    {parcelData.status}
-                                </div>
-                            </div>
-                            
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                    <User size={18} style={{ color: 'var(--text-muted)', marginTop: '2px' }} />
-                                    <div>
-                                        <p style={{ margin: '0 0 2px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Sender</p>
-                                        <p style={{ margin: 0, fontWeight: '500' }}>{parcelData.senderName}</p>
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                    <Route size={18} style={{ color: 'var(--text-muted)', marginTop: '2px' }} />
-                                    <div>
-                                        <p style={{ margin: '0 0 2px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Pickup Location</p>
-                                        <p style={{ margin: 0, fontWeight: '500' }}>{parcelData.pickupLocation}</p>
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                    <MapPin size={18} style={{ color: 'var(--text-muted)', marginTop: '2px' }} />
-                                    <div>
-                                        <p style={{ margin: '0 0 2px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Delivery Address</p>
-                                        <p style={{ margin: 0, fontWeight: '500' }}>{parcelData.deliveryAddress}</p>
-                                    </div>
+                                <div className="status-badge" style={{ background: 'rgba(0,204,102,0.1)', color: 'var(--success)', padding: '4px 12px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                                    ETA: {parcelData.eta}
                                 </div>
                             </div>
                         </div>
-
-                        {/* Driver & ETA Card */}
-                        <div className="dashboard-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                    <div style={{ width: '45px', height: '45px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <ShieldCheck size={24} style={{ color: 'var(--accent)' }} />
-                                    </div>
-                                    <div>
-                                        <p style={{ margin: '0 0 2px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Driver</p>
-                                        <p style={{ margin: 0, fontWeight: '600', fontSize: '1.1rem' }}>{parcelData.driverName}</p>
-                                    </div>
-                                </div>
-                                <button className="secondary-btn" style={{ padding: '8px 15px', display: 'flex', gap: '8px', alignItems: 'center', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'transparent', color: 'white', cursor: 'pointer' }}>
-                                    <Phone size={16} /> Contact
-                                </button>
-                            </div>
-
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                    <Clock size={20} style={{ color: 'var(--warning)' }} />
-                                    <div>
-                                        <p style={{ margin: '0 0 2px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Live ETA</p>
-                                        <p style={{ margin: 0, fontWeight: '700', fontSize: '1rem' }}>{parcelData.eta}</p>
-                                    </div>
-                                </div>
-                                {parcelData.status !== 'Delivered' && (
-                                    <div style={{ textAlign: 'right' }}>
-                                        <p style={{ margin: '0 0 2px 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Next update in</p>
-                                        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--accent)' }}>{countdown}s</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* AI Prediction Card */}
-                        {prediction && (
-                            <div className="dashboard-card" style={{ padding: '1.5rem', background: prediction.delayRisk === 'HIGH' ? 'rgba(255,59,48,0.05)' : prediction.delayRisk === 'MEDIUM' ? 'rgba(255,165,0,0.05)' : 'var(--bg-panel)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '1rem' }}>
-                                    <AlertTriangle size={20} style={{ color: prediction.delayRisk === 'HIGH' ? 'var(--danger)' : prediction.delayRisk === 'MEDIUM' ? 'var(--warning)' : 'var(--success)' }} />
-                                    <h4 style={{ margin: 0 }}>AI Delay Prediction</h4>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Risk Level</span>
-                                    <span style={{ fontWeight: 'bold', color: prediction.delayRisk === 'HIGH' ? 'var(--danger)' : prediction.delayRisk === 'MEDIUM' ? 'var(--warning)' : 'var(--success)' }}>
-                                        {prediction.delayRisk}
-                                    </span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Est. Delay</span>
-                                    <span style={{ fontWeight: 'bold' }}>{prediction.delayMinutes} mins</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Reason</span>
-                                    <span style={{ fontSize: '0.85rem' }}>{prediction.reason}</span>
-                                </div>
-                            </div>
-                        )}
-                        
-                        {/* Status Timeline */}
-                        <div className="dashboard-card" style={{ padding: '1.5rem' }}>
-                            <h4 style={{ margin: '0 0 1.5rem 0' }}>Shipment Timeline</h4>
-                            <div className="timeline-container" style={{ position: 'relative', paddingLeft: '20px' }}>
-                                <div style={{ position: 'absolute', top: 0, bottom: 0, left: '8px', width: '2px', background: 'var(--border-color)', zIndex: 0 }}></div>
-                                {parcelData.timeline && parcelData.timeline.map((step, idx) => (
-                                    <div key={idx} style={{ position: 'relative', zIndex: 1, marginBottom: idx === parcelData.timeline.length - 1 ? 0 : '1.5rem', display: 'flex', gap: '15px' }}>
-                                        <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: step.completed ? 'var(--success)' : 'var(--bg-panel)', border: `2px solid ${step.completed ? 'var(--success)' : 'var(--border-color)'}`, marginTop: '2px', marginLeft: '-9px' }}></div>
-                                        <div>
-                                            <p style={{ margin: '0 0 3px 0', fontWeight: 'bold', color: step.completed ? 'white' : 'var(--text-muted)' }}>{step.title}</p>
-                                            {step.time && <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>{step.time}</p>}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Column: Live Map */}
-                    <div className="dashboard-card" style={{ padding: '1rem', minHeight: '600px', display: 'flex', flexDirection: 'column' }}>
-                        <h4 style={{ margin: '0 0 1rem 0', padding: '0 10px' }}>Live Driver View</h4>
                         <div style={{ flex: 1, position: 'relative', borderRadius: '12px', overflow: 'hidden' }}>
                             {isLoaded ? (
                                 <GoogleMap
                                     mapContainerStyle={mapContainerStyle}
                                     center={defaultCenter}
-                                    zoom={13}
+                                    zoom={14}
                                     options={{ styles: darkModeStyles, disableDefaultUI: true, zoomControl: true }}
                                 >
-                                    {/* Driver Marker */}
                                     {driverPos && (
                                         <Marker
                                             position={driverPos}
@@ -310,7 +194,6 @@ const CustomerTrack = () => {
                                             onClick={() => setSelectedMarker('driver')}
                                         />
                                     )}
-
                                     {selectedMarker === 'driver' && driverPos && (
                                         <InfoWindow position={driverPos} onCloseClick={() => setSelectedMarker(null)}>
                                             <div style={{ color: '#111', padding: '8px' }}>
@@ -328,8 +211,149 @@ const CustomerTrack = () => {
                         </div>
                     </div>
 
+                    {/* Bottom Row: 4 Columns */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+                        
+                        {/* Section 2: Parcel Info */}
+                        <div className="dashboard-card" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.8rem' }}>
+                                <div style={{ background: 'var(--accent)', color: 'white', padding: '8px', borderRadius: '8px' }}>
+                                    <Package size={20} />
+                                </div>
+                                <h4 style={{ margin: 0, fontSize: '1rem' }}>Parcel Info</h4>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                                <div>
+                                    <p style={{ margin: '0 0 2px 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Product</p>
+                                    <p style={{ margin: 0, fontWeight: '600', fontSize: '0.9rem' }}>{parcelData.productName}</p>
+                                </div>
+                                <div>
+                                    <p style={{ margin: '0 0 2px 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Status</p>
+                                    <p style={{ margin: 0, fontWeight: '700', fontSize: '0.9rem', color: parcelData.status === 'Delivered' ? 'var(--success)' : 'orange' }}>{parcelData.status}</p>
+                                </div>
+                                <div>
+                                    <p style={{ margin: '0 0 2px 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sender</p>
+                                    <p style={{ margin: 0, fontWeight: '600', fontSize: '0.9rem' }}>{parcelData.senderName}</p>
+                                </div>
+                                <div>
+                                    <p style={{ margin: '0 0 2px 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Delivery Address</p>
+                                    <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: '1.4' }}>{parcelData.deliveryAddress}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Section 3: Driver & ETA */}
+                        <div className="dashboard-card" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.8rem' }}>
+                                <div style={{ background: 'rgba(255,107,0,0.1)', color: 'var(--accent)', padding: '8px', borderRadius: '8px' }}>
+                                    <ShieldCheck size={18} />
+                                </div>
+                                <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Driver & ETA</h4>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <p style={{ margin: '0 0 6px 0', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Driver Name</p>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <p style={{ margin: 0, fontWeight: '700', fontSize: '1.2rem', color: 'white' }}>{parcelData.driverName}</p>
+                                        <button className="secondary-btn" style={{ 
+                                            width: '42px', 
+                                            height: '42px', 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center', 
+                                            borderRadius: '12px',
+                                            padding: 0,
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            background: 'rgba(255,255,255,0.05)',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s'
+                                        }}>
+                                            <Phone size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style={{ 
+                                    background: 'linear-gradient(135deg, rgba(255,165,0,0.1) 0%, rgba(255,107,0,0.05) 100%)', 
+                                    padding: '1rem', 
+                                    borderRadius: '12px', 
+                                    border: '1px solid rgba(255,165,0,0.15)',
+                                    marginTop: '0.2rem'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                                        <Clock size={14} style={{ color: 'var(--accent)' }} />
+                                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', letterSpacing: '0.5px' }}>LIVE ETA</span>
+                                    </div>
+                                    <p style={{ margin: 0, fontWeight: '800', fontSize: '1.4rem', color: 'white' }}>{parcelData.eta}</p>
+                                    <p style={{ margin: '6px 0 0 0', fontSize: '0.75rem', color: 'var(--accent)', fontWeight: '500' }}>Update in {countdown}s</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Section 4: AI Prediction */}
+                        <div className="dashboard-card" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', background: prediction?.delayRisk === 'HIGH' ? 'rgba(255,59,48,0.05)' : 'var(--bg-panel)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.8rem' }}>
+                                <div style={{ background: 'rgba(255,107,0,0.05)', color: 'var(--warning)', padding: '8px', borderRadius: '8px' }}>
+                                    <AlertTriangle size={20} />
+                                </div>
+                                <h4 style={{ margin: 0, fontSize: '1rem' }}>AI Prediction</h4>
+                            </div>
+                            {prediction ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Risk</span>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: prediction.delayRisk === 'HIGH' ? 'var(--danger)' : 'var(--success)' }}>{prediction.delayRisk}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Est. Delay</span>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>{prediction.delayMinutes}m</span>
+                                    </div>
+                                    <div>
+                                        <p style={{ margin: '0 0 4px 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>Reason</p>
+                                        <p style={{ margin: 0, fontSize: '0.8rem', fontStyle: 'italic' }}>"{prediction.reason}"</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Analysis pending...</p>
+                            )}
+                        </div>
+
+                        {/* Section 5: Shipment Timeline */}
+                        <div className="dashboard-card" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.2rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.8rem' }}>
+                                <div style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--info)', padding: '8px', borderRadius: '8px' }}>
+                                    <Route size={20} />
+                                </div>
+                                <h4 style={{ margin: 0, fontSize: '1rem' }}>Timeline</h4>
+                            </div>
+                            <div className="timeline-container" style={{ position: 'relative', paddingLeft: '15px', maxHeight: '180px', overflowY: 'auto' }}>
+                                <div style={{ position: 'absolute', top: 0, bottom: 0, left: '6px', width: '1px', background: 'var(--border-color)', zIndex: 0 }}></div>
+                                {parcelData.timeline && parcelData.timeline.map((step, idx) => (
+                                    <div key={idx} style={{ position: 'relative', zIndex: 1, marginBottom: '1rem', display: 'flex', gap: '10px' }}>
+                                        <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: step.completed ? 'var(--success)' : 'var(--bg-panel)', border: `2px solid ${step.completed ? 'var(--success)' : 'var(--border-color)'}`, marginTop: '3px', marginLeft: '-6px' }}></div>
+                                        <div>
+                                            <p style={{ margin: '0 0 2px 0', fontWeight: '600', fontSize: '0.75rem', color: step.completed ? 'white' : 'var(--text-muted)' }}>{step.title}</p>
+                                            {step.time && <p style={{ margin: 0, fontSize: '0.65rem', color: 'var(--text-muted)' }}>{step.time}</p>}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                    </div>
+
                 </div>
             </main>
+
+            <style>{`
+                @media (max-width: 1000px) {
+                    .main-content {
+                        padding: 1rem !important;
+                    }
+                    div[style*="grid-template-columns: repeat(4, 1fr)"] {
+                        grid-template-columns: 1fr !important;
+                    }
+                }
+            `}</style>
         </div>
     );
 };
