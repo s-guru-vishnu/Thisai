@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import DashboardCard from '../components/DashboardCard';
-import { Box, X, CheckSquare, Package, Truck, Search, QrCode } from 'lucide-react';
+import { Box, X, CheckSquare, Package, Truck, Search, QrCode, MapPin } from 'lucide-react';
 
 const ManagerDashboard = () => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
@@ -83,6 +83,32 @@ const ManagerDashboard = () => {
                     <DashboardCard title="Outgoing Transfers" value={outgoingInterHub.toLocaleString()} trend="Dispatched to Borders" icon="📤" trendPositive={true} />
                     <DashboardCard title="Delayed / Bottlenecks" value={bottlenecks.toLocaleString()} trend="Requires attention" icon="⚠️" trendPositive={false} />
                 </section>
+
+                <div style={{ marginTop: '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                    <div 
+                        onClick={() => window.location.href = '/settings/addresses'}
+                        style={{ 
+                            background: 'rgba(255,255,255,0.03)', 
+                            padding: '1.5rem', 
+                            borderRadius: '15px', 
+                            border: '1px solid var(--border-color)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '15px',
+                            transition: 'all 0.3s'
+                        }}
+                        className="quick-action-card"
+                    >
+                        <div style={{ background: 'rgba(255,107,0,0.1)', color: 'var(--accent)', padding: '12px', borderRadius: '12px' }}>
+                            <MapPin size={24} />
+                        </div>
+                        <div>
+                            <h4 style={{ margin: 0, fontSize: '1.1rem' }}>Hub Addresses</h4>
+                            <p style={{ margin: '5px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Manage regional hub and collection addresses.</p>
+                        </div>
+                    </div>
+                </div>
 
                 <section className="product-table-section" style={{ marginTop: '2rem' }}>
                     <div className="panel" style={{ background: 'var(--panel-bg)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>

@@ -170,7 +170,7 @@ const SellerDashboard = () => {
                     </div>
                 </div>
 
-                <div className="dashboard-grid seller-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <div className="dashboard-grid seller-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
 
                     {/* Action Cards */}
                     <div className="action-module" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }} onClick={() => checkLocationAndProceed(() => setShowProductModal(true))}>
@@ -187,6 +187,14 @@ const SellerDashboard = () => {
                         </div>
                         <h2 style={{ margin: 0, paddingInline: '20px' }}>Dispatch Delivery</h2>
                         <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '10px', paddingInline: '40px' }}>Select an existing product and map it to a delivery location for immediate tracking using Google Maps.</p>
+                    </div>
+
+                    <div className="action-module" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }} onClick={() => navigate('/settings/addresses')}>
+                        <div className="icon-container" style={{ background: 'rgba(0,122,255,0.1)', padding: '2rem', borderRadius: '50%', marginBottom: '1rem', color: '#007aff' }}>
+                            <Navigation size={48} />
+                        </div>
+                        <h2 style={{ margin: 0, paddingInline: '20px' }}>Manage Addresses</h2>
+                        <p style={{ color: 'var(--text-muted)', textAlign: 'center', marginTop: '10px', paddingInline: '40px' }}>Manage and set your default collection and delivery addresses for quick selection during dispatch.</p>
                     </div>
                 </div>
 

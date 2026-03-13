@@ -83,6 +83,32 @@ const CargoDriverDashboard = () => {
                             </div>
                         ))}
                     </div>
+
+                    <div 
+                        onClick={() => window.location.href = '/settings/addresses'}
+                        style={{ 
+                            marginTop: '2rem',
+                            padding: '15px', 
+                            borderRadius: '12px', 
+                            background: 'rgba(255,255,255,0.03)', 
+                            border: '1px solid var(--border-color)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            transition: 'all 0.3s'
+                        }}
+                        onMouseOver={(e) => { e.currentTarget.style.borderColor = '#2196f3'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+                    >
+                        <div style={{ background: 'rgba(33,150,243,0.1)', color: '#2196f3', padding: '8px', borderRadius: '10px' }}>
+                            <MapPin size={20} />
+                        </div>
+                        <div>
+                            <h4 style={{ margin: 0, fontSize: '0.95rem' }}>Hub Addresses</h4>
+                            <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', color: '#888' }}>Management of hub locations.</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div style={{ flex: 1, position: 'relative' }}>
