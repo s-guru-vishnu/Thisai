@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './components/Login';
 import Register from './components/Register';
+import axios from 'axios';
 import LocationEnforcementModal from './components/LocationEnforcementModal';
 
 import AdminRoutes from './routes/adminRoutes';
@@ -94,8 +95,48 @@ function AppContent() {
         }
     };
 
+    const syncProfile = async () => {
+        const userInfoRaw = localStorage.getItem('userInfo');
+        if (!userInfoRaw || userInfoRaw === 'undefined' || userInfoRaw === 'null') return;
+
+        try {
+            const userInfo = JSON.parse(userInfoRaw);
+            if (!userInfo.token) return;
+
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const { data } = await axios.get(`${apiBase}/api/auth/profile`, {
+                headers: { Authorization: `Bearer ${userInfo.token}` }
+            });
+
+            if (data) {
+                // Merge fresh data with current session token
+                const updatedUserInfo = { ...userInfo, ...data };
+                try {
+                    localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+                } catch (err) {
+                    console.warn("Storage quota exceeded, storing without avatar");
+                    const safe = { ...updatedUserInfo };
+                    delete safe.avatar;
+                    localStorage.setItem('userInfo', JSON.stringify(safe));
+                }
+                
+                // Dispatch event so same-tab components know to update
+                window.dispatchEvent(new Event('userInfoChanged'));
+                applyTheme(); // Re-apply theme in case preferences changed
+            }
+        } catch (e) {
+            console.error("Profile sync failed:", e.message);
+            if (e.response?.status === 401) {
+                // Token expired or invalid
+                localStorage.removeItem('userInfo');
+                window.location.href = '/login';
+            }
+        }
+    };
+
     useEffect(() => {
         applyTheme();
+        syncProfile();
     }, [location.pathname]);
 
     useEffect(() => {
@@ -106,8 +147,9 @@ function AppContent() {
 
         checkLocation();
         applyTheme();
+        syncProfile();
 
-        // Listen for storage changes (like theme toggle on login page)
+        // Listen for storage changes
         const handleStorageChange = () => {
             checkLocation();
             applyTheme();
@@ -118,7 +160,7 @@ function AppContent() {
             window.removeEventListener('storage', handleStorageChange);
             clearTimeout(timer);
         };
-    }, [location.pathname]);
+    }, []);
 
     const handleLocationSaved = () => {
         setShowLocationModal(false);

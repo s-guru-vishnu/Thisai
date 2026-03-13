@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { LayoutDashboard, Users, Map, Package, Truck, BrainCircuit, User, LogOut, Menu, X, Bell, MapPin } from 'lucide-react';
+import { LayoutDashboard, Users, Map, Package, Truck, User, LogOut, Menu, X, Bell, MapPin } from 'lucide-react';
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -9,9 +9,25 @@ const Navbar = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const [userInfo, setUserInfo] = useState(JSON.parse(localStorage.getItem('userInfo') || '{}'));
 
-    // Get user info from localStorage to determine role
-    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    useEffect(() => {
+        const handleStorage = () => {
+            const fresh = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            setUserInfo(fresh);
+        };
+        window.addEventListener('storage', handleStorage);
+        window.addEventListener('userInfoChanged', handleStorage);
+        
+        // Also check on mount in case App synced before Navbar mounted
+        handleStorage();
+        
+        return () => {
+            window.removeEventListener('storage', handleStorage);
+            window.removeEventListener('userInfoChanged', handleStorage);
+        };
+    }, []);
+
     const isAdmin = userInfo.role === 'admin';
     const isSeller = userInfo.role === 'seller';
     const isCustomer = userInfo.role === 'customer';
@@ -72,7 +88,6 @@ const Navbar = () => {
         { name: 'Live Map', path: '/dashboard/map', icon: <Map size={18} />, show: isAdmin },
         { name: 'Parcels', path: '/dashboard/parcels', icon: <Package size={18} />, show: isAdmin || isReceiver },
         { name: 'Drivers', path: '/dashboard/drivers', icon: <Truck size={18} />, show: isAdmin },
-        { name: 'AI Predictions', path: '/dashboard/predictions', icon: <BrainCircuit size={18} />, show: isAdmin },
         // Seller specific
         { name: 'My Deliveries', path: '/seller/deliveries', icon: <Package size={18} />, show: isSeller },
 
