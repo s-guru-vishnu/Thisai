@@ -86,12 +86,28 @@ const CustomerDashboard = () => {
                     (decodedText) => {
                         const code = decodedText.toUpperCase();
                         setTrackingInput(code);
-                        if (code.length === 10) {
+                        if (code.length >= 8) { // Supporting different code lengths if applicable
                             newScanner.clear();
                             setShowScanner(false);
-                            navigate(`/customer/track?id=${code}`);
+                            
+                            // Mark as delivered immediately
+                            const handleAutoConfirm = async () => {
+                                try {
+                                    const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+                                    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+                                    await axios.put(`${apiBase}/api/parcels/scan/${code}`, {}, {
+                                        headers: { Authorization: `Bearer ${userInfo.token}` }
+                                    });
+                                    alert(`Package ${code} marked as Delivered!`);
+                                    window.location.reload(); // Refresh to show updated status
+                                } catch (err) {
+                                    console.error("Scan verification failed", err);
+                                    setError(err.response?.data?.message || 'Verification failed.');
+                                }
+                            };
+                            handleAutoConfirm();
                         } else {
-                            setError('Invalid QR Code format. Must be 10 characters.');
+                            setError('Invalid QR Code format.');
                         }
                     },
                     (error) => {

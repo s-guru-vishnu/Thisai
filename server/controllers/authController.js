@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Address = require('../models/Address');
+const Hub = require('../models/Hub');
 const jwt = require('jsonwebtoken');
 
 const generateToken = (id) => {
@@ -261,12 +262,46 @@ const findCustomerByEmail = async (req, res) => {
             }
 
             console.log(`Resolved - Seller WH: ${sellerWH?.name}, Customer WH: ${customerWH?.name}`);
+            
+            // 4. Resolve Intermediate Hubs from Mesh Network
+            let intermediateHubs = [];
+            if (sellerWH && customerWH) {
+                // Determine regional hubs for pathfinding (e.g. if WH is in "Salem", its regional hub is "Coimbatore")
+                // For simplicity, we use the 'hub' attribute which stores the city name
+                const startCity = sellerWH.hub || sellerWH.city;
+                const endCity = customerWH.hub || customerWH.city;
+
+                // Find the Hub configuration for the starting regional center
+                // Note: local warehouses belong to a regional hub. 
+                // We find which regional hub manages this area.
+                const startRegionalHub = await Hub.findOne({ region: sellerWH.region, isRegionalCenter: true });
+                const endRegionalHub = await Hub.findOne({ region: customerWH.region, isRegionalCenter: true });
+
+                if (startRegionalHub && endRegionalHub && startRegionalHub.name !== endRegionalHub.name) {
+                    const routeInfo = startRegionalHub.routes.find(r => r.destination === endRegionalHub.name);
+                    
+                    if (routeInfo && routeInfo.stops.length > 0) {
+                        // Find the User objects (Managers) for these intermediate stops
+                        const stopNames = routeInfo.stops;
+                        const managers = await User.find({ 
+                            city: { $in: stopNames }, 
+                            role: 'manager' 
+                        }).select('name hub city region role');
+                        
+                        // Maintain route order
+                        intermediateHubs = stopNames.map(name => 
+                            managers.find(m => m.city.toLowerCase() === name.toLowerCase())
+                        ).filter(Boolean);
+                    }
+                }
+            }
 
             res.json({
                 ...user.toObject(),
                 location: resolvedLocation,
                 nearestWarehouse: customerWH,
-                sellerWarehouse: sellerWH
+                sellerWarehouse: sellerWH,
+                intermediateHubs: intermediateHubs
             });
         } else {
             res.status(404).json({ message: 'Customer not found' });

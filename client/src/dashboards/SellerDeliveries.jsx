@@ -4,7 +4,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import Navbar from '../components/Navbar';
 import axios from 'axios';
 import DashboardTabs from '../components/DashboardTabs';
-import { Package, Truck, MapPin, CheckCircle, ArrowLeft, MoreVertical, Edit2, QrCode, X } from 'lucide-react';
+import { Package, Truck, MapPin, CheckCircle, ArrowLeft, MoreVertical, Edit2, QrCode, X, Eye, Map, Navigation } from 'lucide-react';
 import '../styles/dashboard.css';
 import '../styles/seller.css';
 
@@ -35,6 +35,7 @@ const SellerDeliveries = () => {
     const [editingId, setEditingId] = useState(null);
     const [statusVal, setStatusVal] = useState('');
     const [selectedQR, setSelectedQR] = useState(null);
+    const [viewingPath, setViewingPath] = useState(null);
 
     useEffect(() => {
         localStorage.setItem('sellerDeliveries', JSON.stringify(deliveries));
@@ -196,6 +197,15 @@ const SellerDeliveries = () => {
                                                     <QrCode size={18} />
                                                 </button>
 
+                                                <button
+                                                    onClick={() => setViewingPath(del)}
+                                                    className="secondary-btn"
+                                                    style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '0.5rem', borderRadius: '8px', color: '#3b82f6' }}
+                                                    title="View Logistics Path"
+                                                >
+                                                    <Eye size={18} /> Hubs
+                                                </button>
+
                                                 {editingId === (del._id || del.id) ? (
                                                     <button onClick={() => saveStatus(del._id || del.id)} className="primary-btn" style={{ padding: '0.4rem 1rem', fontSize: '0.9rem', borderRadius: '6px' }}>
                                                         Save
@@ -219,6 +229,72 @@ const SellerDeliveries = () => {
                     </div>
                 </div>
             </main>
+
+            {/* Logistics Path Modal */}
+            {viewingPath && (
+                <div className="modal-overlay" onClick={() => setViewingPath(null)} style={{ background: 'rgba(0,0,0,0.92)' }}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ 
+                        maxWidth: '500px', 
+                        background: '#1a1a2e', 
+                        padding: '2.5rem', 
+                        borderRadius: '24px', 
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+                    }}>
+                        <button className="close-modal-btn" onClick={() => setViewingPath(null)}><X size={24} /></button>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '2rem' }}>
+                            <div style={{ padding: '10px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px' }}>
+                                <Truck size={24} color="#3b82f6" />
+                            </div>
+                            <div style={{ textAlign: 'left' }}>
+                                <h2 style={{ margin: 0, fontSize: '1.4rem' }}>Logistics <span>Chain</span></h2>
+                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Tracking ID: {viewingPath.parcelId}</p>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', paddingLeft: '10px' }}>
+                            {/* Origin WH */}
+                            <div style={{ position: 'relative', paddingLeft: '35px', paddingBottom: '30px' }}>
+                                <div style={{ position: 'absolute', left: '7px', top: '20px', bottom: '0', width: '2px', borderLeft: '2px dashed rgba(255,255,255,0.1)' }}></div>
+                                <div style={{ position: 'absolute', left: '0', top: '0', width: '16px', height: '16px', borderRadius: '50%', background: '#3b82f6', border: '3px solid rgba(59, 130, 246, 0.3)' }}></div>
+                                <div style={{ textAlign: 'left' }}>
+                                    <div style={{ fontWeight: '700', color: 'white', fontSize: '1rem' }}>{viewingPath.originWarehouse?.name || viewingPath.origin}</div>
+                                    <div style={{ fontSize: '0.75rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pickup Warehouse ({viewingPath.originWarehouse?.region || 'Origin'})</div>
+                                </div>
+                            </div>
+
+                            {/* Intermediate Hubs */}
+                            {viewingPath.intermediateHubs && viewingPath.intermediateHubs.map((hub, hIdx) => (
+                                <div key={hIdx} style={{ position: 'relative', paddingLeft: '35px', paddingBottom: '30px' }}>
+                                    <div style={{ position: 'absolute', left: '7px', top: '20px', bottom: '0', width: '2px', borderLeft: '2px dashed rgba(255,255,255,0.1)' }}></div>
+                                    <div style={{ position: 'absolute', left: '0', top: '0', width: '16px', height: '16px', borderRadius: '50%', background: 'transparent', border: '3px solid #3b82f6' }}></div>
+                                    <div style={{ textAlign: 'left' }}>
+                                        <div style={{ fontWeight: '700', color: '#ddd', fontSize: '0.95rem' }}>{hub.name}</div>
+                                        <div style={{ fontSize: '0.75rem', color: '#777', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Regional Transfer Hub • {hub.city}</div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Destination WH */}
+                            <div style={{ position: 'relative', paddingLeft: '35px' }}>
+                                <div style={{ position: 'absolute', left: '0', top: '0', width: '16px', height: '16px', borderRadius: '50%', background: '#ff6600', border: '3px solid rgba(255, 102, 0, 0.3)' }}></div>
+                                <div style={{ textAlign: 'left' }}>
+                                    <div style={{ fontWeight: '700', color: 'white', fontSize: '1rem' }}>{viewingPath.destinationWarehouse?.name || (viewingPath.destination + ' Warehouse')}</div>
+                                    <div style={{ fontSize: '0.75rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Final Delivery Warehouse ({viewingPath.destinationWarehouse?.region || 'Target'})</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '2.5rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                <Navigation size={14} />
+                                <span>Estimated Route: {viewingPath.intermediateHubs?.length + 2} Stop Hop Network</span>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* QR Code Modal */}
             {selectedQR && (

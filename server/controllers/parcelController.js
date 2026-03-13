@@ -2,6 +2,8 @@ const Parcel = require('../models/Parcel');
 const User = require('../models/User');
 const Address = require('../models/Address');
 
+const Hub = require('../models/Hub');
+
 // @desc    Create a new parcel
 // @route   POST /api/parcels
 // @access  Private (Parcel Receiver)
@@ -114,54 +116,69 @@ const createParcel = async (req, res) => {
         const originWarehouse = originWH;
         const destinationWarehouse = destWH;
 
-        // 3. Automated Hub Routing (if regions differ)
-        const intermediateHubs = [];
+        // 3. Automated Hub Routing via Mesh Network
+        let intermediateHubs = [];
         if (originWarehouse.region && destinationWarehouse.region && originWarehouse.region !== destinationWarehouse.region) {
-            // Find the hub warehouse for the origin region
-            const originHub = await User.findOne({ 
-                role: 'warehouse', 
-                name: new RegExp(originWarehouse.hub, 'i'),
-                region: originWarehouse.region
-            });
-            
-            // Find the hub warehouse for the destination region
-            const destHub = await User.findOne({ 
-                role: 'warehouse', 
-                name: new RegExp(destinationWarehouse.hub, 'i'),
-                region: destinationWarehouse.region
-            });
+            const startRegionalHub = await Hub.findOne({ region: originWarehouse.region, isRegionalCenter: true });
+            const endRegionalHub = await Hub.findOne({ region: destinationWarehouse.region, isRegionalCenter: true });
 
-            if (originHub && originHub._id.toString() !== originWarehouse._id.toString()) {
-                intermediateHubs.push(originHub._id);
-            }
-            if (destHub && destHub._id.toString() !== destinationWarehouse._id.toString()) {
-                intermediateHubs.push(destHub._id);
+            if (startRegionalHub && endRegionalHub && startRegionalHub.name !== endRegionalHub.name) {
+                const routeInfo = startRegionalHub.routes.find(r => r.destination === endRegionalHub.name);
+                
+                if (routeInfo && routeInfo.stops.length > 0) {
+                    const stopNames = routeInfo.stops;
+                    const managers = await User.find({ 
+                        city: { $in: stopNames }, 
+                        role: { $in: ['manager', 'warehouse'] } 
+                    });
+                    
+                    // Maintain route order and get their ID's
+                    intermediateHubs = stopNames.map(name => {
+                        const match = managers.find(m => m.city.toLowerCase() === name.toLowerCase());
+                        return match ? match._id : null;
+                    }).filter(Boolean);
+                }
             }
         }
 
+        console.log('--- Parcel Creation Debug ---');
+        console.log('Customer ID from body:', customer);
+        console.log('Resolved Customer Profile ID:', customerProfile?._id);
+        console.log('Resolved Seller Profile ID:', sellerProfile?._id);
+        console.log('Origin Warehouse ID:', originWarehouse?._id);
+        console.log('Destination Warehouse ID:', destinationWarehouse?._id);
+
         const parcelId = req.body.parcelId || `PRC-${Math.floor(10000 + Math.random() * 90000)}`;
-        
-        const newParcel = new Parcel({
-            ...req.body,
-            destination, // Ensure the resolved destination is used
+
+        const newParcelData = {
             parcelId,
+            productName: req.body.productName || 'Manual Item',
+            category: req.body.category || 'General',
+            weight: req.body.weight || '1kg',
             seller: sellerProfile.name,
             customer: customerProfile._id,
+            customerName: req.body.customerName || customerProfile.name,
+            deliveryAddress: req.body.deliveryAddress || customerProfile.location?.addressLine1 || 'No Address',
+            destination,
             origin: originWarehouse.name,
             originWarehouse: originWarehouse._id,
             destinationWarehouse: destinationWarehouse._id,
             intermediateHubs: intermediateHubs,
             currentWarehouse: originWarehouse._id,
+            deliveryType: req.body.deliveryType || 'Standard',
             status: req.body.status || 'Dispatched'
-        });
+        };
 
-        console.log('Attempting to save parcel with destination:', newParcel.destination);
+        console.log('Instantiating Parcel with data:', JSON.stringify({ ...newParcelData, customer: newParcelData.customer.toString() }, null, 2));
+
+        const newParcel = new Parcel(newParcelData);
+
         const savedParcel = await newParcel.save();
         console.log(`Parcel created successfully: ${parcelId}`);
         res.status(201).json(savedParcel);
     } catch (err) {
-        console.error('Error in createParcel:', err);
-        res.status(500).json({ message: err.message });
+        console.error('CRITICAL: Error in createParcel:', err);
+        res.status(500).json({ message: err.message, stack: err.stack });
     }
 };
 
@@ -177,7 +194,11 @@ const getParcels = async (req, res) => {
             query.seller = req.user.name;
         }
 
-        const parcels = await Parcel.find(query).sort({ createdAt: -1 });
+        const parcels = await Parcel.find(query)
+            .populate('originWarehouse', 'name city region')
+            .populate('destinationWarehouse', 'name city region')
+            .populate('intermediateHubs', 'name city region')
+            .sort({ createdAt: -1 });
         res.status(200).json(parcels);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -234,4 +255,24 @@ const deleteParcel = async (req, res) => {
     }
 };
 
-module.exports = { createParcel, getParcels, getParcelById, updateParcel, deleteParcel };
+// @desc    Mark parcel as delivered via scan
+// @route   PUT /api/parcels/scan/:parcelId
+// @access  Private
+const markParcelDelivered = async (req, res) => {
+    try {
+        const { parcelId } = req.params;
+        const parcel = await Parcel.findOne({ parcelId });
+        
+        if (parcel) {
+            parcel.status = 'Delivered';
+            await parcel.save();
+            res.json({ message: 'Parcel marked as delivered successfully', parcel });
+        } else {
+            res.status(404).json({ message: 'Parcel not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+module.exports = { createParcel, getParcels, getParcelById, updateParcel, deleteParcel, markParcelDelivered };

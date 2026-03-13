@@ -175,6 +175,10 @@ const SellerManualEntry = () => {
                     console.warn("No customer warehouse returned from API");
                 }
 
+                if (data.intermediateHubs) {
+                    setIntermediateHubs(data.intermediateHubs);
+                }
+
                 // Fetch Logistics Path
                 const startHub = data.sellerWarehouse?.hub || sellerLocation?.city || userInfo.hub || 'Chennai';
                 const endHub = data.nearestWarehouse?.hub || data.location?.city || 'Madurai';
@@ -384,27 +388,36 @@ const SellerManualEntry = () => {
                             <Navigation size={20} style={{ marginRight: '10px' }} />
                             {loading ? 'Processing...' : 'CONFIRM DISPATCH'}
                         </button>
-
                         {logisticsPath.length > 0 && (
                             <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '20px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                                 <h4 style={{ margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6' }}>
                                     <Truck size={18} /> LOGISTICS CHAIN
                                 </h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                                    {logisticsPath.map((stop, idx) => (
-                                        <div key={idx} style={{ position: 'relative', paddingLeft: '25px', paddingBottom: '15px' }}>
-                                            {idx !== logisticsPath.length - 1 && (
-                                                <div style={{ position: 'absolute', left: '7px', top: '15px', bottom: '0', width: '2px', background: 'rgba(59, 130, 246, 0.3)', borderStyle: 'dashed' }}></div>
-                                            )}
-                                            <div style={{ position: 'absolute', left: '0', top: '2px', width: '16px', height: '16px', borderRadius: '50%', background: idx === 0 || idx === logisticsPath.length - 1 ? '#3b82f6' : 'transparent', border: '2px solid #3b82f6', zIndex: 1 }}></div>
-                                            <div style={{ fontSize: '0.85rem', fontWeight: '700', color: idx === 0 || idx === logisticsPath.length - 1 ? 'white' : '#aaa' }}>
-                                                {idx === 0 && resolvedSellerHub ? resolvedSellerHub.name : 
-                                                 idx === logisticsPath.length - 1 && resolvedCustomerHub ? resolvedCustomerHub.name : 
-                                                 stop.destination}
-                                             </div>
-                                             <div style={{ fontSize: '0.7rem', color: '#71717a' }}>{idx === 0 ? 'Origin Hub' : idx === logisticsPath.length - 1 ? 'Final Hub' : 'Transit Warehouse'}</div>
-                                        </div>
-                                    ))}
+                                    {logisticsPath.map((stop, idx) => {
+                                        // Match stop name with our resolved intermediate hubs to show the actual manager names if possible
+                                        const cityName = stop.destination.replace(' Hub', '');
+                                        const managerMatch = intermediateHubs.find(h => h.city.toLowerCase() === cityName.toLowerCase());
+                                        const label = managerMatch ? managerMatch.name : stop.destination;
+
+                                        return (
+                                            <div key={idx} style={{ position: 'relative', paddingLeft: '25px', paddingBottom: '15px' }}>
+                                                {idx !== logisticsPath.length - 1 && (
+                                                    <div style={{ position: 'absolute', left: '7px', top: '15px', bottom: '0', width: '2px', background: 'rgba(59, 130, 246, 0.3)', borderStyle: 'dashed' }}></div>
+                                                )}
+                                                <div style={{ position: 'absolute', left: '0', top: '2px', width: '16px', height: '16px', borderRadius: '50%', background: idx === 0 || idx === logisticsPath.length - 1 ? '#3b82f6' : 'transparent', border: '2px solid #3b82f6', zIndex: 1 }}></div>
+                                                <div style={{ fontSize: '0.85rem', fontWeight: '700', color: idx === 0 || idx === logisticsPath.length - 1 ? 'white' : '#ddd' }}>
+                                                    {idx === 0 && resolvedSellerHub ? resolvedSellerHub.name : 
+                                                     idx === logisticsPath.length - 1 && resolvedCustomerHub ? resolvedCustomerHub.name : 
+                                                     label}
+                                                 </div>
+                                                 <div style={{ fontSize: '0.7rem', color: '#71717a' }}>
+                                                     {idx === 0 ? 'Origin Hub' : idx === logisticsPath.length - 1 ? 'Final Hub' : 'Intermediate Hub'}
+                                                     {managerMatch && idx !== 0 && idx !== logisticsPath.length - 1 && ` • ${managerMatch.region} Region`}
+                                                 </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}

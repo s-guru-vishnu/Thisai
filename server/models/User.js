@@ -113,6 +113,9 @@ const userSchema = mongoose.Schema(
             default: () => ({})
         },
 
+        // Assignment Data
+        assignedManager: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+
         // Driver Specific
         liveLocationSharing: { type: Boolean, default: false },
 
