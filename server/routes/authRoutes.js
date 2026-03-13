@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const { loginUser, registerUser, changePassword, deleteAccount, findCustomerByEmail, getAllUsers, updateUserRole, getWarehouses } = require('../controllers/authController');
 const { protect, authorize } = require('../middleware/authMiddleware');
-const { updateProfile, updatePreferences, updatePlatforms, updateVisibility } = require('../controllers/userSettingsController');
+const { updateProfile, updatePreferences, updatePlatforms, updateVisibility, getUserProfile } = require('../controllers/userSettingsController');
 
 router.get('/users', protect, authorize('admin', 'manager'), getAllUsers);
+router.get('/profile', protect, getUserProfile);
 router.put('/users/:id/role', protect, authorize('admin', 'manager'), updateUserRole);
 router.get('/warehouses', protect, getWarehouses);
 router.get('/find-customer/:email', protect, findCustomerByEmail);

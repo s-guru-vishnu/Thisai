@@ -18,6 +18,7 @@ const loginUser = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                avatar: user.avatar,
                 location: user.location,
                 preferences: user.preferences,
                 token: generateToken(user._id)
@@ -57,6 +58,7 @@ const registerUser = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                avatar: user.avatar,
                 region: user.region,
                 hub: user.hub,
                 location: user.location,

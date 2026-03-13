@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import CargoDriverDashboard from '../dashboards/CargoDriverDashboard';
 import DeliveryDriverDashboard from '../dashboards/DeliveryDriverDashboard';
+import DriverDashboard from '../dashboards/DriverDashboard';
 
 const DriverRoutes = () => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');

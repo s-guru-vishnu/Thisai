@@ -4,7 +4,10 @@ const {
     getDriverParcels,
     updateParcelStatus,
     updateDriverLocation,
-    getDriverRoute
+    getDriverRoute,
+    getOptimizedRoute,
+    getDriverLocation,
+    updateLocation
 } = require('../controllers/driverController');
 const { protect, authorize, checkLocation } = require('../middleware/authMiddleware');
 

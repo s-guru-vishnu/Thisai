@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import axios from 'axios';
 import { User, ClipboardList, Link, Eye, Shield, Palette, ArrowLeft, MapPin } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -18,8 +19,27 @@ const ProfilePage = () => {
     const { tab: activeTab } = useParams();
     const [tabLoading, setTabLoading] = useState(false);
     const [toast, setToast] = useState(null);
-    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const [userInfo, setUserInfo] = useState(JSON.parse(localStorage.getItem('userInfo') || '{}'));
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+                const { data } = await axios.get(`${apiBase}/api/auth/profile`, {
+                    headers: { Authorization: `Bearer ${userInfo.token}` }
+                });
+                if (data) {
+                    const updated = { ...userInfo, ...data };
+                    setUserInfo(updated);
+                    localStorage.setItem('userInfo', JSON.stringify(updated));
+                }
+            } catch (err) {
+                console.error("Failed to fetch fresh profile:", err);
+            }
+        };
+        fetchProfile();
+    }, []);
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
@@ -48,11 +68,10 @@ const ProfilePage = () => {
     const availableTabs = [
         { id: 'basic-info', label: 'Basic Info', icon: <User size={18} />, allowed: true },
         { id: 'profile-details', label: 'Profile Details', icon: <ClipboardList size={18} />, allowed: userInfo.role !== 'customer' },
-        { id: 'platform', label: 'Platform', icon: <Link size={18} />, allowed: userInfo.role === 'admin' || userInfo.role === 'manager' || userInfo.role === 'warehouse' || userInfo.role === 'seller' },
-        { id: 'visibility', label: 'Visibility', icon: <Eye size={18} />, allowed: userInfo.role === 'admin' || userInfo.role === 'manager' || userInfo.role === 'seller' || userInfo.role === 'warehouse' },
+        { id: 'visibility', label: 'Visibility', icon: <Eye size={18} />, allowed: userInfo.role === 'manager' || userInfo.role === 'seller' || userInfo.role === 'warehouse' },
         { id: 'accounts', label: 'Accounts', icon: <Shield size={18} />, allowed: true },
         { id: 'addresses', label: 'Addresses', icon: <MapPin size={18} />, allowed: true },
-        { id: 'appearance', label: 'Appearance', icon: <Palette size={18} />, allowed: userInfo.role === 'admin' || userInfo.role === 'manager' || userInfo.role === 'seller' || userInfo.role === 'customer' }
+        { id: 'appearance', label: 'Appearance', icon: <Palette size={18} />, allowed: true }
     ].filter(tab => tab.allowed);
 
     // Redirect fallback if accessing a disallowed route or invalid tab

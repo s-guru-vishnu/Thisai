@@ -33,6 +33,37 @@ const BasicInfoSettings = ({ userContext, showToast }) => {
         liveLocationSharing: userContext.liveLocationSharing || false
     });
 
+    // Update form data when props change (sync from DB)
+    React.useEffect(() => {
+        setFormData({
+            name: userContext.name || '',
+            email: userContext.email || '',
+            role: userContext.role || '',
+            phone: userContext.phone || '',
+            timezone: userContext.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+            avatarPreview: userContext.avatar || null,
+            companyName: userContext.companyName || '',
+            companyType: userContext.companyType || '',
+            businessAddress: userContext.businessAddress || '',
+            warehouseLocation: userContext.warehouseLocation || '',
+            country: userContext.country || '',
+            city: userContext.city || '',
+            taxId: userContext.taxId || '',
+            nearestWarehouse: userContext.nearestWarehouse || '',
+            location: {
+                addressLine1: userContext.location?.addressLine1 || '',
+                addressLine2: userContext.location?.addressLine2 || '',
+                city: userContext.location?.city || '',
+                state: userContext.location?.state || '',
+                country: userContext.location?.country || '',
+                postalCode: userContext.location?.postalCode || '',
+                latitude: userContext.location?.latitude || 13.0827, 
+                longitude: userContext.location?.longitude || 80.2707,
+            },
+            liveLocationSharing: userContext.liveLocationSharing || false
+        });
+    }, [userContext]);
+
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
         if (name.startsWith('location.')) {

@@ -162,4 +162,26 @@ const getDriverRoute = async (req, res) => {
     }
 };
 
-module.exports = { getDriverParcels, updateParcelStatus, updateDriverLocation, getDriverRoute };
+// @desc    Get driver current location
+const getDriverLocation = async (req, res) => {
+    try {
+        const driver = await User.findById(req.params.driverId);
+        if (driver && driver.location) {
+            res.json(driver.location);
+        } else {
+            res.status(404).json({ message: 'Driver location not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { 
+    getDriverParcels, 
+    updateParcelStatus, 
+    updateDriverLocation, 
+    getDriverRoute, 
+    getOptimizedRoute, 
+    getDriverLocation, 
+    updateLocation 
+};
