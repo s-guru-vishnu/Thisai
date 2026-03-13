@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import { PackageX, MapPin, Truck, Package, Clock, Phone, AlertTriangle, Route, User, ShieldCheck } from 'lucide-react';
+import LoadingScreen from '../components/LoadingScreen';
 
 const mapContainerStyle = {
     width: '100%',
@@ -114,9 +115,7 @@ const CustomerTrack = () => {
         return (
             <div className="app-container">
                 <Navbar />
-                <div style={{ padding: '5rem', textAlign: 'center' }}>
-                    <div className="loader">Loading tracking details...</div>
-                </div>
+                <LoadingScreen fullScreen={true} message="Tuning AI Prediction Models..." />
             </div>
         );
     }
@@ -204,9 +203,7 @@ const CustomerTrack = () => {
                                     )}
                                 </GoogleMap>
                             ) : (
-                                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)' }}>
-                                    <div className="loader">Loading Map...</div>
-                                </div>
+                                <LoadingScreen fullScreen={false} message="Initialising Neural Map..." />
                             )}
                         </div>
                     </div>

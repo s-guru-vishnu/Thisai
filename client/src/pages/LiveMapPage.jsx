@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow, TrafficLayer } from '@react-google-maps/api';
 import { MapPin, Truck, AlertCircle, Maximize2, Layers } from 'lucide-react';
+import LoadingScreen from '../components/LoadingScreen';
 
 const mapContainerStyle = {
     width: '100%',
@@ -177,9 +178,7 @@ const LiveMapPage = () => {
                                 )}
                             </GoogleMap>
                         ) : (
-                            <div style={{ height: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <div className="loader">Loading Neural Map Engine...</div>
-                            </div>
+                            <LoadingScreen fullScreen={false} message="Rendering Live Transit Data..." />
                         )}
                         <div style={{ position: 'absolute', bottom: '20px', left: '20px', background: 'rgba(11,11,12,0.85)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)', backdropFilter: 'blur(10px)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>

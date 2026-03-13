@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import axios from 'axios';
 import { Package, Calendar, MapPin, CheckCircle, PackageSearch, Eye, X, Clock, User, FileText } from 'lucide-react';
+import LoadingScreen from '../components/LoadingScreen';
 
 const CustomerHistory = () => {
     const [history, setHistory] = useState([]);
@@ -51,9 +52,7 @@ const CustomerHistory = () => {
                 </header>
 
                 {loading ? (
-                    <div style={{ padding: '5rem', textAlign: 'center' }}>
-                        <div className="loader">Loading history...</div>
-                    </div>
+                    <LoadingScreen fullScreen={false} message="Parsing Transaction Ledger..." />
                 ) : history.length === 0 ? (
                     <div className="dashboard-card" style={{ padding: '4rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                         <div style={{ background: 'rgba(255,255,255,0.05)', padding: '2rem', borderRadius: '50%', marginBottom: '1.5rem', border: '1px dashed var(--border-color)' }}>

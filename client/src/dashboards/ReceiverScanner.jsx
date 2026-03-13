@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 import Navbar from '../components/Navbar';
 import { Camera, ArrowLeft, ShieldCheck, Zap, StopCircle, RefreshCw } from 'lucide-react';
+import LoadingScreen from '../components/LoadingScreen';
 import '../styles/dashboard.css';
 
 const ReceiverScanner = () => {

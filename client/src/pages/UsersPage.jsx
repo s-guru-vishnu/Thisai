@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import DataTable from '../components/DataTable';
 import { UserPlus, Search, Filter, X, Shield, Mail, Calendar, Key, User, Trash2 } from 'lucide-react';
+import LoadingScreen from '../components/LoadingScreen';
 import axios from 'axios';
 
 const UsersPage = () => {
@@ -158,7 +159,7 @@ const UsersPage = () => {
                 </div>
 
                 {loading ? (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Loading users...</div>
+                    <LoadingScreen fullScreen={false} message="Parsing User Database..." />
                 ) : (
                     <DataTable 
                         headers={['Full Name', 'Email Address', 'Role', 'Joined Date']}

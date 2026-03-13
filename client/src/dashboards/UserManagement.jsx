@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Navbar from '../components/Navbar';
 import { Users, Truck, Search, ShieldCheck, AlertCircle } from 'lucide-react';
+import LoadingScreen from '../components/LoadingScreen';
 
 const UserManagement = () => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
@@ -155,7 +156,9 @@ const UserManagement = () => {
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan="4" style={{ padding: '3rem', textAlign: 'center' }}>Loading users...</td></tr>
+                                    <tr><td colSpan="4" style={{ padding: '0' }}>
+                                        <LoadingScreen fullScreen={false} message="Fetching Personnel Data..." />
+                                    </td></tr>
                                 ) : filteredUsers.length > 0 ? (
                                     filteredUsers.map(user => (
                                         <tr key={user._id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.2s' }}>
