@@ -1,14 +1,16 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import CargoDriverDashboard from '../dashboards/CargoDriverDashboard';
+import InterWarehouseDashboard from '../dashboards/InterWarehouseDashboard';
 import DeliveryDriverDashboard from '../dashboards/DeliveryDriverDashboard';
+import DriverDashboard from '../dashboards/DriverDashboard';
+import VehicleDetails from '../dashboards/VehicleDetails';
 
 const DriverRoutes = () => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
     const role = userInfo.role;
 
     const renderDashboard = () => {
-        if (role === 'cargo_driver') return <CargoDriverDashboard />;
+        if (role === 'cargo_driver') return <InterWarehouseDashboard />;
         if (role === 'delivery_driver') return <DeliveryDriverDashboard />;
         return <DriverDashboard />;
     };
@@ -16,7 +18,7 @@ const DriverRoutes = () => {
     return (
         <Routes>
             <Route path="/" element={renderDashboard()} />
-            {/* Add more driver-specific routes here */}
+            <Route path="/vehicle" element={<VehicleDetails />} />
         </Routes>
     );
 };

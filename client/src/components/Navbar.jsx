@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { LayoutDashboard, Users, Map, Package, Truck, BrainCircuit, User, LogOut, Menu, X, Bell, MapPin } from 'lucide-react';
+import { LayoutDashboard, Users, Map, Package, Truck, BrainCircuit, User, LogOut, Menu, X, Bell, MapPin, Maximize2 } from 'lucide-react';
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -11,7 +11,16 @@ const Navbar = () => {
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
     // Get user info from localStorage to determine role
-    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const userInfo = (() => {
+        try {
+            const saved = localStorage.getItem('userInfo');
+            const parsed = saved ? JSON.parse(saved) : null;
+            return (parsed && typeof parsed === 'object') ? parsed : {};
+        } catch (e) {
+            console.error("Auth session corrupted", e);
+            return {};
+        }
+    })();
     const isAdmin = userInfo.role === 'admin';
     const isSeller = userInfo.role === 'seller';
     const isCustomer = userInfo.role === 'customer';
@@ -24,6 +33,7 @@ const Navbar = () => {
     const [notifications, setNotifications] = useState([]);
 
     const fetchNotifications = async () => {
+        if (!userInfo?.token) return;
         try {
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             const config = {
@@ -93,12 +103,13 @@ const Navbar = () => {
         
         // Driver specific
         { name: 'Dashboard', path: '/driver', icon: <LayoutDashboard size={18} />, show: isDriver },
+        { name: 'Vehicle Details', path: '/driver/vehicle', icon: <Truck size={18} />, show: userInfo.role === 'cargo_driver' },
     ];
 
     return (
         <nav className="navbar">
             <div className="nav-brand">
-                <img src="/Thisai.png" alt="Thisai Logo" className="logo-orb" />
+                <div className="logo-orb-placeholder" style={{ width: '32px', height: '32px', background: 'var(--accent)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', fontWeight: 'bold' }}>T</div>
                 <span className="brand-name">THISAI</span>
             </div>
 
@@ -113,6 +124,40 @@ const Navbar = () => {
                         </li>
                     ))}
                 </ul>
+                
+                {userInfo.role === 'cargo_driver' && location.pathname === '/driver' && (
+                    <button 
+                        onClick={() => {
+                            window.dispatchEvent(new CustomEvent('toggle-focus-mode', { detail: true }));
+                        }}
+                        className="focus-mode-btn"
+                        style={{
+                            marginLeft: '20px',
+                            background: 'rgba(59, 130, 246, 0.1)',
+                            border: '1px solid rgba(59, 130, 246, 0.3)',
+                            color: '#3b82f6',
+                            padding: '6px 14px',
+                            borderRadius: '8px',
+                            fontSize: '0.75rem',
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease'
+                        }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)';
+                            e.currentTarget.style.boxShadow = '0 0 15px rgba(59, 130, 246, 0.3)';
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)';
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}
+                    >
+                        <Maximize2 size={14} /> FOCUS MODE
+                    </button>
+                )}
             </div>
 
             <div className="nav-profile">

@@ -49,6 +49,7 @@ const SellerManualEntry = () => {
     const [lookupLoading, setLookupLoading] = useState(false);
     const [showQRSuccess, setShowQRSuccess] = useState(false);
     const [generatedTrk, setGeneratedTrk] = useState('');
+    const [logisticsPath, setLogisticsPath] = useState([]);
     const [error, setError] = useState('');
 
     const [formData, setFormData] = useState({
@@ -100,6 +101,21 @@ const SellerManualEntry = () => {
                     lat: data.location.latitude,
                     lng: data.location.longitude
                 }));
+
+                // Fetch Logistics Path
+                const startHub = userInfo.hub || 'Chennai'; // Fallback
+                const endHub = data.location.city || 'Madurai'; // Fallback
+                
+                try {
+                    const pathRes = await axios.get(`${apiBase}/api/logistics/path?startHub=${startHub}&endHub=${endHub}`, {
+                        headers: { Authorization: `Bearer ${userInfo.token}` }
+                    });
+                    if (pathRes.data && pathRes.data.stops) {
+                        setLogisticsPath(pathRes.data.stops);
+                    }
+                } catch (pathErr) {
+                    console.error("Path calculation failed", pathErr);
+                }
             } else {
                 setError('Customer found, but they have not set up their location details yet.');
             }
@@ -249,6 +265,26 @@ const SellerManualEntry = () => {
                             <Navigation size={20} style={{ marginRight: '10px' }} />
                             {loading ? 'Processing...' : 'CONFIRM DISPATCH'}
                         </button>
+
+                        {logisticsPath.length > 0 && (
+                            <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '20px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                                <h4 style={{ margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6' }}>
+                                    <Truck size={18} /> LOGISTICS CHAIN
+                                </h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                                    {logisticsPath.map((stop, idx) => (
+                                        <div key={idx} style={{ position: 'relative', paddingLeft: '25px', paddingBottom: '15px' }}>
+                                            {idx !== logisticsPath.length - 1 && (
+                                                <div style={{ position: 'absolute', left: '7px', top: '15px', bottom: '0', width: '2px', background: 'rgba(59, 130, 246, 0.3)', borderStyle: 'dashed' }}></div>
+                                            )}
+                                            <div style={{ position: 'absolute', left: '0', top: '2px', width: '16px', height: '16px', borderRadius: '50%', background: idx === 0 || idx === logisticsPath.length - 1 ? '#3b82f6' : 'transparent', border: '2px solid #3b82f6', zIndex: 1 }}></div>
+                                            <div style={{ fontSize: '0.85rem', fontWeight: '700', color: idx === 0 || idx === logisticsPath.length - 1 ? 'white' : '#aaa' }}>{stop.destination}</div>
+                                            <div style={{ fontSize: '0.7rem', color: '#71717a' }}>{idx === 0 ? 'Origin Hub' : idx === logisticsPath.length - 1 ? 'Final Hub' : 'Transit Warehouse'}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </form>
                 </div>
 

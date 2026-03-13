@@ -27,17 +27,17 @@ function AppContent() {
         const userInfoRaw = localStorage.getItem('userInfo');
         if (userInfoRaw && userInfoRaw !== 'undefined' && userInfoRaw !== 'null') {
             try {
-                const userInfo = JSON.parse(userInfoRaw);
-                if (userInfo && typeof userInfo === 'object') {
-                    // Check for existence of coordinates. 
-                    // We check specifically for latitude not being null/undefined to avoid issues with 0 coordinates.
-                    const loc = userInfo.location;
-                    const hasLocation = loc && (loc.latitude !== null && loc.latitude !== undefined) && (loc.addressLine1 || loc.city);
+                if (userInfoRaw && userInfoRaw !== 'undefined' && userInfoRaw !== 'null') {
+                    const userInfo = JSON.parse(userInfoRaw);
+                    if (userInfo && typeof userInfo === 'object') {
+                        const loc = userInfo.location;
+                        const hasLocation = loc && (loc.latitude !== null && loc.latitude !== undefined) && (loc.addressLine1 || loc.city);
 
-                    if (!hasLocation && userInfo.role === 'customer') {
-                        setShowLocationModal(true);
-                    } else {
-                        setShowLocationModal(false);
+                        if (!hasLocation && userInfo.role === 'customer') {
+                            setShowLocationModal(true);
+                        } else {
+                            setShowLocationModal(false);
+                        }
                     }
                 }
             } catch (e) {
@@ -57,17 +57,19 @@ function AppContent() {
         if (userInfoRaw && userInfoRaw !== 'undefined' && userInfoRaw !== 'null') {
             try {
                 const userInfo = JSON.parse(userInfoRaw);
-                const prefs = userInfo.preferences;
-                if (prefs && prefs.accentColor) {
-                    const root = document.documentElement;
-                    root.style.setProperty('--accent', prefs.accentColor);
-                    root.style.setProperty('--accent-glow', `${prefs.accentColor}40`);
-                    root.style.setProperty('--border-accent', `${prefs.accentColor}66`);
-                }
-                
-                // If logged in and no manual override on current session, use prefs
-                if (prefs && prefs.theme && !standaloneTheme) {
-                    activeTheme = prefs.theme;
+                if (userInfo && userInfo.preferences) {
+                    const prefs = userInfo.preferences;
+                    if (prefs.accentColor) {
+                        const root = document.documentElement;
+                        root.style.setProperty('--accent', prefs.accentColor);
+                        root.style.setProperty('--accent-glow', `${prefs.accentColor}40`);
+                        root.style.setProperty('--border-accent', `${prefs.accentColor}66`);
+                    }
+                    
+                    // If logged in and no manual override on current session, use prefs
+                    if (prefs.theme && !standaloneTheme) {
+                        activeTheme = prefs.theme;
+                    }
                 }
             } catch (e) { }
         }

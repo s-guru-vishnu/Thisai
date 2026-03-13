@@ -24,6 +24,7 @@ const parcelReceiverRoutes = require('./routes/parcelReceiverRoutes');
 const parcelRoutes = require('./routes/parcelRoutes');
 const predictRoutes = require('./routes/predictRoutes');
 const addressRoutes = require('./routes/addressRoutes');
+const logisticsRoutes = require('./routes/logisticsRoutes');
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
@@ -36,6 +37,7 @@ app.use('/api/parcels', protect, parcelReceiverRoutes);
 app.use('/api/parcel', parcelRoutes);
 app.use('/api/predict', predictRoutes);
 app.use('/api/address', addressRoutes);
+app.use('/api/logistics', logisticsRoutes);
 
 app.get('/', (req, res) => {
     res.send('Logistics API is running...');

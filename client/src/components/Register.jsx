@@ -92,7 +92,7 @@ const Register = () => {
 
             <div className="login-box" style={{ maxWidth: '450px' }}>
                 <div className="login-header">
-                    <img src="/Thisai.png" alt="Thisai Logo" className="logo-orb large-orb" />
+                    <div className="logo-orb-placeholder" style={{ width: '64px', height: '64px', background: 'var(--accent)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', fontWeight: 'bold', fontSize: '2rem', margin: '0 auto 1rem auto' }}>T</div>
                     <h2>THISAI</h2>
                     <p>Create your customer account</p>
                 </div>

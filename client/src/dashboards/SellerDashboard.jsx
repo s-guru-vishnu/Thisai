@@ -110,13 +110,18 @@ const SellerDashboard = () => {
         showToast(`Product "${newProduct.name}" saved to catalog!`);
     };
 
-    const safeDeliveries = Array.isArray(deliveries) ? deliveries : [];
+    const safeDeliveries = Array.isArray(deliveries) ? deliveries.filter(d => d && typeof d === 'object') : [];
     const stats = {
         total: safeDeliveries.length,
         pending: safeDeliveries.filter(d => d.status === 'Pending Pickup' || !d.status).length,
         transit: safeDeliveries.filter(d => d.status === 'In Transit').length,
         delivered: safeDeliveries.filter(d => d.status === 'Delivered').length,
     };
+
+    // Safety fallback for blank page issue
+    if (!products && !deliveries) {
+        return <div style={{ color: 'white', padding: '2rem' }}>Loading Inventory Data...</div>;
+    }
 
     return (
         <div className="app-container">
