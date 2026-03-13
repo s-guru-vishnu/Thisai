@@ -1,0 +1,86 @@
+[
+  {
+    "_id": "69b28cc98e0f166a4c32111b",
+    "name": "Admin User",
+    "email": "admin@impact.com",
+    "role": "admin"
+  },
+  {
+    "_id": "69b28cc98e0f166a4c32111e",
+    "name": "System Manager",
+    "email": "manager@impact.com",
+    "role": "manager"
+  },
+  {
+    "_id": "69b28cca8e0f166a4c321121",
+    "name": "Warehouse Lead",
+    "email": "warehouse@impact.com",
+    "role": "warehouse"
+  },
+  {
+    "_id": "69b28cca8e0f166a4c321124",
+    "name": "Driver John",
+    "email": "driver@impact.com",
+    "role": "driver"
+  },
+  {
+    "_id": "69b28cca8e0f166a4c321127",
+    "name": "Valued Customer",
+    "email": "customer@impact.com",
+    "role": "customer"
+  },
+  {
+    "_id": "69b28cca8e0f166a4c32112a",
+    "name": "Parcel Receiver",
+    "email": "receiver@impact.com",
+    "role": "parcel_receiver"
+  },
+  {
+    "_id": "69b28cca8e0f166a4c32112d",
+    "name": "Retail Seller",
+    "email": "seller@impact.com",
+    "role": "seller"
+  },
+  {
+    "_id": "69b28ccb8e0f166a4c321130",
+    "name": "Western Region Driver",
+    "email": "driver.west@logistics.com",
+    "role": "cargo_driver"
+  },
+  {
+    "_id": "69b28ccb8e0f166a4c321133",
+    "name": "Northern Region Driver",
+    "email": "driver.north@logistics.com",
+    "role": "cargo_driver"
+  },
+  {
+    "_id": "69b28ccb8e0f166a4c321136",
+    "name": "Central Region Driver",
+    "email": "driver.central@logistics.com",
+    "role": "cargo_driver"
+  },
+  {
+    "_id": "69b28ccb8e0f166a4c321139",
+    "name": "Southern Region Driver",
+    "email": "driver.south@logistics.com",
+    "role": "cargo_driver"
+  },
+  {
+    "_id": "69b28ccb8e0f166a4c32113c",
+    "name": "Coastal South Driver",
+    "email": "driver.coastal@logistics.com",
+    "role": "cargo_driver"
+  },
+  {
+    "_id": "69b33affa9427d504e1cd1cf",
+    "name": "FELIX JONUS i",
+    "email": "felixjonus07@gmail.com",
+    "role": "customer"
+  },
+  {
+    "_id": "69b33c0ba9427d504e1cd1dd",
+    "name": "Felix",
+    "email": "felixjonus0@gmail.com",
+    "role": "customer"
+  }
+]

@@ -17,6 +17,7 @@ const Navbar = () => {
     const isCustomer = userInfo.role === 'customer';
     const isReceiver = userInfo.role === 'parcel_receiver';
     const isManager = userInfo.role === 'manager';
+    const isDriver = ['driver', 'cargo_driver', 'delivery_driver'].includes(userInfo.role);
 
     const firstLetter = userInfo.name ? userInfo.name.charAt(0).toUpperCase() : '?';
 
@@ -81,6 +82,7 @@ const Navbar = () => {
 
         // Manager specific
         { name: 'Parcels', path: '/manager', icon: <Package size={18} />, show: isManager },
+        { name: 'User Management', path: '/manager/users', icon: <Users size={18} />, show: isManager },
         { name: 'Scan QR', path: '/manager/scan', icon: <LayoutDashboard size={18} />, show: isManager },
         { name: 'Manual Entry', path: '/manager/manual', icon: <LayoutDashboard size={18} />, show: isManager },
 
@@ -88,6 +90,9 @@ const Navbar = () => {
         { name: 'Dashboard', path: '/customer', icon: <LayoutDashboard size={18} />, show: isCustomer },
         { name: 'Track', path: '/customer/track', icon: <Map size={18} />, show: isCustomer },
         { name: 'History', path: '/customer/history', icon: <Package size={18} />, show: isCustomer },
+        
+        // Driver specific
+        { name: 'Dashboard', path: '/driver', icon: <LayoutDashboard size={18} />, show: isDriver },
     ];
 
     return (

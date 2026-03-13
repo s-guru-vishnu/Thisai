@@ -74,9 +74,14 @@ const LocationEnforcementModal = ({ onLocationSaved }) => {
                     });
                 },
                 (err) => {
-                    setError('Error getting location: ' + err.message);
+                    let msg = 'Error getting location';
+                    if (err.code === 1) msg = 'Location access denied.';
+                    else if (err.code === 2) msg = 'Position unavailable.';
+                    else if (err.code === 3) msg = 'Request timed out.';
+                    setError(msg + ': ' + err.message);
                     setStatus('');
-                }
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         } else {
             setError('Geolocation is not supported by your browser');
@@ -208,6 +213,31 @@ const LocationEnforcementModal = ({ onLocationSaved }) => {
                                     type="text"
                                     value={state}
                                     onChange={(e) => setState(e.target.value)}
+                                    required
+                                    style={inputStyle}
+                                />
+                            </div>
+                        </div>
+
+                        <div style={{ ...gridStyle, marginTop: '1rem', padding: '10px', background: 'rgba(255,107,0,0.05)', borderRadius: '8px', border: '1px solid rgba(255,107,0,0.1)' }}>
+                            <div className="form-group">
+                                <label style={{ ...labelStyle, color: 'var(--accent)' }}>Latitude</label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    value={location.lat}
+                                    onChange={(e) => setLocation(prev => ({ ...prev, lat: parseFloat(e.target.value) || 0 }))}
+                                    required
+                                    style={inputStyle}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label style={{ ...labelStyle, color: 'var(--accent)' }}>Longitude</label>
+                                <input
+                                    type="number"
+                                    step="any"
+                                    value={location.lng}
+                                    onChange={(e) => setLocation(prev => ({ ...prev, lng: parseFloat(e.target.value) || 0 }))}
                                     required
                                     style={inputStyle}
                                 />

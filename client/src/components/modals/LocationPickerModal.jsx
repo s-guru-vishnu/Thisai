@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
-import { X, MapPin, CheckCircle, Search } from 'lucide-react';
+import { X, MapPin, CheckCircle, Search, Crosshair } from 'lucide-react';
 
 const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation }) => {
     const { isLoaded } = useJsApiLoader({
@@ -11,6 +11,13 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation }) =>
     const defaultPos = { lat: 11.0168, lng: 76.9558 };
     const [markerPosition, setMarkerPosition] = useState(initialLocation || defaultPos);
     const [addressPreview, setAddressPreview] = useState(null);
+    const [addressData, setAddressData] = useState({
+        address: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        country: ''
+    });
     const [loading, setLoading] = useState(false);
     const [mapCenter, setMapCenter] = useState(initialLocation || defaultPos);
     const mapRef = useRef(null);
@@ -23,17 +30,58 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation }) =>
             const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
             const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`);
             const data = await res.json();
+            
             if (data.results && data.results[0]) {
-                setAddressPreview(data.results[0].formatted_address);
+                const fullAddress = data.results[0].formatted_address;
+                const components = data.results[0].address_components;
+                
+                const getComponent = (type) => components.find(c => c.types.includes(type))?.long_name || '';
+                
+                const structured = {
+                    address: fullAddress,
+                    city: getComponent('locality') || getComponent('administrative_area_level_2'),
+                    state: getComponent('administrative_area_level_1'),
+                    postalCode: getComponent('postal_code'),
+                    country: getComponent('country')
+                };
+                
+                setAddressPreview(fullAddress);
+                setAddressData(structured);
             } else {
-                setAddressPreview(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+                const fallback = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+                setAddressPreview(fallback);
+                setAddressData({ address: fallback, city: '', state: '', postalCode: '', country: '' });
             }
         } catch {
-            setAddressPreview(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+            const fallback = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+            setAddressPreview(fallback);
+            setAddressData({ address: fallback, city: '', state: '', postalCode: '', country: '' });
         } finally {
             setLoading(false);
         }
     }, []);
+
+    const getCurrentLocation = () => {
+        if (navigator.geolocation) {
+            setLoading(true);
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const newPos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    setMarkerPosition(newPos);
+                    setMapCenter(newPos);
+                    reverseGeocode(newPos.lat, newPos.lng);
+                },
+                () => {
+                    setLoading(false);
+                    alert("Unable to fetch location. Please check browser permissions.");
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        }
+    };
 
     // When modal opens or initialLocation changes, update marker AND map center
     useEffect(() => {
@@ -98,13 +146,22 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation }) =>
                         <h2 style={{ margin: 0, fontSize: '1.15rem', color: '#fff', fontWeight: 700 }}>📍 Pick Your Location</h2>
                         <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>Tap on the map or drag the red pin</p>
                     </div>
-                    <button onClick={onClose} style={{
-                        background: 'rgba(255,255,255,0.08)', border: 'none', color: '#aaa', cursor: 'pointer',
-                        borderRadius: '50%', width: '36px', height: '36px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                        <X size={18} />
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={getCurrentLocation} title="Use My Current Location" style={{
+                            background: 'rgba(255,107,0,0.15)', border: '1px solid rgba(255,107,0,0.3)', color: 'var(--accent)', cursor: 'pointer',
+                            borderRadius: '50%', width: '36px', height: '36px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                            <Crosshair size={18} />
+                        </button>
+                        <button onClick={onClose} style={{
+                            background: 'rgba(255,255,255,0.08)', border: 'none', color: '#aaa', cursor: 'pointer',
+                            borderRadius: '50%', width: '36px', height: '36px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                            <X size={18} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Map */}
@@ -167,6 +224,37 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation }) =>
                         )}
                     </div>
 
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                             <label style={{ fontSize: '0.7rem', color: '#666', marginBottom: '4px', display: 'block' }}>LATITUDE</label>
+                             <input 
+                                type="number" 
+                                step="any"
+                                value={markerPosition.lat} 
+                                onChange={(e) => {
+                                    const val = parseFloat(e.target.value) || 0;
+                                    setMarkerPosition(prev => ({ ...prev, lat: val }));
+                                    setMapCenter(prev => ({ ...prev, lat: val }));
+                                }}
+                                style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', fontSize: '0.9rem', outline: 'none' }}
+                             />
+                        </div>
+                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                             <label style={{ fontSize: '0.7rem', color: '#666', marginBottom: '4px', display: 'block' }}>LONGITUDE</label>
+                             <input 
+                                type="number" 
+                                step="any"
+                                value={markerPosition.lng} 
+                                onChange={(e) => {
+                                    const val = parseFloat(e.target.value) || 0;
+                                    setMarkerPosition(prev => ({ ...prev, lng: val }));
+                                    setMapCenter(prev => ({ ...prev, lng: val }));
+                                }}
+                                style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', fontSize: '0.9rem', outline: 'none' }}
+                             />
+                        </div>
+                    </div>
+
                     <div style={{ display: 'flex', gap: '10px' }}>
                         <button onClick={onClose} style={{
                             flex: 1, padding: '13px', borderRadius: '12px',
@@ -174,8 +262,11 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation }) =>
                             color: '#aaa', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem',
                         }}>Cancel</button>
                         <button
-                            onClick={() => onConfirm(markerPosition, addressPreview || formatCoords(markerPosition))}
-                            disabled={loading}
+                            onClick={() => onConfirm({
+                                latitude: markerPosition.lat,
+                                longitude: markerPosition.lng,
+                                ...addressData
+                            })}
                             style={{
                                 flex: 2, padding: '13px', borderRadius: '12px', border: 'none',
                                 background: loading ? '#555' : 'var(--accent)', color: 'white',

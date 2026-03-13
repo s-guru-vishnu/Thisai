@@ -55,6 +55,7 @@ const SellerManualEntry = () => {
         productId: '',
         customerEmail: '',
         customerName: '',
+        customerId: '',
         deliveryAddress: '',
         deliveryType: 'Standard',
         destination: '',
@@ -93,6 +94,7 @@ const SellerManualEntry = () => {
                 setFormData(prev => ({
                     ...prev,
                     customerName: data.name,
+                    customerId: data._id,
                     deliveryAddress: data.location.addressLine1 + (data.location.city ? `, ${data.location.city}` : ''),
                     destination: data.location.city || '',
                     lat: data.location.latitude,
@@ -108,7 +110,7 @@ const SellerManualEntry = () => {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.lat || !formData.lng) {
             setError('Please fetch customer location using email first.');
@@ -116,33 +118,40 @@ const SellerManualEntry = () => {
         }
 
         setLoading(true);
+        setError('');
+        
         const trk = Math.random().toString(36).substring(2, 12).toUpperCase();
         const product = products.find(p => p.id.toString() === formData.productId);
 
-        const newDelivery = {
-            id: Date.now(),
-            trackingCode: trk,
-            productName: product ? product.name : 'Manual Item',
-            ...formData,
-            location: position,
-            origin: userInfo.location || 'Not Configured',
-            status: 'Pending Pickup',
-            createdAt: new Date().toISOString()
-        };
-
-        const savedDels = localStorage.getItem('sellerDeliveries');
-        let existing = [];
         try {
-            const parsed = savedDels ? JSON.parse(savedDels) : null;
-            existing = Array.isArray(parsed) ? parsed : [];
-        } catch (e) {
-            existing = [];
-        }
-        localStorage.setItem('sellerDeliveries', JSON.stringify([newDelivery, ...existing]));
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            
+            // Prepare package data for backend
+            const parcelData = {
+                parcelId: trk, // Use generated tracking as parcelId
+                productName: product ? product.name : 'Manual Item',
+                category: product ? product.category || 'General' : 'General',
+                weight: '1kg', // Default or from form if we add it
+                seller: userInfo.name || 'Seller',
+                destination: formData.destination,
+                customer: formData.customerId,
+                customerName: formData.customerName,
+                deliveryAddress: formData.deliveryAddress,
+                deliveryType: formData.deliveryType,
+                status: 'Dispatched'
+            };
 
-        setGeneratedTrk(trk);
-        setShowQRSuccess(true);
-        setLoading(false);
+            await axios.post(`${apiBase}/api/parcels`, parcelData, {
+                headers: { Authorization: `Bearer ${userInfo.token}` }
+            });
+
+            setGeneratedTrk(trk);
+            setShowQRSuccess(true);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to dispatch product. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

@@ -24,7 +24,9 @@ const getParcelByTrackingId = async (req, res) => {
         // In reality: await Parcel.findOne({ trackingCode: trackingId })
         // Returning mock structure as defined in instructions for immediate frontend integration testing
         
-        let parcel = await Parcel.findOne({ trackingCode: trackingId }).populate('driver');
+        let parcel = await Parcel.findOne({ 
+            $or: [{ trackingCode: trackingId }, { parcelId: trackingId }] 
+        }).populate('assignedDriver');
         
         if (!parcel) {
             // Mock failover if actual DB record doesn't exist yet but UI needs testing
@@ -56,7 +58,7 @@ const getParcelByTrackingId = async (req, res) => {
             deliveryAddress: parcel.deliveryAddress,
             eta: "15 min",
             status: parcel.status,
-            driverName: parcel.driver ? parcel.driver.name : 'Unassigned',
+            driverName: parcel.assignedDriver ? parcel.assignedDriver.name : 'Unassigned',
             driverLocation: parcel.currentLocation || { lat: 13.0827, lng: 80.2707 },
             timeline: [
                 { title: 'Order Created', time: '10:00 AM', completed: true },
@@ -78,9 +80,9 @@ const getUserParcelHistory = async (req, res) => {
     try {
         const { userId } = req.params;
         const history = await Parcel.find({ 
-            $or: [{ customer: userId }, { receiver: userId }], 
+            customer: userId, 
             status: 'Delivered' 
-        }).populate('driver');
+        }).populate('assignedDriver');
         
         res.json(history);
     } catch (error) {
@@ -163,10 +165,52 @@ const getCustomerNotifications = async (req, res) => {
     }
 };
 
+// @desc    Get active (latest non-delivered) shipment for customer
+// @route   GET /api/parcel/active
+// @access  Private
+const getActiveShipment = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const parcel = await Parcel.findOne({
+            customer: userId,
+            status: { $ne: 'Delivered' }
+        }).sort({ createdAt: -1 })
+        .populate('assignedDriver')
+        .populate('originWarehouse', 'name hub region')
+        .populate('destinationWarehouse', 'name hub region')
+        .populate('intermediateHubs', 'name hub region');
+
+        if (!parcel) {
+            return res.json(null);
+        }
+
+        res.json({
+            trackingId: parcel.parcelId,
+            productName: parcel.productName,
+            status: parcel.status,
+            eta: "Calculating...",
+            driverName: parcel.assignedDriver ? parcel.assignedDriver.name : 'Unassigned',
+            logisticsPath: {
+                origin: parcel.originWarehouse?.name || 'Local Pickup',
+                destination: parcel.destinationWarehouse?.name || 'Final Delivery Hub',
+                hubs: parcel.intermediateHubs?.map(h => h.name) || [],
+                fullRoute: [
+                    parcel.originWarehouse?.name,
+                    ...(parcel.intermediateHubs?.map(h => h.name) || []),
+                    parcel.destinationWarehouse?.name
+                ].filter(Boolean)
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getParcelByTrackingId,
     getUserParcelHistory,
     getLiveDriverLocation,
     getDelayPrediction,
-    getCustomerNotifications
+    getCustomerNotifications,
+    getActiveShipment
 };

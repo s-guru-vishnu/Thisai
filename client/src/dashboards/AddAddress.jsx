@@ -62,9 +62,19 @@ const AddAddress = () => {
             },
             (error) => {
                 console.error('Geolocation error:', error);
-                showToast('Unable to access location. Please enable location services.', 'error');
+                
+                let errorMsg = 'Unable to access location.';
+                if (error.code === 1) errorMsg = 'Location access denied. Please enable permissions.';
+                else if (error.code === 2) errorMsg = 'Location unavailable. Trying IP-based location...';
+                else if (error.code === 3) errorMsg = 'Location request timed out.';
+                
+                showToast(errorMsg, 'error');
                 setLocationLoading(false);
-            }
+                
+                // Fallback: Open map at default location instead of doing nothing
+                setShowMap(true);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
     };
 
@@ -207,6 +217,20 @@ const AddAddress = () => {
                             <div className="form-group">
                                 <label className="form-label">State</label>
                                 <input name="state" required value={formData.state} onChange={handleInputChange} className="form-input" />
+                            </div>
+                        </div>
+
+                        <div style={{ 
+                            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem',
+                            padding: '1.5rem', background: 'rgba(255,107,0,0.05)', borderRadius: '12px', border: '1px solid rgba(255,107,0,0.1)'
+                        }}>
+                            <div className="form-group">
+                                <label className="form-label" style={{ color: 'var(--accent)' }}>Latitude</label>
+                                <input name="latitude" type="number" step="any" required value={formData.latitude || ''} onChange={handleInputChange} className="form-input" placeholder="0.0000" />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label" style={{ color: 'var(--accent)' }}>Longitude</label>
+                                <input name="longitude" type="number" step="any" required value={formData.longitude || ''} onChange={handleInputChange} className="form-input" placeholder="0.0000" />
                             </div>
                         </div>
 

@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Sun, Moon } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Eye, EyeOff, Sun, Moon, User, Mail, Lock } from 'lucide-react';
 import axios from 'axios';
 import '../styles/dashboard.css';
 
-const Login = () => {
+const Register = () => {
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [theme, setTheme] = useState(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
     const navigate = useNavigate();
+
+
 
     useEffect(() => {
         if (theme === 'dark') {
@@ -28,64 +32,33 @@ const Login = () => {
         setTheme(prev => prev === 'dark' ? 'light' : 'dark');
     };
 
-    const handleLogin = async (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
+        if (password !== confirmPassword) {
+            setError('Passwords do not match');
+            setLoading(false);
+            return;
+        }
+
         try {
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            const { data } = await axios.post(`${apiBase}/api/auth/login`, {
+            const { data } = await axios.post(`${apiBase}/api/auth/register`, {
+                name,
                 email,
                 password,
+                role: 'customer'
             });
 
-            // Save user to local storage for demo
+            // Save user to local storage
             localStorage.setItem('userInfo', JSON.stringify(data));
 
-            switch (data.role) {
-                case 'admin':
-                    navigate('/dashboard');
-                    break;
-                case 'manager':
-                    navigate('/manager');
-                    break;
-                case 'warehouse':
-                    navigate('/warehouse');
-                    break;
-                case 'driver':
-                case 'cargo_driver':
-                case 'delivery_driver':
-                    navigate('/driver');
-                    break;
-                case 'customer':
-                    navigate('/customer');
-                    break;
-                case 'parcel_receiver':
-                    navigate('/receiver');
-                    break;
-                case 'seller':
-                    navigate('/seller');
-                    break;
-                default:
-                    navigate('/dashboard');
-            }
+            // Navigate to customer dashboard
+            navigate('/customer');
         } catch (err) {
             setError(err.response?.data?.message || err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleSeedDatabase = async () => {
-        try {
-            setLoading(true);
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            await axios.post(`${apiBase}/api/auth/seed`);
-            alert('Database seeded successfully in MongoDB Compass! Check "logist" DB.');
-            setError('');
-        } catch (err) {
-            setError('Seed failed: ' + (err.response?.data?.message || err.message));
         } finally {
             setLoading(false);
         }
@@ -117,37 +90,57 @@ const Login = () => {
                 {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
             </button>
 
-            <div className="login-box">
+            <div className="login-box" style={{ maxWidth: '450px' }}>
                 <div className="login-header">
                     <img src="/Thisai.png" alt="Thisai Logo" className="logo-orb large-orb" />
                     <h2>THISAI</h2>
-                    <p>Login to your portal</p>
+                    <p>Create your customer account</p>
                 </div>
 
                 {error && <div className="error-message">{error}</div>}
 
-                <form onSubmit={handleLogin} className="login-form">
+                <form onSubmit={handleRegister} className="login-form">
+                    <div className="form-group">
+                        <label>Full Name</label>
+                        <div style={{ position: 'relative' }}>
+                            <User size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <input
+                                type="text"
+                                placeholder="Enter Full Name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                required
+                                style={{ paddingLeft: '40px' }}
+                            />
+                        </div>
+                    </div>
+
                     <div className="form-group">
                         <label>Email Address</label>
-                        <input
-                            type="email"
-                            placeholder="Enter Email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
+                        <div style={{ position: 'relative' }}>
+                            <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <input
+                                type="email"
+                                placeholder="Enter Email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                style={{ paddingLeft: '40px' }}
+                            />
+                        </div>
                     </div>
 
                     <div className="form-group">
                         <label>Password</label>
                         <div style={{ position: 'relative' }}>
+                            <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                             <input
                                 type={showPassword ? "text" : "password"}
                                 placeholder="Enter Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                style={{ width: '100%', paddingRight: '45px' }}
+                                style={{ width: '100%', paddingLeft: '40px', paddingRight: '45px' }}
                             />
                             <button
                                 type="button"
@@ -171,30 +164,37 @@ const Login = () => {
                         </div>
                     </div>
 
-                    <button type="submit" className="primary-btn submit-btn" disabled={loading}>
-                        {loading ? 'Authenticating...' : 'Sign In'}
+                    <div className="form-group">
+                        <label>Confirm Password</label>
+                        <div style={{ position: 'relative' }}>
+                            <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Confirm Password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required
+                                style={{ width: '100%', paddingLeft: '40px', paddingRight: '45px' }}
+                            />
+                        </div>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        className="primary-btn submit-btn" 
+                        disabled={loading} 
+                        style={{ marginTop: '1rem' }}
+                    >
+                        {loading ? 'Creating Account...' : 'Register as Customer'}
                     </button>
                 </form>
 
-                <div className="seed-section">
-                    <p className="seed-text" style={{ marginBottom: '10px' }}>Don't have an account? <span onClick={() => navigate('/register')} style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 'bold' }}>Register as Customer</span></p>
-                    <p className="seed-text">First time setup? Need test accounts?</p>
-                    <button onClick={handleSeedDatabase} className="secondary-btn" disabled={loading}>
-                        Seed Default Database
-                    </button>
-                </div>
-
-                <div className="demo-credentials">
-                    <small>
-                        <b>Testing Accounts (PWD: password123):</b><br />
-                        admin@impact.com | manager@impact.com | warehouse@impact.com<br />
-                        driver@impact.com | customer@impact.com | receiver@impact.com<br />
-                        seller@impact.com
-                    </small>
+                <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                    Already have an account? <Link to="/login" style={{ color: 'var(--accent)', fontWeight: 'bold', textDecoration: 'none' }}>Sign In</Link>
                 </div>
             </div>
         </div>
     );
 };
 
-export default Login;
+export default Register;

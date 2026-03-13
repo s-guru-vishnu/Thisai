@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { User, Phone, Globe, Upload, Save, CheckCircle, MapPin, Building, Hash, Crosshair, Search } from 'lucide-react';
 import axios from 'axios';
 import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
@@ -36,6 +36,7 @@ const BasicInfoSettings = ({ userContext, showToast }) => {
         country: userContext.country || '',
         city: userContext.city || '',
         taxId: userContext.taxId || '',
+        nearestWarehouse: userContext.nearestWarehouse || '',
         // New Location Schema
         location: {
             addressLine1: userContext.location?.addressLine1 || '',
@@ -49,6 +50,22 @@ const BasicInfoSettings = ({ userContext, showToast }) => {
         },
         liveLocationSharing: userContext.liveLocationSharing || false
     });
+
+    const [warehouses, setWarehouses] = useState([]);
+    
+    useEffect(() => {
+        const fetchWarehouses = async () => {
+            try {
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+                const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
+                const { data } = await axios.get(`${apiBase}/api/auth/warehouses`, config);
+                setWarehouses(data);
+            } catch (error) {
+                console.error("Error fetching warehouses:", error);
+            }
+        };
+        fetchWarehouses();
+    }, [userContext.token]);
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -158,7 +175,14 @@ const BasicInfoSettings = ({ userContext, showToast }) => {
                         mapRef.current.setZoom(15);
                     }
                 },
-                () => showToast("Error: Geolocation failed.", "error")
+                (err) => {
+                    let msg = "Error: Geolocation failed.";
+                    if (err.code === 1) msg = "Location permission denied.";
+                    else if (err.code === 2) msg = "Location position unavailable.";
+                    else if (err.code === 3) msg = "Location request timed out.";
+                    showToast(msg, "error");
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         } else {
             showToast("Error: Browser does not support geolocation.", "error");
@@ -227,7 +251,8 @@ const BasicInfoSettings = ({ userContext, showToast }) => {
                 city: formData.city,
                 taxId: formData.taxId,
                 location: formData.location,
-                liveLocationSharing: formData.liveLocationSharing
+                liveLocationSharing: formData.liveLocationSharing,
+                nearestWarehouse: formData.nearestWarehouse || null
             };
 
             const { data } = await axios.put(`${apiBase}/api/auth/profile`, payload, config);
@@ -363,6 +388,30 @@ const BasicInfoSettings = ({ userContext, showToast }) => {
                             </div>
                         </div>
 
+                        <div className="form-group" style={{ padding: '15px', background: 'rgba(var(--accent-rgb), 0.05)', borderRadius: '12px', border: '1px solid rgba(var(--accent-rgb), 0.2)' }}>
+                            <label style={{ color: 'var(--accent)', fontWeight: 'bold', marginBottom: '8px', display: 'block', fontSize: '0.9rem' }}>Nearest Logistics Hub *</label>
+                            <div style={{ position: 'relative' }}>
+                                <Building size={18} style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: 'var(--accent)' }} />
+                                <select 
+                                    name="nearestWarehouse" 
+                                    value={formData.nearestWarehouse} 
+                                    onChange={handleInputChange}
+                                    style={{ paddingLeft: '45px' }}
+                                    className="settings-select"
+                                >
+                                    <option value="">Select Nearest Warehouse</option>
+                                    {warehouses.map(wh => (
+                                        <option key={wh._id} value={wh._id}>
+                                            {wh.name} ({wh.region})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <p style={{ margin: '8px 0 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                This facility will handle your primary dispatch and last-mile delivery.
+                            </p>
+                        </div>
+
                         {formData.role === 'driver' && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '15px', background: 'rgba(var(--accent-rgb), 0.05)', borderRadius: '10px', border: '1px solid rgba(var(--accent-rgb), 0.2)' }}>
                                 <div style={{ flex: 1 }}>
@@ -379,7 +428,32 @@ const BasicInfoSettings = ({ userContext, showToast }) => {
                             </div>
                         )}
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem', padding: '15px', background: 'rgba(255,107,0,0.05)', borderRadius: '12px', border: '1px solid rgba(255,107,0,0.1)' }}>
+                            <div className="form-group">
+                                <label style={{ color: 'var(--accent)', fontSize: '0.85rem', marginBottom: '5px', display: 'block' }}>Latitude</label>
+                                <input 
+                                    type="number" 
+                                    step="any" 
+                                    name="location.latitude" 
+                                    value={formData.location.latitude} 
+                                    onChange={handleInputChange} 
+                                    className="settings-input" 
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label style={{ color: 'var(--accent)', fontSize: '0.85rem', marginBottom: '5px', display: 'block' }}>Longitude</label>
+                                <input 
+                                    type="number" 
+                                    step="any" 
+                                    name="location.longitude" 
+                                    value={formData.location.longitude} 
+                                    onChange={handleInputChange} 
+                                    className="settings-input" 
+                                />
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '1rem' }}>
                             <button 
                                 type="button" 
                                 onClick={handleGetCurrentLocation}

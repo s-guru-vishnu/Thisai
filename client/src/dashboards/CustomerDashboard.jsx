@@ -28,8 +28,8 @@ const CustomerDashboard = () => {
                     return;
                 }
                 const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-                // Using a fixed ID for demo/test purposes as requested, or it could be a dynamic "latest" endpoint
-                const { data } = await axios.get(`http://localhost:5000/api/parcel/1234567890`, config);
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+                const { data } = await axios.get(`${apiBase}/api/parcel/active`, config);
                 setActiveShipment(data);
                 setIsLoadingShipment(false);
             } catch (err) {
@@ -43,7 +43,7 @@ const CustomerDashboard = () => {
     const checkLocationAndProceed = (action) => {
         const userInfo = JSON.parse(localStorage.getItem('userInfo'));
         const location = userInfo?.location;
-        
+
         if (!location || !location.addressLine1 || !location.city) {
             setIsLocationModalOpen(true);
         } else {
@@ -60,14 +60,14 @@ const CustomerDashboard = () => {
         setError('');
         navigate(`/customer/track?id=${code}`);
     };
-    
+
     const confirmReceipt = async () => {
         if (!deliveryDetails) return;
         try {
             const userInfo = JSON.parse(localStorage.getItem('userInfo'));
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
             // In a real app: await axios.put(`http://localhost:5000/api/parcel/confirm/${deliveryDetails.trackingId}`, {}, config);
-            
+
             setDeliveryDetails(prev => ({ ...prev, status: 'Delivered' }));
             alert('Delivery confirmed! Thank you.');
         } catch (err) {
@@ -92,7 +92,7 @@ const CustomerDashboard = () => {
                         } else {
                             setError('Invalid QR Code format. Must be 10 characters.');
                         }
-                    }, 
+                    },
                     (error) => {
                         // console.warn(error);
                     }
@@ -131,9 +131,9 @@ const CustomerDashboard = () => {
                                 maxLength={10}
                             />
                         </div>
-                        <button 
-                            onClick={() => checkLocationAndProceed(handleTrack)} 
-                            className="primary-btn" 
+                        <button
+                            onClick={() => checkLocationAndProceed(handleTrack)}
+                            className="primary-btn"
                             style={{ padding: '0 2.5rem', height: '54px', borderRadius: '12px' }}
                         >
                             Track
@@ -142,7 +142,7 @@ const CustomerDashboard = () => {
 
                     <div style={{ marginTop: '2rem' }}>
                         {isLoadingShipment ? (
-                             <div className="skeleton-loader" style={{ height: '100px', borderRadius: '16px' }}></div>
+                            <div className="skeleton-loader" style={{ height: '100px', borderRadius: '16px' }}></div>
                         ) : activeShipment ? (
                             <div className="active-shipment-card">
                                 <div className="shipment-info">
@@ -159,14 +159,33 @@ const CustomerDashboard = () => {
                                     </div>
                                 </div>
                                 <div className="active-shipment-actions">
-                                    <button 
+                                    <button
                                         onClick={() => navigate(`/customer/track?id=${activeShipment.trackingId}`)}
-                                        className="primary-btn" 
+                                        className="primary-btn"
                                         style={{ padding: '0.6rem 1.2rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', height: 'auto' }}
                                     >
                                         Track Live
                                     </button>
                                 </div>
+
+                                {activeShipment.logisticsPath?.fullRoute?.length > 0 && (
+                                    <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,107,0,0.1)' }}>
+                                        <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Logistics Journey</h4>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
+                                            {activeShipment.logisticsPath.fullRoute.map((step, idx) => (
+                                                <React.Fragment key={idx}>
+                                                    <div style={{ textAlign: 'center', flex: 1, position: 'relative', zIndex: 1 }}>
+                                                        <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: idx === 0 ? 'var(--accent)' : 'var(--bg-panel)', border: '2px solid var(--accent)', margin: '0 auto 6px auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: idx === 0 ? 'black' : 'var(--accent)', fontSize: '0.65rem', fontWeight: 'bold' }}>{idx + 1}</div>
+                                                        <div style={{ fontSize: '0.65rem', color: idx === 0 ? 'white' : 'var(--text-muted)' }}>{step.split(' ')[0]}</div>
+                                                    </div>
+                                                    {idx < activeShipment.logisticsPath.fullRoute.length - 1 && (
+                                                        <div style={{ flex: 1, height: '1px', background: 'rgba(255,107,0,0.2)', marginBottom: '18px' }}></div>
+                                                    )}
+                                                </React.Fragment>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ) : null}
                     </div>
@@ -175,19 +194,19 @@ const CustomerDashboard = () => {
                         <button
                             onClick={toggleScanner}
                             className={`primary-btn ${!showScanner ? 'pulse-glow' : ''}`}
-                            style={{ 
-                                padding: '0.8rem 2rem', 
-                                fontSize: '1.05rem', 
-                                borderRadius: '12px', 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center', 
-                                gap: '12px', 
-                                width: 'fit-content', 
+                            style={{
+                                padding: '0.8rem 2rem',
+                                fontSize: '1.05rem',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '12px',
+                                width: 'fit-content',
                                 minWidth: '260px',
-                                background: showScanner ? 'var(--bg-panel)' : 'var(--accent)', 
-                                border: showScanner ? '1px solid var(--accent)' : 'none', 
-                                color: showScanner ? 'var(--accent)' : 'white' 
+                                background: showScanner ? 'var(--bg-panel)' : 'var(--accent)',
+                                border: showScanner ? '1px solid var(--accent)' : 'none',
+                                color: showScanner ? 'var(--accent)' : 'white'
                             }}
                         >
                             <QrCode size={22} />
@@ -196,11 +215,11 @@ const CustomerDashboard = () => {
                     </div>
 
                     {showScanner && (
-                        <div style={{ 
-                            marginTop: '25px', 
-                            padding: '10px', 
-                            background: 'rgba(255,255,255,0.02)', 
-                            borderRadius: '24px', 
+                        <div style={{
+                            marginTop: '25px',
+                            padding: '10px',
+                            background: 'rgba(255,255,255,0.02)',
+                            borderRadius: '24px',
                             border: '1px solid var(--border-color)',
                             boxShadow: 'inset 0 0 20px rgba(0,0,0,0.4)',
                             position: 'relative',
@@ -295,16 +314,16 @@ const CustomerDashboard = () => {
 
                 {/* Quick Actions / Addresses Section */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginTop: '2rem' }}>
-                        <div className="dashboard-card" 
+                    <div className="dashboard-card"
                         onClick={() => navigate('/settings/addresses')}
-                        style={{ 
-                            padding: '1.5rem', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '20px', 
+                        style={{
+                            padding: '1.5rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '20px',
                             cursor: 'pointer',
                             transition: 'transform 0.2s',
-                        }} 
+                        }}
                         onMouseOver={e => e.currentTarget.style.transform = 'translateY(-5px)'}
                         onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
                     >
@@ -317,16 +336,16 @@ const CustomerDashboard = () => {
                         </div>
                     </div>
 
-                    <div className="dashboard-card" 
+                    <div className="dashboard-card"
                         onClick={() => navigate('/customer/history')}
-                        style={{ 
-                            padding: '1.5rem', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '20px', 
+                        style={{
+                            padding: '1.5rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '20px',
                             cursor: 'pointer',
                             transition: 'transform 0.2s',
-                        }} 
+                        }}
                         onMouseOver={e => e.currentTarget.style.transform = 'translateY(-5px)'}
                         onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
                     >
@@ -341,9 +360,9 @@ const CustomerDashboard = () => {
                 </div>
             </main>
 
-            <LocationRequiredModal 
-                isOpen={isLocationModalOpen} 
-                onClose={() => setIsLocationModalOpen(false)} 
+            <LocationRequiredModal
+                isOpen={isLocationModalOpen}
+                onClose={() => setIsLocationModalOpen(false)}
             />
         </div>
     );

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Login from './components/Login';
+import Register from './components/Register';
 import LocationEnforcementModal from './components/LocationEnforcementModal';
 
 import AdminRoutes from './routes/adminRoutes';
@@ -17,8 +18,8 @@ function AppContent() {
     const location = useLocation();
 
     const checkLocation = () => {
-        // If the user is on the login page, don't show the modal
-        if (location.pathname === '/login' || location.pathname === '/') {
+        // If the user is on the login or register page, don't show the modal
+        if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/') {
             setShowLocationModal(false);
             return;
         }
@@ -28,10 +29,12 @@ function AppContent() {
             try {
                 const userInfo = JSON.parse(userInfoRaw);
                 if (userInfo && typeof userInfo === 'object') {
-                    // Mandatory fields: latitude, longitude, and postalCode (pincode)
-                    const hasLocation = userInfo.location && userInfo.location.latitude && userInfo.location.postalCode;
+                    // Check for existence of coordinates. 
+                    // We check specifically for latitude not being null/undefined to avoid issues with 0 coordinates.
+                    const loc = userInfo.location;
+                    const hasLocation = loc && (loc.latitude !== null && loc.latitude !== undefined) && (loc.addressLine1 || loc.city);
 
-                    if (!hasLocation) {
+                    if (!hasLocation && userInfo.role === 'customer') {
                         setShowLocationModal(true);
                     } else {
                         setShowLocationModal(false);
@@ -116,6 +119,7 @@ function AppContent() {
             <Routes>
                 <Route path="/" element={<Navigate to="/login" />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
 
                 {/* Role-based Independent Routers */}
                 <Route path="/dashboard/*" element={<AdminRoutes />} />

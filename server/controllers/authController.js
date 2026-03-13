@@ -46,7 +46,8 @@ const registerUser = async (req, res) => {
             password,
             role: role || 'customer',
             region: req.body.region,
-            hub: req.body.hub
+            hub: req.body.hub,
+            location: req.body.location
         });
 
         if (user) {
@@ -122,4 +123,70 @@ const findCustomerByEmail = async (req, res) => {
     }
 };
 
-module.exports = { loginUser, registerUser, changePassword, deleteAccount, findCustomerByEmail };
+const getAllUsers = async (req, res) => {
+    console.log(`GET /api/auth/users called by ${req.user?.email} (${req.user?.role})`);
+    try {
+        const users = await User.find({}).select('-password');
+        res.json(users);
+    } catch (error) {
+        console.error('Error in getAllUsers:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const updateUserRole = async (req, res) => {
+    try {
+        const { role } = req.body;
+        
+        // Block managers from assigning cargo_driver role
+        if (role === 'cargo_driver' && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Access denied: Only admins can assign Cargo Driver roles.' });
+        }
+
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Role Enforcement Group
+        const manageableRoles = req.user.role === 'admin' 
+            ? ['customer', 'delivery_driver', 'cargo_driver', 'driver'] 
+            : ['customer', 'delivery_driver', 'driver'];
+            
+        const targetableRoles = ['customer', 'delivery_driver'];
+
+        // Restriction: Non-admins have limited target roles and manageable users
+        if (req.user.role !== 'admin') {
+            if (!targetableRoles.includes(role)) {
+                return res.status(403).json({ message: `Access denied: Managers cannot assign the ${role} role.` });
+            }
+            if (!manageableRoles.includes(user.role)) {
+                return res.status(403).json({ message: `Access denied: Managers cannot modify ${user.role.replace('_', ' ')} roles.` });
+            }
+        }
+
+        user.role = role || user.role;
+        const updatedUser = await user.save();
+        res.json({
+            _id: updatedUser._id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            role: updatedUser.role
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+// @desc    Get all warehouse users
+// @route   GET /api/auth/warehouses
+// @access  Public (or semi-public)
+const getWarehouses = async (req, res) => {
+    try {
+        const warehouses = await User.find({ role: 'warehouse' }).select('name _id city region hub');
+        res.json(warehouses);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { loginUser, registerUser, changePassword, deleteAccount, findCustomerByEmail, getAllUsers, updateUserRole, getWarehouses };

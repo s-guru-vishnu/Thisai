@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { getParcelByTrackingId, getUserParcelHistory, getLiveDriverLocation, getCustomerNotifications } = require('../controllers/customerParcelController');
+const { getParcelByTrackingId, getUserParcelHistory, getLiveDriverLocation, getCustomerNotifications, getActiveShipment } = require('../controllers/customerParcelController');
 const { protect, checkLocation } = require('../middleware/authMiddleware');
 
 router.get('/notifications', protect, getCustomerNotifications);
+router.get('/active', protect, getActiveShipment);
 
 router.get('/:trackingId', protect, getParcelByTrackingId);
 

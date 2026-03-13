@@ -45,7 +45,7 @@ const userSchema = mongoose.Schema(
         role: {
             type: String,
             required: true,
-            enum: ['admin', 'manager', 'warehouse', 'driver', 'customer', 'parcel_receiver', 'seller'],
+            enum: ['admin', 'manager', 'warehouse', 'driver', 'customer', 'parcel_receiver', 'seller', 'cargo_driver', 'delivery_driver'],
             default: 'customer',
         },
         phone: { type: String, default: '' },
@@ -58,6 +58,9 @@ const userSchema = mongoose.Schema(
             theme: { type: String, default: 'system' },
             accentColor: { type: String, default: 'default' }
         },
+        nearestWarehouse: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        region: { type: String, default: '' },
+        hub: { type: String, default: '' },
         security: {
             twoFactorEnabled: { type: Boolean, default: false },
             activeSessions: { type: Array, default: [] }

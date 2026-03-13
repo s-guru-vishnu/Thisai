@@ -30,7 +30,7 @@ const updateProfile = async (req, res) => {
                 'storeName', 'businessType', 'warehouseLocation', 'averageDailyOrders', 'returnAddress', 'gstNumber',
                 
                 // General / Legacy
-                'taxId', 'region', 'hub', 'liveLocationSharing'
+                'taxId', 'region', 'hub', 'liveLocationSharing', 'nearestWarehouse'
             ];
             
             // Dynamically assign simple fields
