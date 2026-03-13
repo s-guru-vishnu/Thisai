@@ -37,12 +37,19 @@ const LiveMapPage = () => {
     const [activeDrivers, setActiveDrivers] = useState([]);
     const [liveAlert, setLiveAlert] = useState(null);
     const [loadingData, setLoadingData] = useState(true);
+    const [userCurrentLocation, setUserCurrentLocation] = useState(null);
     const [mapInstance, setMapInstance] = useState(null);
     const [showTraffic, setShowTraffic] = useState(false);
 
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const userLocation = userInfo.location;
+    const defaultCenter = (userLocation && userLocation.latitude && userLocation.longitude) 
+        ? { lat: userLocation.latitude, lng: userLocation.longitude }
+        : center;
+
     const handleFocusCenter = () => {
         if (mapInstance) {
-            mapInstance.panTo(center);
+            mapInstance.panTo(userCurrentLocation || defaultCenter);
             mapInstance.setZoom(13);
         }
     };
@@ -52,9 +59,32 @@ const LiveMapPage = () => {
     };
 
     React.useEffect(() => {
+        // Track live GPS location
+        if (navigator.geolocation) {
+            const watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const pos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    setUserCurrentLocation(pos);
+                    // Optionally center on first fix
+                    if (!userCurrentLocation && mapInstance) {
+                        mapInstance.panTo(pos);
+                    }
+                },
+                (err) => console.error("Geolocation error:", err),
+                { enableHighAccuracy: true }
+            );
+            return () => navigator.geolocation.clearWatch(watchId);
+        }
+    }, [mapInstance]);
+
+    React.useEffect(() => {
         const fetchMapData = async () => {
             try {
-                const response = await fetch('http://localhost:5000/api/admin/live-map');
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+                const response = await fetch(`${apiBase}/api/admin/live-map`);
                 if (response.ok) {
                     const data = await response.json();
                     setActiveDrivers(data.activeDrivers);
@@ -91,14 +121,31 @@ const LiveMapPage = () => {
                 <div className="map-view-container" style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '1.5rem' }}>
                     <div style={{ position: 'relative', background: 'var(--bg-panel)', border: '1px solid var(--border-color)', borderRadius: '16px', overflow: 'hidden' }}>
                         {isLoaded && !loadingData ? (
-                            <GoogleMap
-                                mapContainerStyle={mapContainerStyle}
-                                center={center}
-                                zoom={13}
+                                <GoogleMap
+                                    mapContainerStyle={mapContainerStyle}
+                                    center={userCurrentLocation || defaultCenter}
+                                    zoom={13}
                                 onLoad={map => setMapInstance(map)}
                                 options={{ styles: darkModeStyles, disableDefaultUI: true, zoomControl: true }}
                             >
                                 {showTraffic && <TrafficLayer />}
+                                
+                                {/* User's Real-time GPS Location Marker */}
+                                {userCurrentLocation && (
+                                    <Marker 
+                                        position={userCurrentLocation}
+                                        icon={{
+                                            path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
+                                            fillColor: "#007AFF",
+                                            fillOpacity: 1,
+                                            strokeWeight: 2,
+                                            strokeColor: "#FFFFFF",
+                                            scale: 2
+                                        }}
+                                        title="Your Current Live Location"
+                                    />
+                                )}
+
                                 {activeDrivers.map(driver => (
                                     <Marker 
                                         key={driver.id} 

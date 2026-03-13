@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { MapPin, Plus, Trash2, Home, Building, Briefcase, Info, Phone, Navigation } from 'lucide-react';
+import { MapPin, Plus, Trash2, Eye, Star, Navigation, CheckCircle2 } from 'lucide-react';
 import LocationPickerModal from '../modals/LocationPickerModal';
 
 const AddressSettings = ({ userContext, showToast }) => {
     const [addresses, setAddresses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showMap, setShowMap] = useState(false);
+    const [viewLocation, setViewLocation] = useState(null); // For viewing a saved location on map
+    const [showViewMap, setShowViewMap] = useState(false);
 
     const fetchAddresses = async () => {
         setLoading(true);
@@ -15,6 +17,11 @@ const AddressSettings = ({ userContext, showToast }) => {
             const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
             const { data } = await axios.get(`${apiBase}/api/address`, config);
             setAddresses(data);
+
+            // Auto-set first address as default if none are default
+            if (data.length > 0 && !data.some(a => a.isDefault)) {
+                await handleSetDefault(data[0]._id, true);
+            }
         } catch (error) {
             console.error('Error fetching addresses:', error);
         } finally {
@@ -26,8 +33,9 @@ const AddressSettings = ({ userContext, showToast }) => {
         fetchAddresses();
     }, []);
 
+    const [currentCoords, setCurrentCoords] = useState(null);
+
     const handleAddAddress = () => {
-        // If geolocation is available, get current position first then open map
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -35,7 +43,6 @@ const AddressSettings = ({ userContext, showToast }) => {
                     setShowMap(true);
                 },
                 () => {
-                    // Fallback: open map with default coords
                     setCurrentCoords(null);
                     setShowMap(true);
                 }
@@ -46,29 +53,29 @@ const AddressSettings = ({ userContext, showToast }) => {
         }
     };
 
-    const [currentCoords, setCurrentCoords] = useState(null);
-
-    const onLocationConfirm = async (coords, displayAddress) => {
+    const onLocationConfirm = async (locationData) => {
         setShowMap(false);
 
-        // Reverse geocode to get structured address
+        const { latitude, longitude, address, city, state, postalCode, country } = locationData;
+
         let addressData = {
             fullName: userContext.name || 'My Address',
             phone: userContext.phone || '',
-            latitude: coords.lat,
-            longitude: coords.lng,
+            latitude: latitude,
+            longitude: longitude,
             houseNumber: '-',
-            area: displayAddress || `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`,
-            townCity: '',
-            state: '',
-            pincode: '',
-            country: 'India',
+            area: address || `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`,
+            townCity: city || '',
+            state: state || '',
+            pincode: postalCode || '',
+            country: country || 'India',
             addressType: 'House',
+            isDefault: addresses.length === 0, // First address is default
         };
 
         try {
             const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-            const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${coords.lat},${coords.lng}&key=${apiKey}`);
+            const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`);
             const data = await response.json();
 
             if (data.results && data.results[0]) {
@@ -79,10 +86,10 @@ const AddressSettings = ({ userContext, showToast }) => {
                     ...addressData,
                     houseNumber: getComp('subpremise') || getComp('premise') || getComp('street_number') || '-',
                     area: getComp('sublocality_level_1') || getComp('sublocality') || getComp('route') || data.results[0].formatted_address,
-                    townCity: getComp('locality') || getComp('postal_town') || '',
-                    state: getComp('administrative_area_level_1') || '',
-                    pincode: getComp('postal_code') || '',
-                    country: getComp('country') || 'India',
+                    townCity: city || getComp('locality') || getComp('postal_town') || '',
+                    state: state || getComp('administrative_area_level_1') || '',
+                    pincode: postalCode || getComp('postal_code') || '',
+                    country: country || getComp('country') || 'India',
                 };
             }
         } catch (err) {
@@ -95,9 +102,57 @@ const AddressSettings = ({ userContext, showToast }) => {
             const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
             await axios.post(`${apiBase}/api/address`, addressData, config);
             showToast('Address saved!');
+            
+            // Update local storage if this is the only address (and thus default)
+            if (addressData.isDefault) {
+                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                userInfo.location = {
+                    addressLine1: addressData.area,
+                    city: addressData.townCity,
+                    state: addressData.state,
+                    country: addressData.country,
+                    postalCode: addressData.pincode,
+                    latitude: addressData.latitude,
+                    longitude: addressData.longitude
+                };
+                localStorage.setItem('userInfo', JSON.stringify(userInfo));
+            }
+
             fetchAddresses();
         } catch (error) {
             showToast('Failed to save address', 'error');
+        }
+    };
+
+    const handleSetDefault = async (id, silent = false) => {
+        try {
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
+            await axios.put(`${apiBase}/api/address/${id}`, { isDefault: true }, config);
+            if (!silent) {
+                showToast('Default address updated!');
+            }
+
+            // Update local storage
+            const { data: addressesData } = await axios.get(`${apiBase}/api/address`, config);
+            const defAddr = addressesData.find(a => a._id === id);
+            if (defAddr) {
+                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                userInfo.location = {
+                    addressLine1: defAddr.area,
+                    city: defAddr.townCity,
+                    state: defAddr.state,
+                    country: defAddr.country,
+                    postalCode: defAddr.pincode,
+                    latitude: defAddr.latitude,
+                    longitude: defAddr.longitude
+                };
+                localStorage.setItem('userInfo', JSON.stringify(userInfo));
+            }
+
+            fetchAddresses();
+        } catch (error) {
+            if (!silent) showToast('Failed to update default', 'error');
         }
     };
 
@@ -114,12 +169,10 @@ const AddressSettings = ({ userContext, showToast }) => {
         }
     };
 
-    const getIcon = (type) => {
-        switch(type) {
-            case 'House': return <Home size={18} />;
-            case 'Apartment': return <Building size={18} />;
-            case 'Business': return <Briefcase size={18} />;
-            default: return <Info size={18} />;
+    const handleViewLocation = (addr) => {
+        if (addr.latitude && addr.longitude) {
+            setViewLocation({ lat: addr.latitude, lng: addr.longitude });
+            setShowViewMap(true);
         }
     };
 
@@ -144,49 +197,150 @@ const AddressSettings = ({ userContext, showToast }) => {
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Click here or press "Add New Address" to pick a location on the map</p>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gap: '1.5rem' }}>
-                    {addresses.map(addr => (
+                <div style={{ display: 'grid', gap: '1rem' }}>
+                    {addresses.map((addr, index) => (
                         <div key={addr._id} style={{
-                            padding: '1.5rem',
-                            background: 'rgba(255,255,255,0.03)',
-                            borderRadius: '16px',
-                            border: addr.isDefault ? '1px solid var(--accent)' : '1px solid var(--border-color)',
+                            padding: '1.25rem 1.5rem',
+                            background: addr.isDefault ? 'rgba(var(--accent-rgb, 255, 107, 0), 0.04)' : 'rgba(255,255,255,0.02)',
+                            borderRadius: '14px',
+                            border: addr.isDefault ? '1.5px solid var(--accent)' : '1px solid var(--border-color)',
                             display: 'flex',
                             justifyContent: 'space-between',
-                            alignItems: 'flex-start',
-                            transition: 'transform 0.2s',
+                            alignItems: 'center',
+                            transition: 'all 0.2s ease',
                         }}>
-                            <div style={{ display: 'flex', gap: '15px' }}>
-                                <div style={{ background: 'rgba(var(--accent-rgb), 0.1)', color: 'var(--accent)', padding: '12px', borderRadius: '12px', height: 'fit-content' }}>
+                            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                                <div style={{
+                                    background: addr.isDefault ? 'var(--accent)' : 'rgba(var(--accent-rgb, 255, 107, 0), 0.1)',
+                                    color: addr.isDefault ? 'white' : 'var(--accent)',
+                                    padding: '10px',
+                                    borderRadius: '12px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}>
                                     <MapPin size={20} />
                                 </div>
                                 <div>
-                                    <p style={{ margin: '0 0 6px 0', fontWeight: '600', fontSize: '1rem' }}>
-                                        {addr.area || 'Saved Location'}
-                                    </p>
-                                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                                        {[addr.houseNumber !== '-' && addr.houseNumber, addr.townCity, addr.state, addr.pincode].filter(Boolean).join(', ')}
-                                    </p>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                                        <p style={{ margin: 0, fontWeight: '600', fontSize: '1rem', color: 'var(--text-main)' }}>
+                                            Address {index + 1}
+                                        </p>
+                                        {addr.isDefault && (
+                                            <span style={{
+                                                background: 'var(--accent)',
+                                                color: 'white',
+                                                padding: '2px 10px',
+                                                borderRadius: '20px',
+                                                fontSize: '0.7rem',
+                                                fontWeight: '700',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '4px',
+                                                letterSpacing: '0.3px',
+                                            }}>
+                                                <CheckCircle2 size={10} /> Default
+                                            </span>
+                                        )}
+                                    </div>
                                     {addr.latitude && (
-                                        <p style={{ margin: '6px 0 0 0', fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                                        <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                                             📍 {addr.latitude.toFixed(5)}, {addr.longitude.toFixed(5)}
                                         </p>
                                     )}
                                 </div>
                             </div>
-                            <button onClick={() => handleDelete(addr._id)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '8px' }} onMouseOver={e => e.currentTarget.style.color = '#ff3b30'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}>
-                                <Trash2 size={18} />
-                            </button>
+
+                            {/* Action Icons */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                {/* View Location */}
+                                <button
+                                    onClick={() => handleViewLocation(addr)}
+                                    title="View location on map"
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: 'var(--text-muted)',
+                                        cursor: 'pointer',
+                                        padding: '8px',
+                                        borderRadius: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'all 0.2s',
+                                    }}
+                                    onMouseOver={e => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'rgba(var(--accent-rgb, 255, 107, 0), 0.1)'; }}
+                                    onMouseOut={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
+                                >
+                                    <Eye size={17} />
+                                </button>
+
+                                {/* Set as Default */}
+                                {!addr.isDefault && (
+                                    <button
+                                        onClick={() => handleSetDefault(addr._id)}
+                                        title="Set as default address"
+                                        style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            color: 'var(--text-muted)',
+                                            cursor: 'pointer',
+                                            padding: '8px',
+                                            borderRadius: '8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            transition: 'all 0.2s',
+                                        }}
+                                        onMouseOver={e => { e.currentTarget.style.color = 'var(--warning, #F7931A)'; e.currentTarget.style.background = 'rgba(247, 147, 26, 0.1)'; }}
+                                        onMouseOut={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
+                                    >
+                                        <Star size={17} />
+                                    </button>
+                                )}
+
+                                {/* Delete */}
+                                <button
+                                    onClick={() => handleDelete(addr._id)}
+                                    title="Delete address"
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: 'var(--text-muted)',
+                                        cursor: 'pointer',
+                                        padding: '8px',
+                                        borderRadius: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'all 0.2s',
+                                    }}
+                                    onMouseOver={e => { e.currentTarget.style.color = '#ff3b30'; e.currentTarget.style.background = 'rgba(255, 59, 48, 0.1)'; }}
+                                    onMouseOut={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'; }}
+                                >
+                                    <Trash2 size={17} />
+                                </button>
+                            </div>
                         </div>
                     ))}
                 </div>
             )}
 
+            {/* Map for adding new address */}
             <LocationPickerModal
                 isOpen={showMap}
                 onClose={() => setShowMap(false)}
                 onConfirm={onLocationConfirm}
                 initialLocation={currentCoords}
+            />
+
+            {/* Read-only map for viewing a saved location */}
+            <LocationPickerModal
+                isOpen={showViewMap}
+                onClose={() => setShowViewMap(false)}
+                onConfirm={() => setShowViewMap(false)}
+                initialLocation={viewLocation}
+                readOnly={true}
             />
         </div>
     );

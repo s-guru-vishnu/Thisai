@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
 import { X, MapPin, CheckCircle, Search, Crosshair } from 'lucide-react';
 
-const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation }) => {
+const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation, readOnly = false }) => {
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY
     });
 
-    const defaultPos = { lat: 11.0168, lng: 76.9558 };
+    const defaultPos = { lat: 11.00000, lng: 77.08360 };
     const [markerPosition, setMarkerPosition] = useState(initialLocation || defaultPos);
     const [addressPreview, setAddressPreview] = useState(null);
     const [addressData, setAddressData] = useState({
@@ -117,7 +118,7 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation }) =>
 
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <>
             {/* Overlay */}
             <div style={{
@@ -143,17 +144,19 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation }) =>
                     borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)',
                 }}>
                     <div>
-                        <h2 style={{ margin: 0, fontSize: '1.15rem', color: '#fff', fontWeight: 700 }}>📍 Pick Your Location</h2>
-                        <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>Tap on the map or drag the red pin</p>
+                        <h2 style={{ margin: 0, fontSize: '1.15rem', color: '#fff', fontWeight: 700 }}>{readOnly ? '📍 Saved Location' : '📍 Pick Your Location'}</h2>
+                        <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#888' }}>{readOnly ? 'Viewing your saved address pin' : 'Tap on the map or drag the red pin'}</p>
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                        <button onClick={getCurrentLocation} title="Use My Current Location" style={{
-                            background: 'rgba(255,107,0,0.15)', border: '1px solid rgba(255,107,0,0.3)', color: 'var(--accent)', cursor: 'pointer',
-                            borderRadius: '50%', width: '36px', height: '36px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                            <Crosshair size={18} />
-                        </button>
+                        {!readOnly && (
+                            <button onClick={getCurrentLocation} title="Use My Current Location" style={{
+                                background: 'rgba(255,107,0,0.15)', border: '1px solid rgba(255,107,0,0.3)', color: 'var(--accent)', cursor: 'pointer',
+                                borderRadius: '50%', width: '36px', height: '36px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                                <Crosshair size={18} />
+                            </button>
+                        )}
                         <button onClick={onClose} style={{
                             background: 'rgba(255,255,255,0.08)', border: 'none', color: '#aaa', cursor: 'pointer',
                             borderRadius: '50%', width: '36px', height: '36px',
@@ -176,7 +179,7 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation }) =>
                                 map.panTo(markerPosition);
                                 map.setZoom(17);
                             }}
-                            onClick={onMapClick}
+                            onClick={readOnly ? undefined : onMapClick}
                             options={{
                                 disableDefaultUI: true,
                                 zoomControl: true,
@@ -185,7 +188,7 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation }) =>
                         >
                             <MarkerF
                                 position={markerPosition}
-                                draggable={true}
+                                draggable={!readOnly}
                                 onDragEnd={onMarkerDragEnd}
                             />
                         </GoogleMap>
@@ -224,59 +227,74 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation }) =>
                         )}
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
-                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                             <label style={{ fontSize: '0.7rem', color: '#666', marginBottom: '4px', display: 'block' }}>LATITUDE</label>
-                             <input 
-                                type="number" 
-                                step="any"
-                                value={markerPosition.lat} 
-                                onChange={(e) => {
-                                    const val = parseFloat(e.target.value) || 0;
-                                    setMarkerPosition(prev => ({ ...prev, lat: val }));
-                                    setMapCenter(prev => ({ ...prev, lat: val }));
-                                }}
-                                style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', fontSize: '0.9rem', outline: 'none' }}
-                             />
+                    {!readOnly && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+                            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                 <label style={{ fontSize: '0.7rem', color: '#666', marginBottom: '4px', display: 'block' }}>LATITUDE</label>
+                                 <input 
+                                    type="number" 
+                                    step="any"
+                                    value={markerPosition.lat} 
+                                    onChange={(e) => {
+                                        const val = parseFloat(e.target.value) || 0;
+                                        setMarkerPosition(prev => ({ ...prev, lat: val }));
+                                        setMapCenter(prev => ({ ...prev, lat: val }));
+                                    }}
+                                    style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', fontSize: '0.9rem', outline: 'none' }}
+                                 />
+                            </div>
+                            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                 <label style={{ fontSize: '0.7rem', color: '#666', marginBottom: '4px', display: 'block' }}>LONGITUDE</label>
+                                 <input 
+                                    type="number" 
+                                    step="any"
+                                    value={markerPosition.lng} 
+                                    onChange={(e) => {
+                                        const val = parseFloat(e.target.value) || 0;
+                                        setMarkerPosition(prev => ({ ...prev, lng: val }));
+                                        setMapCenter(prev => ({ ...prev, lng: val }));
+                                    }}
+                                    style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', fontSize: '0.9rem', outline: 'none' }}
+                                 />
+                            </div>
                         </div>
-                        <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                             <label style={{ fontSize: '0.7rem', color: '#666', marginBottom: '4px', display: 'block' }}>LONGITUDE</label>
-                             <input 
-                                type="number" 
-                                step="any"
-                                value={markerPosition.lng} 
-                                onChange={(e) => {
-                                    const val = parseFloat(e.target.value) || 0;
-                                    setMarkerPosition(prev => ({ ...prev, lng: val }));
-                                    setMapCenter(prev => ({ ...prev, lng: val }));
-                                }}
-                                style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', fontSize: '0.9rem', outline: 'none' }}
-                             />
-                        </div>
-                    </div>
+                    )}
 
                     <div style={{ display: 'flex', gap: '10px' }}>
-                        <button onClick={onClose} style={{
-                            flex: 1, padding: '13px', borderRadius: '12px',
-                            border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
-                            color: '#aaa', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem',
-                        }}>Cancel</button>
-                        <button
-                            onClick={() => onConfirm({
-                                latitude: markerPosition.lat,
-                                longitude: markerPosition.lng,
-                                ...addressData
-                            })}
-                            style={{
-                                flex: 2, padding: '13px', borderRadius: '12px', border: 'none',
-                                background: loading ? '#555' : 'var(--accent)', color: 'white',
-                                cursor: loading ? 'not-allowed' : 'pointer',
-                                fontWeight: 700, fontSize: '0.95rem',
+                        {readOnly ? (
+                            <button onClick={onClose} style={{
+                                flex: 1, padding: '13px', borderRadius: '12px', border: 'none',
+                                background: 'var(--accent)', color: 'white',
+                                cursor: 'pointer', fontWeight: 700, fontSize: '0.95rem',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                            }}
-                        >
-                            <CheckCircle size={18} /> Use This Location
-                        </button>
+                            }}>
+                                <X size={18} /> Close
+                            </button>
+                        ) : (
+                            <>
+                                <button onClick={onClose} style={{
+                                    flex: 1, padding: '13px', borderRadius: '12px',
+                                    border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
+                                    color: '#aaa', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem',
+                                }}>Cancel</button>
+                                <button
+                                    onClick={() => onConfirm({
+                                        latitude: markerPosition.lat,
+                                        longitude: markerPosition.lng,
+                                        ...addressData
+                                    })}
+                                    style={{
+                                        flex: 2, padding: '13px', borderRadius: '12px', border: 'none',
+                                        background: loading ? '#555' : 'var(--accent)', color: 'white',
+                                        cursor: loading ? 'not-allowed' : 'pointer',
+                                        fontWeight: 700, fontSize: '0.95rem',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                    }}
+                                >
+                                    <CheckCircle size={18} /> Use This Location
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
@@ -287,7 +305,8 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation }) =>
                     to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
                 }
             `}</style>
-        </>
+        </>,
+        document.body
     );
 };
 
