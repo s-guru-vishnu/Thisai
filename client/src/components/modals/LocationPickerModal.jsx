@@ -93,7 +93,7 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation, read
             setMarkerPosition(pos);
             setMapCenter(pos);
             setAddressPreview(null);
-            setSelectedHub('');
+            setSelectedHub(initialLocation?.nearestHub || '');
 
             // Fetch Hubs
             const fetchHubs = async () => {

@@ -50,6 +50,8 @@ const SellerManualEntry = () => {
     // Check for origin location if missing in profile
     const [sellerLocation, setSellerLocation] = useState(userInfo.location);
     const [nearestHub, setNearestHub] = useState(null);
+    const [resolvedSellerHub, setResolvedSellerHub] = useState(null);
+    const [resolvedCustomerHub, setResolvedCustomerHub] = useState(null);
     
     useEffect(() => {
         const fetchSellerLocation = async () => {
@@ -84,7 +86,8 @@ const SellerManualEntry = () => {
 
                         if (!foundHub) {
                             const matchedHubs = hubs.filter(h => h.hub?.toLowerCase() === loc.city.toLowerCase() || h.city?.toLowerCase() === loc.city.toLowerCase());
-                            foundHub = matchedHubs.find(h => h.role === 'manager') || matchedHubs.find(h => h.role === 'warehouse');
+                            // Prioritize warehouse role over manager role
+                            foundHub = matchedHubs.find(h => h.role === 'warehouse') || matchedHubs.find(h => h.role === 'manager');
                         }
                         
                         if (foundHub) {
@@ -157,9 +160,24 @@ const SellerManualEntry = () => {
                     lng: data.location.longitude
                 }));
 
+                console.log("FETCH API Response Data:", data);
+                if (data.sellerWarehouse) {
+                    console.log("Setting Seller WH:", data.sellerWarehouse.name);
+                    setResolvedSellerHub(data.sellerWarehouse);
+                } else {
+                    console.warn("No seller warehouse returned from API");
+                }
+                
+                if (data.nearestWarehouse) {
+                    console.log("Setting Customer WH:", data.nearestWarehouse.name);
+                    setResolvedCustomerHub(data.nearestWarehouse);
+                } else {
+                    console.warn("No customer warehouse returned from API");
+                }
+
                 // Fetch Logistics Path
-                const startHub = sellerLocation?.city || userInfo.hub || 'Chennai';
-                const endHub = data.location?.city || 'Madurai';
+                const startHub = data.sellerWarehouse?.hub || sellerLocation?.city || userInfo.hub || 'Chennai';
+                const endHub = data.nearestWarehouse?.hub || data.location?.city || 'Madurai';
                 
                 try {
                     const pathRes = await axios.get(`${apiBase}/api/logistics/path?startHub=${startHub}&endHub=${endHub}`, {
@@ -303,6 +321,28 @@ const SellerManualEntry = () => {
                                     {lookupLoading ? '...' : 'FETCH'}
                                 </button>
                             </div>
+                            
+                            {(resolvedSellerHub || resolvedCustomerHub) && (
+                                <div style={{ display: 'grid', gridTemplateColumns: resolvedSellerHub && resolvedCustomerHub ? '1fr 1fr' : '1fr', gap: '1rem', marginTop: '1rem' }}>
+                                    {resolvedSellerHub && (
+                                        <div style={{ padding: '0.8rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                                            <p style={{ margin: 0, fontSize: '0.65rem', color: '#3b82f6', textTransform: 'uppercase', fontWeight: '800', letterSpacing: '0.5px' }}>
+                                                <Navigation size={10} style={{ marginRight: '4px' }} /> Seller Origin
+                                            </p>
+                                            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', fontWeight: 'bold', color: 'white' }}>{resolvedSellerHub.name}</p>
+                                        </div>
+                                    )}
+                                    {resolvedCustomerHub && (
+                                        <div style={{ padding: '0.8rem', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+                                            <p style={{ margin: 0, fontSize: '0.65rem', color: '#22c55e', textTransform: 'uppercase', fontWeight: '800', letterSpacing: '0.5px' }}>
+                                                <MapPin size={10} style={{ marginRight: '4px' }} /> Target Hub
+                                            </p>
+                                            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', fontWeight: 'bold', color: 'white' }}>{resolvedCustomerHub.name}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
                                 <Info size={12} style={{ display: 'inline', marginRight: '4px' }} />
                                 Fetches location and name automatically from user profile.
@@ -357,8 +397,12 @@ const SellerManualEntry = () => {
                                                 <div style={{ position: 'absolute', left: '7px', top: '15px', bottom: '0', width: '2px', background: 'rgba(59, 130, 246, 0.3)', borderStyle: 'dashed' }}></div>
                                             )}
                                             <div style={{ position: 'absolute', left: '0', top: '2px', width: '16px', height: '16px', borderRadius: '50%', background: idx === 0 || idx === logisticsPath.length - 1 ? '#3b82f6' : 'transparent', border: '2px solid #3b82f6', zIndex: 1 }}></div>
-                                            <div style={{ fontSize: '0.85rem', fontWeight: '700', color: idx === 0 || idx === logisticsPath.length - 1 ? 'white' : '#aaa' }}>{stop.destination}</div>
-                                            <div style={{ fontSize: '0.7rem', color: '#71717a' }}>{idx === 0 ? 'Origin Hub' : idx === logisticsPath.length - 1 ? 'Final Hub' : 'Transit Warehouse'}</div>
+                                            <div style={{ fontSize: '0.85rem', fontWeight: '700', color: idx === 0 || idx === logisticsPath.length - 1 ? 'white' : '#aaa' }}>
+                                                {idx === 0 && resolvedSellerHub ? resolvedSellerHub.name : 
+                                                 idx === logisticsPath.length - 1 && resolvedCustomerHub ? resolvedCustomerHub.name : 
+                                                 stop.destination}
+                                             </div>
+                                             <div style={{ fontSize: '0.7rem', color: '#71717a' }}>{idx === 0 ? 'Origin Hub' : idx === logisticsPath.length - 1 ? 'Final Hub' : 'Transit Warehouse'}</div>
                                         </div>
                                     ))}
                                 </div>

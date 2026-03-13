@@ -40,7 +40,9 @@ const addAddress = async (req, res) => {
 // @access  Private
 const getAddresses = async (req, res) => {
     try {
-        const addresses = await Address.find({ userId: req.user._id }).sort({ isDefault: -1, createdAt: -1 });
+        const addresses = await Address.find({ userId: req.user._id })
+            .populate('nearestHub', 'name hub city')
+            .sort({ isDefault: -1, createdAt: -1 });
         res.json(addresses);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -68,6 +70,7 @@ const updateAddress = async (req, res) => {
             });
 
             const updatedAddress = await address.save();
+            await updatedAddress.populate('nearestHub', 'name hub city');
 
             // Sync to User location if it's set as default
             if (updatedAddress.isDefault) {

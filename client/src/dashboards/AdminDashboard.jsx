@@ -24,7 +24,7 @@ const AdminDashboard = () => {
     React.useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
                 const userInfo = JSON.parse(localStorage.getItem('userInfo'));
                 const config = { headers: { Authorization: `Bearer ${userInfo?.token}` } };
                 

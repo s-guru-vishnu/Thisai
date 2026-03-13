@@ -67,7 +67,7 @@ const CustomerDashboard = () => {
         try {
             const userInfo = JSON.parse(localStorage.getItem('userInfo'));
             const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
-            // In a real app: await axios.put(`http://localhost:5000/api/parcel/confirm/${deliveryDetails.trackingId}`, {}, config);
+            // In a real app: await axios.put(`http://localhost:5005/api/parcel/confirm/${deliveryDetails.trackingId}`, {}, config);
 
             setDeliveryDetails(prev => ({ ...prev, status: 'Delivered' }));
             alert('Delivery confirmed! Thank you.');
@@ -223,6 +223,35 @@ const CustomerDashboard = () => {
                                     </div>
                                 </div>
                             </div>
+                            
+                            {/* Horizontal Mini Timeline */}
+                            <div style={{ padding: '0 10px', margin: '20px 0', position: 'relative' }}>
+                                <div style={{ position: 'absolute', top: '7px', left: '20px', right: '20px', height: '2px', background: 'rgba(255,107,0,0.1)', zIndex: 0 }}></div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+                                    {activeShipment.timeline && activeShipment.timeline.map((step, idx) => {
+                                        // Show only first, intermediate (if any), and last steps for mini view
+                                        const isMainStep = idx === 0 || idx === activeShipment.timeline.length - 1 || 
+                                                           (activeShipment.timeline.length > 3 && idx === Math.floor(activeShipment.timeline.length / 2));
+                                        
+                                        if (!isMainStep) return null;
+
+                                        return (
+                                            <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                                <div style={{ 
+                                                    width: '16px', 
+                                                    height: '16px', 
+                                                    borderRadius: '50%', 
+                                                    background: step.completed ? 'var(--accent)' : 'var(--bg-panel)',
+                                                    border: `2px solid ${step.completed ? 'var(--accent)' : 'var(--border-color)'}`,
+                                                    boxShadow: step.completed ? '0 0 10px rgba(255,107,0,0.5)' : 'none'
+                                                }}></div>
+                                                <span style={{ fontSize: '0.65rem', color: step.completed ? 'white' : 'var(--text-muted)', fontWeight: 'bold' }}>{step.title.split(' ').pop()}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
                             <div className="active-shipment-actions">
                                 <button
                                     onClick={() => navigate(`/customer/track?id=${activeShipment.trackingId}`)}

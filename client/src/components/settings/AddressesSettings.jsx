@@ -452,6 +452,20 @@ const AddressesSettings = ({ userContext, showToast }) => {
                                 <Phone size={12} /> {addr.phone}
                             </p>
 
+                            {addr.nearestHub && (
+                                <div style={{ 
+                                    marginTop: '8px', 
+                                    padding: '6px 10px', 
+                                    background: 'rgba(var(--accent-rgb), 0.05)', 
+                                    borderRadius: '6px', 
+                                    border: '1px solid rgba(var(--accent-rgb), 0.1)',
+                                    fontSize: '0.75rem'
+                                }}>
+                                    <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>Hub: </span>
+                                    <span style={{ color: 'white' }}>{typeof addr.nearestHub === 'object' ? addr.nearestHub.name : addr.nearestHub}</span>
+                                </div>
+                            )}
+
                             <div style={{ marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); handleDelete(addr._id); }} 

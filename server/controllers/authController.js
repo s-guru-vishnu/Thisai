@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Address = require('../models/Address');
 const jwt = require('jsonwebtoken');
 
 const generateToken = (id) => {
@@ -40,6 +41,10 @@ const loginUser = async (req, res) => {
                 role: user.role,
                 location: userLocation,
                 avatar: user.avatar,
+                region: user.region,
+                hub: user.hub,
+                isRegionalHub: user.isRegionalHub,
+                isBorderHub: user.isBorderHub,
                 preferences: user.preferences,
                 token: generateToken(user._id)
             });
@@ -81,6 +86,8 @@ const registerUser = async (req, res) => {
                 avatar: user.avatar,
                 region: user.region,
                 hub: user.hub,
+                isRegionalHub: user.isRegionalHub,
+                isBorderHub: user.isBorderHub,
                 location: user.location,
                 token: generateToken(user._id)
             });
@@ -134,30 +141,138 @@ const deleteAccount = async (req, res) => {
 
 const findCustomerByEmail = async (req, res) => {
     try {
-        const user = await User.findOne({ email: req.params.email, role: 'customer' }).select('name location email');
+        const user = await User.findOne({ email: req.params.email, role: 'customer' }).select('name location email region hub nearestWarehouse');
         if (user) {
-            // Fallback: If location is not set, try to fetch from Address collection
-            if (!user.location || !user.location.latitude) {
-                const Address = require('../models/Address');
-                const defaultAddress = await Address.findOne({ userId: user._id }).sort({ isDefault: -1, createdAt: -1 });
-                
-                if (defaultAddress) {
-                    user.location = {
-                        addressLine1: defaultAddress.houseNumber + ', ' + defaultAddress.area,
-                        city: defaultAddress.townCity,
-                        state: defaultAddress.state,
-                        country: defaultAddress.country,
-                        postalCode: defaultAddress.pincode,
-                        latitude: defaultAddress.latitude,
-                        longitude: defaultAddress.longitude
+            const sellerAddr = await Address.findOne({ userId: req.user._id }).sort({ isDefault: -1, createdAt: -1 });
+            const customerAddr = await Address.findOne({ userId: user._id }).sort({ isDefault: -1, createdAt: -1 });
+
+            // 1. Resolve Customer Location
+            let resolvedLocation = user.location;
+            if (!resolvedLocation || !resolvedLocation.latitude) {
+                if (customerAddr) {
+                    resolvedLocation = {
+                        addressLine1: customerAddr.houseNumber + ', ' + customerAddr.area,
+                        city: customerAddr.townCity,
+                        state: customerAddr.state,
+                        country: customerAddr.country,
+                        postalCode: customerAddr.pincode,
+                        latitude: customerAddr.latitude,
+                        longitude: customerAddr.longitude
                     };
                 }
             }
-            res.json(user);
+
+            console.log(`Resolving warehouses for Seller: ${req.user.email} and Customer: ${user.email}`);
+            console.log(`Seller Hub: ${req.user.hub}, Customer City: ${resolvedLocation?.city}`);
+
+            let sellerWH = null;
+            let customerWH = null;
+
+            // 2. Seller Warehouse Logic
+            // Priority 1: User Profile nearestWarehouse
+            if (req.user.nearestWarehouse) {
+                sellerWH = await User.findById(req.user.nearestWarehouse).select('name hub city region role');
+            }
+            
+            // Priority 2: Default Address nearestHub
+            if (!sellerWH && sellerAddr?.nearestHub) {
+                sellerWH = await User.findById(sellerAddr.nearestHub).select('name hub city region role');
+            }
+
+            // Priority 3: Match by attributes, prioritizing 'warehouse' role
+            if (!sellerWH) {
+                const sellerCriteria = [
+                    req.user.hub && { hub: req.user.hub },
+                    req.user.city && { city: req.user.city },
+                    sellerAddr?.townCity && { city: sellerAddr.townCity },
+                    req.user.region && { region: req.user.region }
+                ].filter(Boolean);
+
+                if (sellerCriteria.length > 0) {
+                    // Try warehouse first
+                    sellerWH = await User.findOne({ 
+                        role: 'warehouse',
+                        $or: sellerCriteria
+                    }).select('name hub city region role');
+
+                    // Fallback to manager
+                    if (!sellerWH) {
+                        sellerWH = await User.findOne({ 
+                            role: 'manager',
+                            $or: sellerCriteria
+                        }).select('name hub city region role');
+                    }
+                }
+
+                // Absolute fallback (avoid if possible)
+                if (!sellerWH) {
+                    sellerWH = await User.findOne({ role: 'warehouse', name: /Chennai/i }).select('name hub city region role');
+                }
+            }
+
+            // 3. Customer Warehouse Logic
+            // Priority 1: User Profile nearestWarehouse
+            if (user.nearestWarehouse) {
+                customerWH = await User.findById(user.nearestWarehouse).select('name hub city region role');
+            }
+
+            // Priority 2: Default Address nearestHub
+            if (!customerWH && customerAddr?.nearestHub) {
+                customerWH = await User.findById(customerAddr.nearestHub).select('name hub city region role');
+            }
+
+            // Priority 3: Match by attributes, prioritizing 'warehouse' role
+            if (!customerWH) {
+                const customerCriteria = [
+                    resolvedLocation?.city && { city: resolvedLocation.city },
+                    user.hub && { hub: user.hub },
+                    customerAddr?.townCity && { city: customerAddr.townCity },
+                    user.region && { region: user.region }
+                ].filter(Boolean);
+
+                if (customerCriteria.length > 0) {
+                    // Try warehouse first
+                    customerWH = await User.findOne({ 
+                        role: 'warehouse',
+                        $or: customerCriteria
+                    }).select('name hub city region role');
+
+                    // Fallback to manager
+                    if (!customerWH) {
+                        customerWH = await User.findOne({ 
+                            role: 'manager',
+                            $or: customerCriteria
+                        }).select('name hub city region role');
+                    }
+                }
+
+                // Absolute fallback (avoid if possible)
+                if (!customerWH) {
+                    customerWH = await User.findOne({ role: 'warehouse', name: /Madurai/i }).select('name hub city region role');
+                }
+            }
+
+            // Final safety fallback if still null - find ANY warehouse
+            if (!sellerWH) {
+                sellerWH = await User.findOne({ role: 'warehouse' }).select('name hub city region role');
+            }
+            if (!customerWH) {
+                customerWH = await User.findOne({ role: 'warehouse' }).select('name hub city region role');
+            }
+
+            console.log(`Resolved - Seller WH: ${sellerWH?.name}, Customer WH: ${customerWH?.name}`);
+
+            res.json({
+                ...user.toObject(),
+                location: resolvedLocation,
+                nearestWarehouse: customerWH,
+                sellerWarehouse: sellerWH
+            });
         } else {
             res.status(404).json({ message: 'Customer not found' });
         }
     } catch (error) {
+        console.error('FindCustomer Error:', error);
         res.status(500).json({ message: error.message });
     }
 };

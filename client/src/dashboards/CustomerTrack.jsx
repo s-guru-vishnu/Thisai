@@ -53,7 +53,7 @@ const CustomerTrack = () => {
 
         const fetchParcelData = async () => {
             try {
-                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
                 const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
                 
                 // Fetch parcel info
@@ -80,7 +80,7 @@ const CustomerTrack = () => {
     useEffect(() => {
         if (!trackingId || !parcelData || parcelData.status === 'Delivered') return;
 
-        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+        const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
         const config = { headers: { Authorization: `Bearer ${userInfo.token}` } };
 
         const interval = setInterval(async () => {

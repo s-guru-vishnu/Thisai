@@ -34,45 +34,74 @@ const createParcel = async (req, res) => {
         let destWH = null;
 
         // Resolve Origin Hub
-        if (sellerAddr?.nearestHub) {
+        // Priority 1: Profile nearestWarehouse
+        if (sellerProfile.nearestWarehouse) {
+            originWH = await User.findById(sellerProfile.nearestWarehouse);
+        }
+        
+        // Priority 2: Address nearestHub
+        if (!originWH && sellerAddr?.nearestHub) {
             const manualHub = await User.findById(sellerAddr.nearestHub);
             if (manualHub) {
-                // If they picked a manager, find the warehouse in same hub city
                 originWH = manualHub.role === 'warehouse' ? manualHub : await User.findOne({ role: 'warehouse', hub: manualHub.hub });
             }
         }
         
+        // Priority 3: Match by attributes
         if (!originWH) {
-            originWH = await User.findOne({ 
-                role: 'warehouse', 
-                $or: [
-                    { hub: sellerProfile?.hub },
-                    { city: sellerProfile?.city },
-                    { city: sellerAddr?.townCity },
-                    { name: /Chennai/i }
-                ]
-            }).sort({ createdAt: 1 });
+            const criteria = [
+                sellerProfile?.hub && { hub: sellerProfile.hub },
+                sellerProfile?.city && { city: sellerProfile.city },
+                sellerAddr?.townCity && { city: sellerAddr.townCity }
+            ].filter(Boolean);
+
+            if (criteria.length > 0) {
+                originWH = await User.findOne({ 
+                    role: 'warehouse', 
+                    $or: criteria
+                }).sort({ createdAt: 1 });
+            }
+
+            // Fallback
+            if (!originWH) {
+                originWH = await User.findOne({ role: 'warehouse', name: /Chennai/i });
+            }
         }
 
         // Resolve Destination Hub
-        if (customerAddr?.nearestHub) {
+        // Priority 1: Profile nearestWarehouse
+        if (customerProfile.nearestWarehouse) {
+            destWH = await User.findById(customerProfile.nearestWarehouse);
+        }
+
+        // Priority 2: Address nearestHub
+        if (!destWH && customerAddr?.nearestHub) {
             const manualHub = await User.findById(customerAddr.nearestHub);
             if (manualHub) {
                 destWH = manualHub.role === 'warehouse' ? manualHub : await User.findOne({ role: 'warehouse', hub: manualHub.hub });
             }
         }
 
+        // Priority 3: Match by attributes
         if (!destWH) {
-            destWH = await User.findOne({ 
-                role: 'warehouse', 
-                $or: [
-                    { city: destination },
-                    { hub: customerProfile.hub },
-                    { city: customerProfile.location?.city },
-                    { city: customerAddr?.townCity },
-                    { name: /Madurai/i }
-                ]
-            }).sort({ createdAt: 1 });
+            const criteria = [
+                { city: destination },
+                customerProfile.hub && { hub: customerProfile.hub },
+                customerProfile.location?.city && { city: customerProfile.location.city },
+                customerAddr?.townCity && { city: customerAddr.townCity }
+            ].filter(Boolean);
+
+            if (criteria.length > 0) {
+                destWH = await User.findOne({ 
+                    role: 'warehouse', 
+                    $or: criteria
+                }).sort({ createdAt: 1 });
+            }
+
+            // Fallback
+            if (!destWH) {
+                destWH = await User.findOne({ role: 'warehouse', name: /Madurai/i });
+            }
         }
 
         if (!originWH) {
@@ -118,6 +147,7 @@ const createParcel = async (req, res) => {
             parcelId,
             seller: sellerProfile.name,
             customer: customerProfile._id,
+            origin: originWarehouse.name,
             originWarehouse: originWarehouse._id,
             destinationWarehouse: destinationWarehouse._id,
             intermediateHubs: intermediateHubs,

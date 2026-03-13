@@ -202,6 +202,12 @@ const getCachedOrComputeRoute = async (driverId, startLoc, stops, driverStats = 
     return result;
 };
 
+const calculateBurdenScore = (distance, stops, delay) => {
+    // Stage 9 Burden Logic: Weighting stops and delays over raw distance
+    const score = (stops * 0.4) + (delay * 0.01) + (distance * 0.005);
+    return Math.min(score, 1).toFixed(2);
+};
+
 module.exports = {
     calculatePickupRoute,
     optimizeDeliverySequence,
@@ -209,6 +215,7 @@ module.exports = {
     getSmoothedETA,
     getCachedOrComputeRoute,
     computeHybridETA,
-    formatDuration
+    formatDuration,
+    calculateBurdenScore
 };
 
