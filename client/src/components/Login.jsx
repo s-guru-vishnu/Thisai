@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Sun, Moon } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import '../styles/dashboard.css';
 
@@ -10,23 +10,6 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [theme, setTheme] = useState(localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        if (theme === 'dark') {
-            document.body.classList.add('dark-mode');
-            document.body.classList.remove('light-mode');
-        } else {
-            document.body.classList.add('light-mode');
-            document.body.classList.remove('dark-mode');
-        }
-        localStorage.setItem('theme', theme);
-    }, [theme]);
-
-    const toggleTheme = () => {
-        setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-    };
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -91,31 +74,10 @@ const Login = () => {
         }
     };
 
+    const navigate = useNavigate();
+
     return (
         <div className="login-container">
-            <button 
-                onClick={toggleTheme}
-                className="theme-toggle-btn"
-                style={{
-                    position: 'fixed',
-                    top: '20px',
-                    right: '20px',
-                    padding: '10px',
-                    borderRadius: '50%',
-                    background: 'var(--bg-panel)',
-                    border: '1px solid var(--border-color)',
-                    color: 'var(--text-main)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                    zIndex: 1000,
-                    transition: 'all 0.3s'
-                }}
-            >
-                {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
 
             <div className="login-box">
                 <div className="login-header">
