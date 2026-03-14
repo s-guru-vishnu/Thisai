@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { QRCodeSVG } from 'qrcode.react';
 import { useNavigate } from 'react-router-dom';
@@ -37,7 +37,7 @@ const SellerManualEntry = () => {
             return [];
         }
     });
-    const [userInfo] = useState(() => {
+    const [userInfo, setUserInfo] = useState(() => {
         const saved = localStorage.getItem('userInfo');
         try {
             const parsed = saved ? JSON.parse(saved) : null;
@@ -46,10 +46,68 @@ const SellerManualEntry = () => {
             return {};
         }
     });
+
+    // Check for origin location if missing in profile
+    const [sellerLocation, setSellerLocation] = useState(userInfo.location);
+    const [nearestHub, setNearestHub] = useState(null);
+    const [resolvedSellerHub, setResolvedSellerHub] = useState(null);
+    const [resolvedCustomerHub, setResolvedCustomerHub] = useState(null);
+    
+    useEffect(() => {
+        const fetchSellerLocation = async () => {
+            try {
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+                const { data: addresses } = await axios.get(`${apiBase}/api/address`, {
+                    headers: { Authorization: `Bearer ${userInfo.token}` }
+                });
+                
+                if (addresses && addresses.length > 0) {
+                    const def = addresses.find(a => a.isDefault) || addresses[0];
+                    const loc = {
+                        addressLine1: def.houseNumber + ', ' + def.area,
+                        city: def.townCity,
+                        state: def.state,
+                        postalCode: def.pincode,
+                        latitude: def.latitude,
+                        longitude: def.longitude
+                    };
+                    setSellerLocation(loc);
+
+                    // Find Nearest Hub (Manual Specification Prioritized)
+                    try {
+                        const { data: hubs } = await axios.get(`${apiBase}/api/auth/warehouses`, {
+                            headers: { Authorization: `Bearer ${userInfo.token}` }
+                        });
+                        
+                        let foundHub = null;
+                        if (def.nearestHub) {
+                            foundHub = hubs.find(h => h._id === def.nearestHub);
+                        }
+
+                        if (!foundHub) {
+                            const matchedHubs = hubs.filter(h => h.hub?.toLowerCase() === loc.city.toLowerCase() || h.city?.toLowerCase() === loc.city.toLowerCase());
+                            // Prioritize warehouse role over manager role
+                            foundHub = matchedHubs.find(h => h.role === 'warehouse') || matchedHubs.find(h => h.role === 'manager');
+                        }
+                        
+                        if (foundHub) {
+                            setNearestHub(foundHub.name);
+                        }
+                    } catch (hubErr) {
+                        console.error("Failed to fetch hubs", hubErr);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch seller addresses", err);
+            }
+        };
+        fetchSellerLocation();
+    }, [userInfo.token]);
     const [loading, setLoading] = useState(false);
     const [lookupLoading, setLookupLoading] = useState(false);
     const [showQRSuccess, setShowQRSuccess] = useState(false);
     const [generatedTrk, setGeneratedTrk] = useState('');
+    const [logisticsPath, setLogisticsPath] = useState([]);
     const [error, setError] = useState('');
 
     const [formData, setFormData] = useState({
@@ -101,8 +159,47 @@ const SellerManualEntry = () => {
                     lat: data.location.latitude,
                     lng: data.location.longitude
                 }));
+
+                console.log("FETCH API Response Data:", data);
+                if (data.sellerWarehouse) {
+                    console.log("Setting Seller WH:", data.sellerWarehouse.name);
+                    setResolvedSellerHub(data.sellerWarehouse);
+                } else {
+                    console.warn("No seller warehouse returned from API");
+                }
+                
+                if (data.nearestWarehouse) {
+                    console.log("Setting Customer WH:", data.nearestWarehouse.name);
+                    setResolvedCustomerHub(data.nearestWarehouse);
+                } else {
+                    console.warn("No customer warehouse returned from API");
+                }
+
+                if (data.intermediateHubs) {
+                    setIntermediateHubs(data.intermediateHubs);
+                }
+
+                // Fetch Logistics Path
+                const startHub = data.sellerWarehouse?.hub || sellerLocation?.city || userInfo.hub || 'Chennai';
+                const endHub = data.nearestWarehouse?.hub || data.location?.city || 'Madurai';
+                
+                try {
+                    const pathRes = await axios.get(`${apiBase}/api/logistics/path?startHub=${startHub}&endHub=${endHub}`, {
+                        headers: { Authorization: `Bearer ${userInfo.token}` }
+                    });
+                    if (pathRes.data && pathRes.data.stops) {
+                        setLogisticsPath(pathRes.data.stops);
+                    }
+                } catch (pathErr) {
+                    console.error("Path calculation failed", pathErr);
+                }
             } else {
-                setError('Customer found, but they have not set up their location details yet.');
+                setError('Customer found, but location details are missing. Please enter the delivery address manually.');
+                setFormData(prev => ({
+                    ...prev,
+                    customerName: data.name,
+                    customerId: data._id
+                }));
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Customer not found. Please verify the email.');
@@ -113,8 +210,8 @@ const SellerManualEntry = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.lat || !formData.lng) {
-            setError('Please fetch customer location using email first.');
+        if (!formData.customerId || !formData.deliveryAddress || !formData.destination) {
+            setError('Please find a customer and provide both a delivery address and a destination city.');
             return;
         }
 
@@ -149,7 +246,8 @@ const SellerManualEntry = () => {
             setGeneratedTrk(trk);
             setShowQRSuccess(true);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to dispatch product. Please try again.');
+            const msg = err.response?.data?.message || err.response?.data?.error || err.message || 'Failed to dispatch product. Please try again.';
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -177,6 +275,25 @@ const SellerManualEntry = () => {
                     )}
 
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <Truck size={14} /> DISPATCHING FROM:
+                            </p>
+                            <p style={{ margin: '5px 0 0 0', fontWeight: 'bold' }}>
+                                {sellerLocation?.addressLine1 ? `${sellerLocation.addressLine1}, ${sellerLocation.city}` : 'No Origin Location Detected'}
+                            </p>
+                            {nearestHub && (
+                                <p style={{ margin: '5px 0 0 0', fontSize: '0.85rem', color: 'var(--accent)', fontWeight: '600' }}>
+                                    Nearest Hub: {nearestHub}
+                                </p>
+                            )}
+                            {!sellerLocation?.addressLine1 && (
+                                <p style={{ margin: '5px 0 0 0', fontSize: '0.75rem', color: 'var(--danger)' }}>
+                                    Warning: No dispatch hub set. Please add an address in your profile.
+                                </p>
+                            )}
+                        </div>
+
                         <div className="form-group">
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Select Catalog Product</label>
                             <select name="productId" value={formData.productId} onChange={handleInputChange} required style={{ width: '100%', cursor: 'pointer', padding: '0.8rem' }}>
@@ -208,6 +325,28 @@ const SellerManualEntry = () => {
                                     {lookupLoading ? '...' : 'FETCH'}
                                 </button>
                             </div>
+                            
+                            {(resolvedSellerHub || resolvedCustomerHub) && (
+                                <div style={{ display: 'grid', gridTemplateColumns: resolvedSellerHub && resolvedCustomerHub ? '1fr 1fr' : '1fr', gap: '1rem', marginTop: '1rem' }}>
+                                    {resolvedSellerHub && (
+                                        <div style={{ padding: '0.8rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                                            <p style={{ margin: 0, fontSize: '0.65rem', color: '#3b82f6', textTransform: 'uppercase', fontWeight: '800', letterSpacing: '0.5px' }}>
+                                                <Navigation size={10} style={{ marginRight: '4px' }} /> Seller Origin
+                                            </p>
+                                            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', fontWeight: 'bold', color: 'white' }}>{resolvedSellerHub.name}</p>
+                                        </div>
+                                    )}
+                                    {resolvedCustomerHub && (
+                                        <div style={{ padding: '0.8rem', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+                                            <p style={{ margin: 0, fontSize: '0.65rem', color: '#22c55e', textTransform: 'uppercase', fontWeight: '800', letterSpacing: '0.5px' }}>
+                                                <MapPin size={10} style={{ marginRight: '4px' }} /> Target Hub
+                                            </p>
+                                            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', fontWeight: 'bold', color: 'white' }}>{resolvedCustomerHub.name}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>
                                 <Info size={12} style={{ display: 'inline', marginRight: '4px' }} />
                                 Fetches location and name automatically from user profile.
@@ -216,7 +355,7 @@ const SellerManualEntry = () => {
 
                         <div className="form-group">
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Customer Name</label>
-                            <input name="customerName" value={formData.customerName} onChange={handleInputChange} required placeholder="Populated from email" style={{ width: '100%' }} readOnly />
+                            <input name="customerName" value={formData.customerName} onChange={handleInputChange} required placeholder="Enter customer name or fetch by email" style={{ width: '100%' }} />
                         </div>
 
                         <div className="form-group">
@@ -225,9 +364,8 @@ const SellerManualEntry = () => {
                                 name="deliveryAddress"
                                 value={formData.deliveryAddress}
                                 onChange={handleInputChange}
-                                placeholder="Populated from email"
+                                placeholder="Enter full delivery address"
                                 style={{ width: '100%', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', borderRadius: '10px', padding: '1rem', minHeight: '80px', resize: 'none' }}
-                                readOnly
                             />
                         </div>
 
@@ -241,15 +379,48 @@ const SellerManualEntry = () => {
                                 </select>
                             </div>
                             <div className="form-group">
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Destination</label>
-                                <input name="destination" value={formData.destination} onChange={handleInputChange} placeholder="Hub City" style={{ width: '100%' }} readOnly />
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Destination City</label>
+                                <input name="destination" value={formData.destination} onChange={handleInputChange} required placeholder="e.g. Madurai" style={{ width: '100%' }} />
                             </div>
                         </div>
 
-                        <button type="submit" disabled={loading || !formData.lat || formData.lat === center.lat} className="primary-btn pulse-glow" style={{ padding: '1.2rem', borderRadius: '12px', marginTop: '1rem', opacity: (!formData.lat || formData.lat === center.lat) ? 0.5 : 1 }}>
+                        <button type="submit" disabled={loading || !formData.customerId || !formData.deliveryAddress} className="primary-btn pulse-glow" style={{ padding: '1.2rem', borderRadius: '12px', marginTop: '1rem', opacity: (!formData.customerId || !formData.deliveryAddress) ? 0.5 : 1 }}>
                             <Navigation size={20} style={{ marginRight: '10px' }} />
                             {loading ? 'Processing...' : 'CONFIRM DISPATCH'}
                         </button>
+                        {logisticsPath.length > 0 && (
+                            <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '20px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                                <h4 style={{ margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '8px', color: '#3b82f6' }}>
+                                    <Truck size={18} /> LOGISTICS CHAIN
+                                </h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                                    {logisticsPath.map((stop, idx) => {
+                                        // Match stop name with our resolved intermediate hubs to show the actual manager names if possible
+                                        const cityName = stop.destination.replace(' Hub', '');
+                                        const managerMatch = intermediateHubs.find(h => h.city.toLowerCase() === cityName.toLowerCase());
+                                        const label = managerMatch ? managerMatch.name : stop.destination;
+
+                                        return (
+                                            <div key={idx} style={{ position: 'relative', paddingLeft: '25px', paddingBottom: '15px' }}>
+                                                {idx !== logisticsPath.length - 1 && (
+                                                    <div style={{ position: 'absolute', left: '7px', top: '15px', bottom: '0', width: '2px', background: 'rgba(59, 130, 246, 0.3)', borderStyle: 'dashed' }}></div>
+                                                )}
+                                                <div style={{ position: 'absolute', left: '0', top: '2px', width: '16px', height: '16px', borderRadius: '50%', background: idx === 0 || idx === logisticsPath.length - 1 ? '#3b82f6' : 'transparent', border: '2px solid #3b82f6', zIndex: 1 }}></div>
+                                                <div style={{ fontSize: '0.85rem', fontWeight: '700', color: idx === 0 || idx === logisticsPath.length - 1 ? 'white' : '#ddd' }}>
+                                                    {idx === 0 && resolvedSellerHub ? resolvedSellerHub.name : 
+                                                     idx === logisticsPath.length - 1 && resolvedCustomerHub ? resolvedCustomerHub.name : 
+                                                     label}
+                                                 </div>
+                                                 <div style={{ fontSize: '0.7rem', color: '#71717a' }}>
+                                                     {idx === 0 ? 'Origin Hub' : idx === logisticsPath.length - 1 ? 'Final Hub' : 'Intermediate Hub'}
+                                                     {managerMatch && idx !== 0 && idx !== logisticsPath.length - 1 && ` • ${managerMatch.region} Region`}
+                                                 </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </form>
                 </div>
 

@@ -205,7 +205,7 @@ const BasicInfoSettings = ({ userContext, showToast }) => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '2rem' }}>
                 <button onClick={handleSaveProfile} disabled={loading} style={{ background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', padding: '12px 32px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1rem', boxShadow: '0 4px 15px rgba(var(--accent-rgb), 0.3)' }}>
                     {loading ? <span className="loader" style={{ width: '18px', height: '18px', borderWidth: '2px' }}></span> : <Save size={20} />}
-                    {loading ? 'Saving Changes...' : 'Save Profile & Location'}
+                    {loading ? 'Saving Changes...' : 'Save Profile'}
                 </button>
             </div>
 

@@ -21,6 +21,8 @@ const LocationEnforcementModal = ({ onLocationSaved }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [status, setStatus] = useState('');
+    const [hubs, setHubs] = useState([]);
+    const [nearestHub, setNearestHub] = useState('');
 
     const autocompleteRef = useRef(null);
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
@@ -48,6 +50,21 @@ const LocationEnforcementModal = ({ onLocationSaved }) => {
             });
         }
     };
+
+    useEffect(() => {
+        const fetchHubs = async () => {
+            try {
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+                const { data } = await axios.get(`${apiBase}/api/auth/warehouses`, {
+                    headers: { Authorization: `Bearer ${userInfo.token}` }
+                });
+                setHubs(data.filter(h => h.role === 'manager'));
+            } catch (err) {
+                console.error("Failed to fetch hubs", err);
+            }
+        };
+        fetchHubs();
+    }, [userInfo.token]);
 
     const handleCurrentLocation = () => {
         if (navigator.geolocation) {
@@ -122,7 +139,8 @@ const LocationEnforcementModal = ({ onLocationSaved }) => {
                     postalCode,
                     latitude: location.lat,
                     longitude: location.lng
-                }
+                },
+                nearestWarehouse: nearestHub
             }, {
                 headers: { Authorization: `Bearer ${userInfo.token}` }
             });
@@ -242,6 +260,26 @@ const LocationEnforcementModal = ({ onLocationSaved }) => {
                                     style={inputStyle}
                                 />
                             </div>
+                        </div>
+
+                        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                            <label style={labelStyle}>Specify Nearest Logistics Hub (Manager)</label>
+                            <select 
+                                value={nearestHub} 
+                                onChange={(e) => setNearestHub(e.target.value)} 
+                                style={inputStyle}
+                                required
+                            >
+                                <option value="">Select Nearest Distribution Hub</option>
+                                {hubs.map(hub => (
+                                    <option key={hub._id} value={hub._id}>
+                                        {hub.name} ({hub.hub || hub.city})
+                                    </option>
+                                ))}
+                            </select>
+                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '5px' }}>
+                                Required for regional routing and dispatch assignments.
+                            </p>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '1rem' }}>

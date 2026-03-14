@@ -58,6 +58,10 @@ const addressSchema = new mongoose.Schema({
         type: String,
         enum: ['Weekdays', 'Weekends', 'Both'],
         default: 'Both'
+    },
+    nearestHub: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     }
 }, {
     timestamps: true

@@ -2,45 +2,63 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
 import Navbar from '../components/Navbar';
+import axios from 'axios';
 import DashboardTabs from '../components/DashboardTabs';
-import { Package, Truck, MapPin, CheckCircle, ArrowLeft, MoreVertical, Edit2, QrCode, X } from 'lucide-react';
+import { Package, Truck, MapPin, CheckCircle, ArrowLeft, MoreVertical, Edit2, QrCode, X, Eye, Map, Navigation } from 'lucide-react';
 import '../styles/dashboard.css';
 import '../styles/seller.css';
 
 const SellerDeliveries = () => {
-    const [deliveries, setDeliveries] = useState(() => {
-        const saved = localStorage.getItem('sellerDeliveries');
+    const [deliveries, setDeliveries] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchDeliveries = async () => {
         try {
-            const parsed = saved ? JSON.parse(saved) : null;
-            return Array.isArray(parsed) ? parsed : [];
-        } catch (e) {
-            return [];
+            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const { data } = await axios.get(`${apiBase}/api/parcels`, {
+                headers: { Authorization: `Bearer ${userInfo.token}` }
+            });
+            setDeliveries(data);
+        } catch (err) {
+            console.error("Error fetching deliveries:", err);
+        } finally {
+            setLoading(false);
         }
-    });
+    };
+
+    useEffect(() => {
+        fetchDeliveries();
+    }, []);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [editingId, setEditingId] = useState(null);
     const [statusVal, setStatusVal] = useState('');
     const [selectedQR, setSelectedQR] = useState(null);
+    const [viewingPath, setViewingPath] = useState(null);
 
     useEffect(() => {
         localStorage.setItem('sellerDeliveries', JSON.stringify(deliveries));
     }, [deliveries]);
 
     const handleEditStatus = (delivery) => {
-        setEditingId(delivery.id);
+        setEditingId(delivery._id || delivery.id);
         setStatusVal(delivery.status || 'Pending Pickup');
     };
 
-    const saveStatus = (id) => {
-        const updatedDeliveries = deliveries.map(del => {
-            if (del.id === id) {
-                return { ...del, status: statusVal };
-            }
-            return del;
-        });
-        setDeliveries(updatedDeliveries);
-        setEditingId(null);
+    const saveStatus = async (id, parcelId) => {
+        try {
+            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            await axios.put(`${apiBase}/api/parcels/${id}`, { status: statusVal }, {
+                headers: { Authorization: `Bearer ${userInfo.token}` }
+            });
+            fetchDeliveries();
+            setEditingId(null);
+        } catch (err) {
+            console.error("Failed to update status", err);
+            alert("Failed to update status on server.");
+        }
     };
 
     const safeDeliveries = Array.isArray(deliveries) ? deliveries : [];
@@ -74,8 +92,8 @@ const SellerDeliveries = () => {
                         </div>
                     </div>
                 </header>
-
                 <DashboardTabs />
+
 
                 <div className="stats-row">
                     <div className="stat-widget" style={{ padding: '1rem 1.5rem' }}>
@@ -129,12 +147,12 @@ const SellerDeliveries = () => {
                             </thead>
                             <tbody>
                                 {safeFilteredDeliveries.slice(0).reverse().map(del => (
-                                    <tr key={del.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.3s' }}>
+                                    <tr key={del._id || del.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.3s' }}>
                                         <td style={{ padding: '1rem' }}>
                                             <div style={{ fontWeight: 'bold', color: 'var(--accent)', fontSize: '1.1rem', letterSpacing: '1px' }}>
-                                                {del.trackingCode || 'N/A'}
+                                                {del.parcelId || 'N/A'}
                                             </div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: #{del.id.toString().slice(-6)}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Created: {new Date(del.createdAt).toLocaleDateString()}</div>
                                         </td>
                                         <td style={{ padding: '1rem' }}>
                                             <div style={{ fontWeight: '600', color: '#fff' }}>{del.productName}</div>
@@ -179,8 +197,17 @@ const SellerDeliveries = () => {
                                                     <QrCode size={18} />
                                                 </button>
 
-                                                {editingId === del.id ? (
-                                                    <button onClick={() => saveStatus(del.id)} className="primary-btn" style={{ padding: '0.4rem 1rem', fontSize: '0.9rem', borderRadius: '6px' }}>
+                                                <button
+                                                    onClick={() => setViewingPath(del)}
+                                                    className="secondary-btn"
+                                                    style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '0.5rem', borderRadius: '8px', color: '#3b82f6' }}
+                                                    title="View Logistics Path"
+                                                >
+                                                    <Eye size={18} /> Hubs
+                                                </button>
+
+                                                {editingId === (del._id || del.id) ? (
+                                                    <button onClick={() => saveStatus(del._id || del.id)} className="primary-btn" style={{ padding: '0.4rem 1rem', fontSize: '0.9rem', borderRadius: '6px' }}>
                                                         Save
                                                     </button>
                                                 ) : (
@@ -203,6 +230,72 @@ const SellerDeliveries = () => {
                 </div>
             </main>
 
+            {/* Logistics Path Modal */}
+            {viewingPath && (
+                <div className="modal-overlay" onClick={() => setViewingPath(null)} style={{ background: 'rgba(0,0,0,0.92)' }}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ 
+                        maxWidth: '500px', 
+                        background: '#1a1a2e', 
+                        padding: '2.5rem', 
+                        borderRadius: '24px', 
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
+                    }}>
+                        <button className="close-modal-btn" onClick={() => setViewingPath(null)}><X size={24} /></button>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '2rem' }}>
+                            <div style={{ padding: '10px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px' }}>
+                                <Truck size={24} color="#3b82f6" />
+                            </div>
+                            <div style={{ textAlign: 'left' }}>
+                                <h2 style={{ margin: 0, fontSize: '1.4rem' }}>Logistics <span>Chain</span></h2>
+                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>Tracking ID: {viewingPath.parcelId}</p>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', paddingLeft: '10px' }}>
+                            {/* Origin WH */}
+                            <div style={{ position: 'relative', paddingLeft: '35px', paddingBottom: '30px' }}>
+                                <div style={{ position: 'absolute', left: '7px', top: '20px', bottom: '0', width: '2px', borderLeft: '2px dashed rgba(255,255,255,0.1)' }}></div>
+                                <div style={{ position: 'absolute', left: '0', top: '0', width: '16px', height: '16px', borderRadius: '50%', background: '#3b82f6', border: '3px solid rgba(59, 130, 246, 0.3)' }}></div>
+                                <div style={{ textAlign: 'left' }}>
+                                    <div style={{ fontWeight: '700', color: 'white', fontSize: '1rem' }}>{viewingPath.originWarehouse?.name || viewingPath.origin}</div>
+                                    <div style={{ fontSize: '0.75rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Pickup Warehouse ({viewingPath.originWarehouse?.region || 'Origin'})</div>
+                                </div>
+                            </div>
+
+                            {/* Intermediate Hubs */}
+                            {viewingPath.intermediateHubs && viewingPath.intermediateHubs.map((hub, hIdx) => (
+                                <div key={hIdx} style={{ position: 'relative', paddingLeft: '35px', paddingBottom: '30px' }}>
+                                    <div style={{ position: 'absolute', left: '7px', top: '20px', bottom: '0', width: '2px', borderLeft: '2px dashed rgba(255,255,255,0.1)' }}></div>
+                                    <div style={{ position: 'absolute', left: '0', top: '0', width: '16px', height: '16px', borderRadius: '50%', background: 'transparent', border: '3px solid #3b82f6' }}></div>
+                                    <div style={{ textAlign: 'left' }}>
+                                        <div style={{ fontWeight: '700', color: '#ddd', fontSize: '0.95rem' }}>{hub.name}</div>
+                                        <div style={{ fontSize: '0.75rem', color: '#777', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Regional Transfer Hub • {hub.city}</div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Destination WH */}
+                            <div style={{ position: 'relative', paddingLeft: '35px' }}>
+                                <div style={{ position: 'absolute', left: '0', top: '0', width: '16px', height: '16px', borderRadius: '50%', background: '#ff6600', border: '3px solid rgba(255, 102, 0, 0.3)' }}></div>
+                                <div style={{ textAlign: 'left' }}>
+                                    <div style={{ fontWeight: '700', color: 'white', fontSize: '1rem' }}>{viewingPath.destinationWarehouse?.name || (viewingPath.destination + ' Warehouse')}</div>
+                                    <div style={{ fontSize: '0.75rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Final Delivery Warehouse ({viewingPath.destinationWarehouse?.region || 'Target'})</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '2.5rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                <Navigation size={14} />
+                                <span>Estimated Route: {viewingPath.intermediateHubs?.length + 2} Stop Hop Network</span>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* QR Code Modal */}
             {selectedQR && (
                 <div className="modal-overlay" onClick={() => setSelectedQR(null)}>
@@ -210,11 +303,11 @@ const SellerDeliveries = () => {
                         <button className="close-modal-btn" onClick={() => setSelectedQR(null)}><X size={24} /></button>
                         <h2 style={{ marginBottom: '1rem' }}>Delivery QR Code</h2>
                         <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', display: 'inline-block', marginBottom: '1.5rem' }}>
-                            <QRCodeCanvas value={selectedQR.trackingCode} size={200} />
+                            <QRCodeCanvas value={selectedQR.parcelId || selectedQR.trackingCode || selectedQR.id} size={200} />
                         </div>
                         <div style={{ marginBottom: '1.5rem' }}>
                             <p style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Tracking Code</p>
-                            <h3 style={{ color: 'var(--accent)', letterSpacing: '2px', margin: 0 }}>{selectedQR.trackingCode}</h3>
+                            <h3 style={{ color: 'var(--accent)', letterSpacing: '2px', margin: 0 }}>{selectedQR.parcelId || selectedQR.trackingCode}</h3>
                         </div>
                         <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                             Receiver can scan this QR or enter the code manually to track and confirm delivery.

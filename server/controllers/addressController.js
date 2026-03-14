@@ -8,8 +8,11 @@ const addAddress = async (req, res) => {
     try {
         console.log('--- RESTART VERIFIED: addAddress called ---');
         console.log('Payload:', JSON.stringify(req.body, null, 2));
+        const payload = { ...req.body };
+        if (payload.nearestHub === '') delete payload.nearestHub;
+
         const address = new Address({
-            ...req.body,
+            ...payload,
             userId: req.user._id
         });
 
@@ -27,7 +30,8 @@ const addAddress = async (req, res) => {
                     postalCode: createdAddress.pincode,
                     latitude: createdAddress.latitude,
                     longitude: createdAddress.longitude
-                }
+                },
+                nearestWarehouse: createdAddress.nearestHub
             });
         }
 
@@ -43,7 +47,9 @@ const addAddress = async (req, res) => {
 // @access  Private
 const getAddresses = async (req, res) => {
     try {
-        const addresses = await Address.find({ userId: req.user._id }).sort({ isDefault: -1, createdAt: -1 });
+        const addresses = await Address.find({ userId: req.user._id })
+            .populate('nearestHub', 'name hub city')
+            .sort({ isDefault: -1, createdAt: -1 });
         res.json(addresses);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -66,11 +72,16 @@ const updateAddress = async (req, res) => {
             // Update fields
             Object.keys(req.body).forEach(key => {
                 if (key !== 'userId') {
-                    address[key] = req.body[key];
+                    if (key === 'nearestHub' && req.body[key] === '') {
+                        address[key] = undefined;
+                    } else {
+                        address[key] = req.body[key];
+                    }
                 }
             });
 
             const updatedAddress = await address.save();
+            await updatedAddress.populate('nearestHub', 'name hub city');
 
             // Sync to User location if it's set as default
             if (updatedAddress.isDefault) {
@@ -83,7 +94,8 @@ const updateAddress = async (req, res) => {
                         postalCode: updatedAddress.pincode,
                         latitude: updatedAddress.latitude,
                         longitude: updatedAddress.longitude
-                    }
+                    },
+                    nearestWarehouse: updatedAddress.nearestHub
                 });
             }
 

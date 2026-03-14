@@ -40,7 +40,9 @@ const ReceiverManualEntry = () => {
         weight: '',
         seller: '',
         destination: '',
+        customerEmail: '',
         customerName: '',
+        customerId: '',
         deliveryAddress: '',
         deliveryType: 'Standard',
         lat: center.lat.toFixed(6),
@@ -95,14 +97,64 @@ const ReceiverManualEntry = () => {
         }));
     };
 
-    const handleAddProduct = async (e) => {
-        e.preventDefault();
+    const handleLookupCustomer = async () => {
+        if (!newProduct.customerEmail) {
+            alert('Please enter a customer email.');
+            return;
+        }
+
         setLoading(true);
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+            const { data } = await axios.get(`${apiBase}/api/auth/find-customer/${newProduct.customerEmail}`, {
+                headers: { Authorization: `Bearer ${userInfo.token}` }
+            });
+
+            if (data) {
+                setNewProduct(prev => ({
+                    ...prev,
+                    customerName: data.name,
+                    customerId: data._id,
+                    deliveryAddress: data.location?.addressLine1 || prev.deliveryAddress,
+                    destination: data.location?.city || prev.destination,
+                    lat: data.location?.latitude || prev.lat,
+                    lng: data.location?.longitude || prev.lng
+                }));
+                if (data.location?.latitude && map) {
+                    const newPos = { lat: data.location.latitude, lng: data.location.longitude };
+                    setPosition(newPos);
+                    map.panTo(newPos);
+                }
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || 'Customer not found. Please verify the email.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAddProduct = async (e) => {
+        e.preventDefault();
+        if (!newProduct.customerId) {
+            alert('Please verify a customer by email first.');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
             const trk = 'M-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-            const payload = { ...newProduct, trackingCode: trk, status: 'Received' };
-            await axios.post(`${apiBase}/api/parcels`, payload);
+            const payload = { 
+                ...newProduct, 
+                customer: newProduct.customerId, // Map to correct field for backend
+                trackingCode: trk, 
+                status: 'Received' 
+            };
+            await axios.post(`${apiBase}/api/parcels`, payload, {
+                headers: { Authorization: `Bearer ${userInfo.token}` }
+            });
             setGeneratedTracking(trk);
             setShowQRModal(true);
         } catch (err) {
@@ -177,6 +229,14 @@ const ReceiverManualEntry = () => {
                         <div>
                             <label style={{ display: 'block', marginBottom: '0.6rem', fontWeight: '600' }}>Destination Hub</label>
                             <input required name="destination" value={newProduct.destination} onChange={handleInputChange} placeholder="Central Warehouse" style={{ width: '100%', padding: '0.9rem 1.2rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)' }} />
+                        </div>
+
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <label style={{ display: 'block', marginBottom: '0.6rem', fontWeight: '600' }}>Customer Email</label>
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <input required name="customerEmail" value={newProduct.customerEmail} onChange={handleInputChange} placeholder="customer@example.com" style={{ flex: 1, padding: '0.9rem 1.2rem', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-color)' }} />
+                                <button type="button" onClick={handleLookupCustomer} style={{ padding: '0 1.5rem', borderRadius: '10px', background: 'rgba(255,107,0,0.1)', color: 'var(--accent)', border: '1px solid var(--accent)', cursor: 'pointer', fontWeight: 'bold' }}>Fetch</button>
+                            </div>
                         </div>
 
                         <div style={{ gridColumn: '1 / -1' }}>

@@ -36,7 +36,7 @@
   color: #fff;
 }
 .landing-nav .nav-logo .accent {
-  color: #FF6B00;
+  color: var(--accent, #FF6B00);
 }
 .landing-nav-links {
   display: flex;
@@ -53,7 +53,7 @@
   transition: color 0.25s;
 }
 .landing-nav-links a:hover {
-  color: #FF6B00;
+  color: var(--accent, #FF6B00);
 }
 .landing-nav-actions {
   display: flex;
@@ -74,10 +74,10 @@
 }
 .btn-ghost:hover {
   color: #fff;
-  border-color: #FF6B00;
+  border-color: var(--accent, #FF6B00);
 }
 .btn-accent {
-  background: #FF6B00;
+  background: var(--accent, #FF6B00);
   color: #fff;
   border: none;
   padding: 10px 20px;
@@ -91,7 +91,7 @@
 .btn-accent:hover {
   opacity: 0.9;
   transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(255, 107, 0, 0.3);
+  box-shadow: 0 4px 20px var(--accent-glow, rgba(255, 107, 0, 0.3));
 }
 .btn-accent-lg {
   padding: 14px 32px;
@@ -127,7 +127,7 @@
   color: #fff;
 }
 .hero-left h1 .accent {
-  color: #FF6B00;
+  color: var(--accent, #FF6B00);
 }
 .hero-left p {
   font-size: 1.2rem;
@@ -172,7 +172,7 @@
   color: #fff;
 }
 .hp-section-title .accent {
-  color: #FF6B00;
+  color: var(--accent, #FF6B00);
 }
 .hp-section-subtitle {
   text-align: center;
@@ -228,8 +228,8 @@
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(255, 107, 0, 0.1);
-  color: #FF6B00;
+  background: var(--accent-subtle, rgba(255, 107, 0, 0.1));
+  color: var(--accent, #FF6B00);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -250,7 +250,7 @@
   cursor: default;
 }
 .service-card:hover {
-  border-color: rgba(255, 107, 0, 0.3);
+  border-color: var(--border-accent, rgba(255, 107, 0, 0.3));
   transform: translateY(-4px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
 }
@@ -258,8 +258,8 @@
   width: 50px;
   height: 50px;
   border-radius: 12px;
-  background: rgba(255, 107, 0, 0.1);
-  color: #FF6B00;
+  background: var(--accent-subtle, rgba(255, 107, 0, 0.1));
+  color: var(--accent, #FF6B00);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -293,15 +293,15 @@
   transition: all 0.3s;
 }
 .ai-card:hover {
-  border-color: rgba(255, 107, 0, 0.3);
+  border-color: var(--border-accent, rgba(255, 107, 0, 0.3));
   transform: translateY(-4px);
 }
 .ai-card-icon {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: rgba(255, 107, 0, 0.1);
-  color: #FF6B00;
+  background: var(--accent-subtle, rgba(255, 107, 0, 0.1));
+  color: var(--accent, #FF6B00);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -343,8 +343,8 @@
   transition: all 0.25s;
 }
 .mp-logo:hover {
-  border-color: #FF6B00;
-  color: #FF6B00;
+  border-color: var(--accent, #FF6B00);
+  color: var(--accent, #FF6B00);
 }
 .mp-info {
   flex: 1;
@@ -373,7 +373,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #FF6B00;
+  background: var(--accent, #FF6B00);
   flex-shrink: 0;
 }
 
@@ -394,7 +394,7 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: #FF6B00;
+  background: var(--accent, #FF6B00);
   color: #fff;
   display: flex;
   align-items: center;
@@ -445,15 +445,15 @@
   transition: all 0.3s;
 }
 .join-card:hover {
-  border-color: rgba(255, 107, 0, 0.3);
+  border-color: var(--border-accent, rgba(255, 107, 0, 0.3));
   transform: translateY(-4px);
 }
 .join-card-icon {
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background: rgba(255, 107, 0, 0.1);
-  color: #FF6B00;
+  background: var(--accent-subtle, rgba(255, 107, 0, 0.1));
+  color: var(--accent, #FF6B00);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -484,7 +484,7 @@
 .stat-value {
   font-size: 3rem;
   font-weight: 800;
-  color: #FF6B00;
+  color: var(--accent, #FF6B00);
   margin: 0;
 }
 .stat-label {
@@ -521,8 +521,8 @@
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: rgba(255, 107, 0, 0.15);
-  color: #FF6B00;
+  background: var(--accent-glow, rgba(255, 107, 0, 0.15));
+  color: var(--accent, #FF6B00);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -555,7 +555,7 @@
   transition: border-color 0.25s;
 }
 .faq-item.open {
-  border-color: rgba(255, 107, 0, 0.3);
+  border-color: var(--border-accent, rgba(255, 107, 0, 0.3));
 }
 .faq-question {
   width: 100%;
@@ -573,7 +573,7 @@
   font-family: 'Inter', sans-serif;
 }
 .faq-question:hover {
-  color: #FF6B00;
+  color: var(--accent, #FF6B00);
 }
 .faq-chevron {
   transition: transform 0.25s;
@@ -581,7 +581,7 @@
 }
 .faq-item.open .faq-chevron {
   transform: rotate(180deg);
-  color: #FF6B00;
+  color: var(--accent, #FF6B00);
 }
 .faq-answer {
   padding: 0 1.5rem 1.2rem;
@@ -614,7 +614,7 @@
   margin: 0 0 0.8rem 0;
 }
 .footer-brand h3 .accent {
-  color: #FF6B00;
+  color: var(--accent, #FF6B00);
 }
 .footer-brand p {
   color: #666;
@@ -639,7 +639,7 @@
   transition: color 0.25s;
 }
 .footer-col a:hover {
-  color: #FF6B00;
+  color: var(--accent, #FF6B00);
 }
 .footer-socials {
   display: flex;
@@ -661,8 +661,8 @@
   text-decoration: none;
 }
 .footer-social:hover {
-  border-color: #FF6B00;
-  color: #FF6B00;
+  border-color: var(--accent, #FF6B00);
+  color: var(--accent, #FF6B00);
 }
 .footer-bottom {
   border-top: 1px solid #1a1a1a;

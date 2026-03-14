@@ -11,6 +11,7 @@ const AddAddress = () => {
     const [loading, setLoading] = useState(false);
     const [locationLoading, setLocationLoading] = useState(false);
     const [showMap, setShowMap] = useState(false);
+    const [hubs, setHubs] = useState([]);
     const [toastData, setToastData] = useState(null);
     
     const showToast = (message, type = 'success') => {
@@ -32,8 +33,25 @@ const AddAddress = () => {
         addressType: 'House',
         isDefault: false,
         deliveryInstructions: '',
-        deliverySchedule: 'Both'
+        deliverySchedule: 'Both',
+        nearestHub: ''
     });
+
+    useEffect(() => {
+        const fetchHubs = async () => {
+            try {
+                const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+                const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+                const { data } = await axios.get(`${apiBase}/api/auth/warehouses`, {
+                    headers: { Authorization: `Bearer ${userInfo.token}` }
+                });
+                setHubs(data.filter(h => h.role === 'manager'));
+            } catch (err) {
+                console.error("Failed to fetch hubs", err);
+            }
+        };
+        fetchHubs();
+    }, []);
 
     const handleInputChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -272,6 +290,27 @@ const AddAddress = () => {
                             <div className="form-group">
                                 <label className="form-label">Delivery Instructions</label>
                                 <textarea name="deliveryInstructions" value={formData.deliveryInstructions} onChange={handleInputChange} className="form-input" style={{ width: '100%', minHeight: '80px', paddingTop: '10px' }} placeholder="E.g. Leave at the front desk" />
+                            </div>
+                            <div className="form-group" style={{ marginTop: '1rem' }}>
+                                <label className="form-label">Specify Nearest Logistics Hub (Manager)</label>
+                                <select 
+                                    name="nearestHub" 
+                                    value={formData.nearestHub} 
+                                    onChange={handleInputChange} 
+                                    className="form-input" 
+                                    style={{ width: '100%' }}
+                                    required
+                                >
+                                    <option value="">Select Nearest District/Regional Hub</option>
+                                    {hubs.map(hub => (
+                                        <option key={hub._id} value={hub._id}>
+                                            {hub.name} ({hub.hub || hub.city})
+                                        </option>
+                                    ))}
+                                </select>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '5px' }}>
+                                    This helps us assign the correct regional manager and warehouse for your deliveries.
+                                </p>
                             </div>
                             <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <input type="checkbox" name="isDefault" checked={formData.isDefault} onChange={handleInputChange} id="isDefault" style={{ width: '18px', height: '18px', accentColor: 'var(--accent)' }} />

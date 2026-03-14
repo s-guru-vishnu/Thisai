@@ -21,6 +21,8 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation, read
     });
     const [loading, setLoading] = useState(false);
     const [mapCenter, setMapCenter] = useState(initialLocation || defaultPos);
+    const [hubs, setHubs] = useState([]);
+    const [selectedHub, setSelectedHub] = useState('');
     const mapRef = useRef(null);
 
     const formatCoords = (pos) => `${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)} (current address)`;
@@ -91,6 +93,25 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation, read
             setMarkerPosition(pos);
             setMapCenter(pos);
             setAddressPreview(null);
+            setSelectedHub(initialLocation?.nearestHub || '');
+
+            // Fetch Hubs
+            const fetchHubs = async () => {
+                try {
+                    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+                    const res = await fetch(`${apiBase}/api/auth/warehouses`, {
+                        headers: { Authorization: `Bearer ${userInfo.token}` }
+                    });
+                    const data = await res.json();
+                    if (Array.isArray(data)) {
+                        setHubs(data.filter(h => h.role === 'manager'));
+                    }
+                } catch (err) {
+                    console.error("Hub fetch error:", err);
+                }
+            };
+            fetchHubs();
 
             // Also pan the map ref if it exists
             if (mapRef.current) {
@@ -228,36 +249,58 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation, read
                     </div>
 
                     {!readOnly && (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
-                            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                 <label style={{ fontSize: '0.7rem', color: '#666', marginBottom: '4px', display: 'block' }}>LATITUDE</label>
-                                 <input 
-                                    type="number" 
-                                    step="any"
-                                    value={markerPosition.lat} 
-                                    onChange={(e) => {
-                                        const val = parseFloat(e.target.value) || 0;
-                                        setMarkerPosition(prev => ({ ...prev, lat: val }));
-                                        setMapCenter(prev => ({ ...prev, lat: val }));
-                                    }}
-                                    style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', fontSize: '0.9rem', outline: 'none' }}
-                                 />
+                        <>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+                                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <label style={{ fontSize: '0.7rem', color: '#666', marginBottom: '4px', display: 'block' }}>LATITUDE</label>
+                                    <input 
+                                        type="number" 
+                                        step="any"
+                                        value={markerPosition.lat} 
+                                        onChange={(e) => {
+                                            const val = parseFloat(e.target.value) || 0;
+                                            setMarkerPosition(prev => ({ ...prev, lat: val }));
+                                            setMapCenter(prev => ({ ...prev, lat: val }));
+                                        }}
+                                        style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', fontSize: '0.9rem', outline: 'none' }}
+                                    />
+                                </div>
+                                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <label style={{ fontSize: '0.7rem', color: '#666', marginBottom: '4px', display: 'block' }}>LONGITUDE</label>
+                                    <input 
+                                        type="number" 
+                                        step="any"
+                                        value={markerPosition.lng} 
+                                        onChange={(e) => {
+                                            const val = parseFloat(e.target.value) || 0;
+                                            setMarkerPosition(prev => ({ ...prev, lng: val }));
+                                            setMapCenter(prev => ({ ...prev, lng: val }));
+                                        }}
+                                        style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', fontSize: '0.9rem', outline: 'none' }}
+                                    />
+                                </div>
                             </div>
-                            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '10px 12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                 <label style={{ fontSize: '0.7rem', color: '#666', marginBottom: '4px', display: 'block' }}>LONGITUDE</label>
-                                 <input 
-                                    type="number" 
-                                    step="any"
-                                    value={markerPosition.lng} 
-                                    onChange={(e) => {
-                                        const val = parseFloat(e.target.value) || 0;
-                                        setMarkerPosition(prev => ({ ...prev, lng: val }));
-                                        setMapCenter(prev => ({ ...prev, lng: val }));
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ fontSize: '0.7rem', color: '#ff6b6b', marginBottom: '8px', display: 'block', fontWeight: 'bold', textTransform: 'uppercase' }}>Nearest Logistics Hub (Manager)</label>
+                                <select 
+                                    value={selectedHub} 
+                                    onChange={(e) => setSelectedHub(e.target.value)}
+                                    style={{ 
+                                        width: '100%', padding: '12px', borderRadius: '10px', 
+                                        background: '#111', border: '1px solid rgba(255,107,0,0.3)', 
+                                        color: 'white', fontSize: '0.9rem', outline: 'none' 
                                     }}
-                                    style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', fontSize: '0.9rem', outline: 'none' }}
-                                 />
+                                    required
+                                >
+                                    <option value="">Select Nearest Distribution Hub...</option>
+                                    {hubs.map(hub => (
+                                        <option key={hub._id} value={hub._id}>
+                                            {hub.name} ({hub.hub || hub.city})
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
-                        </div>
+                        </>
                     )}
 
                     <div style={{ display: 'flex', gap: '10px' }}>
@@ -281,7 +324,8 @@ const LocationPickerModal = ({ isOpen, onClose, onConfirm, initialLocation, read
                                     onClick={() => onConfirm({
                                         latitude: markerPosition.lat,
                                         longitude: markerPosition.lng,
-                                        ...addressData
+                                        ...addressData,
+                                        nearestHub: selectedHub
                                     })}
                                     style={{
                                         flex: 2, padding: '13px', borderRadius: '12px', border: 'none',

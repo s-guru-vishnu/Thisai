@@ -19,9 +19,10 @@ const DriverMap = ({ driverLocation, warehouseLocation, stops, onMapLoad, driver
     });
 
     const mapRef = useRef(null);
+    const [directionsResponse, setDirectionsResponse] = useState(null);
     const [pickupDirections, setPickupDirections] = useState(null);
     const [deliveryDirections, setDeliveryDirections] = useState(null);
-    const [showTraffic, setShowTraffic] = useState(false);
+    const [showTraffic, setShowTraffic] = useState(true);
     const [mapType, setMapType] = useState("roadmap");
     
     // Zoom/Center stabilization
@@ -78,8 +79,10 @@ const DriverMap = ({ driverLocation, warehouseLocation, stops, onMapLoad, driver
             { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
             { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
             { featureType: "water", elementType: "geometry", stylers: [{ color: "#17263c" }] },
-            { featureType: "road", elementType: "geometry", stylers: [{ color: "#38414e" }] },
-            { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
+            { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#38414e" }, { visibility: "on" }] },
+            { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#212a37" }] },
+            { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#38414e" }, { visibility: "on" }] },
+            { featureType: "road.local", elementType: "all", stylers: [{ visibility: "off" }] }, // Hide narrow local roads (< 5m preference)
             { featureType: "poi", elementType: "geometry", stylers: [{ color: "#2f3948" }] },
             { featureType: "transit", elementType: "geometry", stylers: [{ color: "#2f3948" }] }
         ] : [],
@@ -187,7 +190,12 @@ const DriverMap = ({ driverLocation, warehouseLocation, stops, onMapLoad, driver
                             origin: warehouseLocation,
                             destination: stops[stops.length - 1].location,
                             waypoints: stops.slice(0, -1).map(stop => ({ location: stop.location, stopover: true })),
-                            travelMode: 'DRIVING'
+                            travelMode: 'DRIVING',
+                            drivingOptions: {
+                                departureTime: new Date(),
+                                trafficModel: 'best_guess'
+                            },
+                            optimizeWaypoints: true
                         }}
                         callback={deliveryCallback}
                     />
@@ -369,6 +377,7 @@ const DriverMap = ({ driverLocation, warehouseLocation, stops, onMapLoad, driver
                         if (mapRef.current && driverLocation) {
                             mapRef.current.panTo(driverLocation);
                             setMapCenter(driverLocation);
+                            setMapZoom(15);
                         }
                     }}
                     style={{

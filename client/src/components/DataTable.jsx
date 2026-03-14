@@ -20,7 +20,7 @@ const DataTable = ({ headers, data, onEdit, onSuspend, onDelete }) => {
                         <tr key={index} style={{ borderBottom: '1px solid var(--border-color)', transition: 'var(--transition)' }} className="table-row-hover">
                             {Object.values(row).map((val, idx) => (
                                 <td key={idx} style={{ padding: '1.2rem', color: 'white', fontSize: '0.95rem' }}>
-                                    {typeof val === 'string' && (val === 'Admin' || val === 'Manager' || val === 'Warehouse' || val === 'Driver' || val === 'Suspended' || val === 'Customer' || val === 'Receiver' || val === 'Seller') ? (
+                                    {typeof val === 'string' && (val === 'Admin' || val === 'Manager' || val === 'Warehouse' || val === 'Driver' || val === 'Suspended' || val === 'Customer' || val === 'Receiver' || val === 'Seller' || val === 'Cargo Driver') ? (
                                         <span className={`status-pill ${val.toLowerCase()}`}>
                                             {val}
                                         </span>
@@ -115,6 +115,7 @@ const DataTable = ({ headers, data, onEdit, onSuspend, onDelete }) => {
                 .status-pill.customer { background: rgba(163,163,163,0.1); color: var(--text-muted); border-color: rgba(163,163,163,0.2); }
                 .status-pill.receiver { background: rgba(155,89,182,0.1); color: #9b59b6; border-color: rgba(155,89,182,0.2); }
                 .status-pill.seller { background: rgba(52,152,219,0.1); color: #3498db; border-color: rgba(52,152,219,0.2); }
+                .status-pill.cargo_driver { background: rgba(79, 70, 229, 0.1); color: #6366f1; border-color: rgba(79, 70, 229, 0.2); }
             `}</style>
         </div>
     );

@@ -64,6 +64,27 @@ const UserManagement = () => {
         }
     };
 
+    const handleRecruit = async (driverId) => {
+        if (!window.confirm(`Add this driver to your operational team?`)) return;
+
+        try {
+            setUpdating(driverId);
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            await axios.put(`${apiBase}/api/manager/drivers/${driverId}/recruit`, {}, {
+                headers: { Authorization: `Bearer ${userInfo.token}` }
+            });
+            
+            // Update local state
+            setUsers(users.map(u => u._id === driverId ? { ...u, assignedManager: userInfo._id } : u));
+            setError(null);
+            alert("Driver successfully recruited to your team!");
+        } catch (err) {
+            setError(err.response?.data?.message || 'Failed to recruit driver');
+        } finally {
+            setUpdating(null);
+        }
+    };
+
     const filteredUsers = users.filter(u => 
         u.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
         u.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -186,11 +207,11 @@ const UserManagement = () => {
                                                     fontSize: '0.75rem', 
                                                     fontWeight: '700',
                                                     textTransform: 'uppercase',
-                                                    background: ['driver', 'cargo_driver', 'delivery_driver'].includes(user.role) ? 'rgba(76,175,80,0.1)' : 'rgba(255,255,255,0.05)',
-                                                    color: ['driver', 'cargo_driver', 'delivery_driver'].includes(user.role) ? '#4caf50' : 'var(--text-muted)',
-                                                    border: ['driver', 'cargo_driver', 'delivery_driver'].includes(user.role) ? '1px solid rgba(76,175,80,0.2)' : '1px solid rgba(255,255,255,0.1)'
+                                                    background: user.role === 'cargo_driver' ? 'rgba(79, 70, 229, 0.1)' : (['driver', 'delivery_driver'].includes(user.role) ? 'rgba(76,175,80,0.1)' : 'rgba(255,255,255,0.05)'),
+                                                    color: user.role === 'cargo_driver' ? '#6366f1' : (['driver', 'delivery_driver'].includes(user.role) ? '#4caf50' : 'var(--text-muted)'),
+                                                    border: user.role === 'cargo_driver' ? '1px solid rgba(79, 70, 229, 0.2)' : (['driver', 'delivery_driver'].includes(user.role) ? '1px solid rgba(76,175,80,0.2)' : '1px solid rgba(255,255,255,0.1)')
                                                 }}>
-                                                    {user.role.replace('_', ' ')}
+                                                    {user.role === 'cargo_driver' ? 'Cargo Driver' : user.role.replace('_', ' ')}
                                                 </span>
                                             </td>
                                             <td style={{ padding: '1rem' }}>
@@ -255,9 +276,35 @@ const UserManagement = () => {
                                                     </div>
                                                 ) : (
                                                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'flex-end' }}>
-                                                        <div style={{ color: '#4caf50', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: '600' }}>
-                                                            <ShieldCheck size={16} /> {user.role.replace('_', ' ').toUpperCase()}
+                                                        <div style={{ color: '#4caf50', display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: '600' }}>
+                                                                <ShieldCheck size={16} /> {user.role === 'cargo_driver' ? 'CARGO DRIVER' : user.role.replace('_', ' ').toUpperCase()}
+                                                            </div>
+                                                            {user.assignedManager === userInfo._id && (
+                                                                <span style={{ fontSize: '0.65rem', background: 'rgba(76,175,80,0.1)', color: '#4caf50', padding: '2px 6px', borderRadius: '4px', marginTop: '4px', fontWeight: 'bold', border: '1px solid rgba(76,175,80,0.3)' }}>IN YOUR TEAM</span>
+                                                            )}
                                                         </div>
+
+                                                        {userInfo.role === 'manager' && user.assignedManager !== userInfo._id && (
+                                                            <button 
+                                                                onClick={() => handleRecruit(user._id)}
+                                                                disabled={updating === user._id}
+                                                                style={{ 
+                                                                    padding: '6px 12px', 
+                                                                    borderRadius: '8px', 
+                                                                    border: 'none', 
+                                                                    background: '#2196f3', 
+                                                                    color: 'white',
+                                                                    fontWeight: '600',
+                                                                    fontSize: '0.75rem',
+                                                                    cursor: 'pointer',
+                                                                    boxShadow: '0 2px 8px rgba(33,150,243,0.3)'
+                                                                }}
+                                                            >
+                                                                Recruit
+                                                            </button>
+                                                        )}
+
                                                         {(userInfo.role === 'admin' || (userInfo.role === 'manager' && user.role !== 'cargo_driver')) && (
                                                             <button 
                                                                 onClick={() => handleRoleUpdate(user._id, 'customer')}

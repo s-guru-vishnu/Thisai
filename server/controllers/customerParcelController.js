@@ -2,6 +2,55 @@
 const Parcel = require('../models/Parcel'); // Assuming returning mock data if DB isn't fully structured for this, but using existing parcel schema layout if possible.
 
 const { getLiveWeather } = require('../services/weatherService');
+const { calculateDelayInternal } = require('../services/predictionService');
+const User = require('../models/User');
+
+const generateTimeline = (parcel) => {
+    const timeline = [];
+    timeline.push({ 
+        title: 'Order Dispatched', 
+        time: parcel.createdAt ? new Date(parcel.createdAt).toLocaleTimeString() : 'N/A', 
+        completed: true 
+    });
+    
+    // Origin Hub
+    timeline.push({ 
+        title: `Arrived at ${parcel.originWarehouse?.hub || 'Origin'} Hub`, 
+        completed: true 
+    });
+
+    // Intermediate Hubs
+    if (parcel.intermediateHubs && parcel.intermediateHubs.length > 0) {
+        parcel.intermediateHubs.forEach(hub => {
+            timeline.push({ 
+                title: `Transit: ${hub.hub || hub.city} Hub`, 
+                completed: ['In Transit', 'Out For Delivery', 'Delivered'].includes(parcel.status)
+            });
+        });
+    }
+
+    // Destination Hub
+    timeline.push({ 
+        title: `Arrived at ${parcel.destinationWarehouse?.hub || 'Destination'} Hub`, 
+        completed: ['Out For Delivery', 'Delivered'].includes(parcel.status)
+    });
+
+    timeline.push({ 
+        title: 'Out For Delivery', 
+        time: '', 
+        completed: ['Out For Delivery', 'Delivered'].includes(parcel.status) 
+    });
+    
+    timeline.push({ 
+        title: 'Delivered', 
+        time: '', 
+        completed: parcel.status === 'Delivered' 
+    });
+
+    return timeline;
+};
+
+
 
 // @desc    Get parcel details by Tracking ID
 // @route   GET /api/parcel/:trackingId
@@ -14,7 +63,12 @@ const getParcelByTrackingId = async (req, res) => {
         
         let parcel = await Parcel.findOne({ 
             $or: [{ trackingCode: trackingId }, { parcelId: trackingId }] 
-        }).populate('assignedDriver');
+        })
+        .populate('assignedDriver')
+        .populate('originWarehouse')
+        .populate('destinationWarehouse')
+        .populate('intermediateHubs')
+        .populate('currentWarehouse');
         
         if (!parcel) {
             // Mock failover if actual DB record doesn't exist yet but UI needs testing
@@ -38,23 +92,25 @@ const getParcelByTrackingId = async (req, res) => {
             });
         }
 
+        // Construct Dynamic Timeline
+        const timeline = generateTimeline(parcel);
+        const prediction = await calculateDelayInternal(parcel);
+
         res.json({
-            trackingId: parcel.trackingCode,
+            trackingId: parcel.parcelId || parcel.trackingCode,
             productName: parcel.productName || 'Package',
-            senderName: parcel.sender || 'Sender Name',
-            pickupLocation: parcel.pickupAddress || 'Warehouse',
+            senderName: parcel.seller || 'Seller',
+            pickupLocation: parcel.originWarehouse?.name || 'Origin Hub',
             deliveryAddress: parcel.deliveryAddress,
-            eta: "15 min",
+            eta: prediction.eta,
+            delayMinutes: prediction.delayMinutes,
+            delayRisk: prediction.delayRisk,
+            reason: prediction.reason,
             status: parcel.status,
             driverName: parcel.assignedDriver ? parcel.assignedDriver.name : 'Unassigned',
             driverLocation: parcel.currentLocation || { lat: 13.0827, lng: 80.2707 },
-            timeline: [
-                { title: 'Order Created', time: '10:00 AM', completed: true },
-                { title: 'Package Picked Up', time: '11:30 AM', completed: ['Picked Up', 'In Transit', 'Out For Delivery', 'Delivered'].includes(parcel.status) },
-                { title: 'In Transit', time: '12:00 PM', completed: ['In Transit', 'Out For Delivery', 'Delivered'].includes(parcel.status) },
-                { title: 'Out For Delivery', time: '', completed: ['Out For Delivery', 'Delivered'].includes(parcel.status) },
-                { title: 'Delivered', time: '', completed: parcel.status === 'Delivered' }
-             ]
+            timeline: timeline,
+            prediction: prediction
         });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -106,57 +162,8 @@ const getDelayPrediction = async (req, res) => {
         const { trackingId } = req.params;
         const parcel = await Parcel.findOne({ trackingCode: trackingId });
         
-        // Base driver mock coordinates (or actual parcel coordinates if available)
-        let lat = 13.0827;
-        let lng = 80.2707;
-        let distanceFactor = 1.0;
-        
-        if (parcel && parcel.currentLocation) {
-             lat = parcel.currentLocation.lat;
-             lng = parcel.currentLocation.lng;
-             distanceFactor = 1.1; // Baseline realistic distance factor
-        }
-
-        // Live Weather API Evaluation
-        const weather = await getLiveWeather(lat, lng);
-        
-        let weatherRiskFactor = 1.0;
-        if (weather.riskLevel === 'HIGH') weatherRiskFactor = 1.6;
-        else if (weather.riskLevel === 'MEDIUM') weatherRiskFactor = 1.25;
-        
-        // Traffic Delay Logic (Based on Time of Day rush hours natively)
-        const hour = new Date().getHours();
-        const isRushHour = (hour >= 8 && hour <= 10) || (hour >= 17 && hour <= 20);
-        const trafficDelayFactor = isRushHour ? 1.5 : 1.0;
-
-        // ** CORE ROUTING CALCULATION **
-        // RouteScore = distanceFactor * trafficDelayFactor * weatherRiskFactor
-        const routeScore = distanceFactor * trafficDelayFactor * weatherRiskFactor;
-        
-        // Interpret Score into Dashboard Data
-        let delayRisk = 'LOW';
-        let customReason = 'Clear route';
-        
-        if (routeScore >= 1.8) {
-             delayRisk = 'HIGH';
-             if (weatherRiskFactor >= 1.6) customReason = `Severe weather delay (${weather.weatherMain})`;
-             else customReason = 'Severe traffic congestion detected';
-        } else if (routeScore >= 1.3) {
-             delayRisk = 'MEDIUM';
-             if (weatherRiskFactor > 1.0) customReason = `Moderate weather impact (${weather.weatherDescription})`;
-             else customReason = 'Moderate routing delay';
-        }
-        
-        // Output translation
-        const delayMinutes = Math.floor((routeScore - 1.0) * 20);
-
-        res.json({
-            delayRisk,
-            delayMinutes: delayMinutes > 0 ? delayMinutes : 0,
-            reason: customReason,
-            routeScore: routeScore.toFixed(2),
-            weatherMeta: weather
-        });
+        const prediction = await calculateDelayInternal(parcel);
+        res.json(prediction);
     } catch (error) {
         console.error('Route scoring error:', error);
         res.status(500).json({ message: error.message });
@@ -225,12 +232,18 @@ const getActiveShipment = async (req, res) => {
             return res.json(null);
         }
 
+        const prediction = await calculateDelayInternal(parcel);
+
         res.json({
             trackingId: parcel.parcelId,
             productName: parcel.productName,
             status: parcel.status,
-            eta: "Calculating...",
+            eta: prediction.eta,
+            delayMinutes: prediction.delayMinutes,
+            delayRisk: prediction.delayRisk,
+            reason: prediction.reason,
             driverName: parcel.assignedDriver ? parcel.assignedDriver.name : 'Unassigned',
+            timeline: generateTimeline(parcel),
             logisticsPath: {
                 origin: parcel.originWarehouse?.name || 'Local Pickup',
                 destination: parcel.destinationWarehouse?.name || 'Final Delivery Hub',

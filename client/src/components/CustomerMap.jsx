@@ -44,7 +44,7 @@ const CustomerMap = ({ deliveryDetails }) => {
         const fetchLiveLocation = async () => {
             try {
                 // Step 8: Fetch driver location from backend for Live Tracking
-                const locRes = await axios.get(`http://localhost:5000/api/driver/location/${driverId}`);
+                const locRes = await axios.get(`http://localhost:5005/api/driver/location/${driverId}`);
                 if (locRes.data && locRes.data.location) {
                     setDriverLocation(locRes.data.location);
                 }

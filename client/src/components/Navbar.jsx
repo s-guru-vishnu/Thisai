@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { LayoutDashboard, Users, Map, Package, Truck, User, LogOut, Menu, X, Bell, MapPin } from 'lucide-react';
+import { LayoutDashboard, Users, Map, Package, Truck, BrainCircuit, User, LogOut, Menu, X, Bell, MapPin, Maximize2 } from 'lucide-react';
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -28,6 +28,7 @@ const Navbar = () => {
         };
     }, []);
 
+
     const isAdmin = userInfo.role === 'admin';
     const isSeller = userInfo.role === 'seller';
     const isCustomer = userInfo.role === 'customer';
@@ -40,6 +41,7 @@ const Navbar = () => {
     const [notifications, setNotifications] = useState([]);
 
     const fetchNotifications = async () => {
+        if (!userInfo?.token) return;
         try {
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             const config = {
@@ -86,9 +88,9 @@ const Navbar = () => {
         { name: 'Dashboard', path: '/manager', icon: <LayoutDashboard size={18} />, show: isManager },
         { name: 'Users', path: '/dashboard/users', icon: <Users size={18} />, show: isAdmin },
         { name: 'Live Map', path: '/dashboard/map', icon: <Map size={18} />, show: isAdmin },
-        { name: 'Parcels', path: '/dashboard/parcels', icon: <Package size={18} />, show: isAdmin || isReceiver },
         { name: 'Drivers', path: '/dashboard/drivers', icon: <Truck size={18} />, show: isAdmin },
         // Seller specific
+        { name: 'Dashboard', path: '/seller', icon: <LayoutDashboard size={18} />, show: isSeller },
         { name: 'My Deliveries', path: '/seller/deliveries', icon: <Package size={18} />, show: isSeller },
 
         // Receiver specific
@@ -96,7 +98,6 @@ const Navbar = () => {
         { name: 'Manual Entry', path: '/receiver/manual', icon: <LayoutDashboard size={18} />, show: isReceiver },
 
         // Manager specific
-        { name: 'Parcels', path: '/manager', icon: <Package size={18} />, show: isManager },
         { name: 'User Management', path: '/manager/users', icon: <Users size={18} />, show: isManager },
         { name: 'Scan QR', path: '/manager/scan', icon: <LayoutDashboard size={18} />, show: isManager },
         { name: 'Manual Entry', path: '/manager/manual', icon: <LayoutDashboard size={18} />, show: isManager },
@@ -108,12 +109,13 @@ const Navbar = () => {
         
         // Driver specific
         { name: 'Dashboard', path: '/driver', icon: <LayoutDashboard size={18} />, show: isDriver },
+        { name: 'Vehicle Details', path: '/driver/vehicle', icon: <Truck size={18} />, show: userInfo.role === 'cargo_driver' },
     ];
 
     return (
         <nav className="navbar">
             <div className="nav-brand">
-                <img src="/Thisai.png" alt="Thisai Logo" className="logo-orb" />
+                <div className="logo-orb-placeholder" style={{ width: '32px', height: '32px', background: 'var(--accent)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', fontWeight: 'bold' }}>T</div>
                 <span className="brand-name">THISAI</span>
             </div>
 
@@ -128,6 +130,40 @@ const Navbar = () => {
                         </li>
                     ))}
                 </ul>
+                
+                {userInfo.role === 'cargo_driver' && location.pathname === '/driver' && (
+                    <button 
+                        onClick={() => {
+                            window.dispatchEvent(new CustomEvent('toggle-focus-mode', { detail: true }));
+                        }}
+                        className="focus-mode-btn"
+                        style={{
+                            marginLeft: '20px',
+                            background: 'rgba(59, 130, 246, 0.1)',
+                            border: '1px solid rgba(59, 130, 246, 0.3)',
+                            color: '#3b82f6',
+                            padding: '6px 14px',
+                            borderRadius: '8px',
+                            fontSize: '0.75rem',
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease'
+                        }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.2)';
+                            e.currentTarget.style.boxShadow = '0 0 15px rgba(59, 130, 246, 0.3)';
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)';
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}
+                    >
+                        <Maximize2 size={14} /> FOCUS MODE
+                    </button>
+                )}
             </div>
 
             <div className="nav-profile">

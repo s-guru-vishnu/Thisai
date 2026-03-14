@@ -17,7 +17,7 @@ const Login = () => {
         setError('');
 
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             const { data } = await axios.post(`${apiBase}/api/auth/login`, {
                 email,
                 password,
@@ -63,7 +63,7 @@ const Login = () => {
     const handleSeedDatabase = async () => {
         try {
             setLoading(true);
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             await axios.post(`${apiBase}/api/auth/seed`);
             alert('Database seeded successfully in MongoDB Compass! Check "logist" DB.');
             setError('');
@@ -81,7 +81,7 @@ const Login = () => {
 
             <div className="login-box">
                 <div className="login-header">
-                    <img src="/Thisai.png" alt="Thisai Logo" className="logo-orb large-orb" />
+                    <div className="logo-orb-placeholder" style={{ width: '64px', height: '64px', background: 'var(--accent)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', fontWeight: 'bold', fontSize: '2rem', margin: '0 auto 1rem auto' }}>T</div>
                     <h2>THISAI</h2>
                     <p>Login to your portal</p>
                 </div>

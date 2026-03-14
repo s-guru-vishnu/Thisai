@@ -8,7 +8,6 @@ const DashboardTabs = () => {
 
     const tabs = [
         { id: '/seller', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
-        { id: '/customer', label: 'Track', icon: <Map size={18} /> },
         { id: '/seller/deliveries', label: 'My Deliveries', icon: <Package size={18} /> }
     ];
 

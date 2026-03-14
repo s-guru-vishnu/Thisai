@@ -20,7 +20,7 @@ const UsersPage = () => {
 
     const fetchUsers = async () => {
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             // Getting token if needed
             const userInfo = JSON.parse(localStorage.getItem('userInfo'));
             const config = {
@@ -59,7 +59,7 @@ const UsersPage = () => {
 
     const confirmDelete = async () => {
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             const userInfo = JSON.parse(localStorage.getItem('userInfo'));
             const config = {
                 headers: { Authorization: `Bearer ${userInfo?.token}` }
@@ -92,7 +92,7 @@ const UsersPage = () => {
         };
 
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
             const userInfo = JSON.parse(localStorage.getItem('userInfo'));
             const config = {
                 headers: { Authorization: `Bearer ${userInfo?.token}` }
@@ -168,6 +168,8 @@ const UsersPage = () => {
                             if (user.role) {
                                 if (user.role.toLowerCase() === 'parcel_receiver') {
                                     formattedRole = 'Receiver';
+                                } else if (user.role.toLowerCase() === 'cargo_driver') {
+                                    formattedRole = 'Cargo Driver';
                                 } else {
                                     formattedRole = user.role.charAt(0).toUpperCase() + user.role.slice(1);
                                 }

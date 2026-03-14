@@ -133,11 +133,25 @@ const AddressBook = () => {
                                     {addr.townCity}, {addr.state} {addr.pincode}<br />
                                     {addr.country}
                                 </p>
-                                <p style={{ margin: '10px 0 0 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                                    <Phone size={14} style={{ marginRight: '5px', verticalAlign: 'middle' }} /> {addr.phone}
-                                </p>
+                                 <p style={{ margin: '10px 0 0 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                                     <Phone size={14} style={{ marginRight: '5px', verticalAlign: 'middle' }} /> {addr.phone}
+                                 </p>
 
-                                <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '15px' }}>
+                                 {addr.nearestHub && (
+                                     <div style={{ 
+                                         marginTop: '12px', 
+                                         padding: '8px 12px', 
+                                         background: 'rgba(var(--accent-rgb), 0.05)', 
+                                         borderRadius: '8px', 
+                                         border: '1px solid rgba(var(--accent-rgb), 0.1)',
+                                         fontSize: '0.8rem'
+                                     }}>
+                                         <span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>Nearest Hub: </span>
+                                         <span style={{ color: 'white' }}>{addr.nearestHub.name} ({addr.nearestHub.hub || addr.nearestHub.city})</span>
+                                     </div>
+                                 )}
+
+                                 <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '15px' }}>
                                     <button style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.85rem' }} onMouseOver={e => e.currentTarget.style.color = 'var(--accent)'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}>
                                         <Edit3 size={16} /> Edit
                                     </button>

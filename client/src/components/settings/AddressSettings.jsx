@@ -73,7 +73,9 @@ const AddressSettings = ({ userContext, showToast }) => {
             country: country || 'India',
             addressType: 'House',
             isDefault: addresses.length === 0, // First address is default
+            nearestHub: locationData.nearestHub || ''
         };
+        if (addressData.nearestHub === '') delete addressData.nearestHub;
 
         try {
             const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -172,7 +174,11 @@ const AddressSettings = ({ userContext, showToast }) => {
 
     const handleViewLocation = (addr) => {
         if (addr.latitude && addr.longitude) {
-            setViewLocation({ lat: addr.latitude, lng: addr.longitude });
+            setViewLocation({ 
+                lat: addr.latitude, 
+                lng: addr.longitude,
+                nearestHub: addr.nearestHub?._id || addr.nearestHub
+            });
             setShowViewMap(true);
         }
     };
@@ -244,10 +250,17 @@ const AddressSettings = ({ userContext, showToast }) => {
                                             </span>
                                         )}
                                     </div>
-                                    {addr.latitude && (
-                                        <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                                            📍 {addr.latitude.toFixed(5)}, {addr.longitude.toFixed(5)}
-                                        </p>
+                                     {addr.latitude && (
+                                        <>
+                                            <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                                                📍 {addr.latitude.toFixed(5)}, {addr.longitude.toFixed(5)}
+                                            </p>
+                                            {addr.nearestHub && (
+                                                <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'var(--accent)', fontWeight: '600' }}>
+                                                    Hub: {typeof addr.nearestHub === 'object' ? addr.nearestHub.name : addr.nearestHub}
+                                                </p>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             </div>

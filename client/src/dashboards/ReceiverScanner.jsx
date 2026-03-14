@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
+import axios from 'axios';
 import Navbar from '../components/Navbar';
-import { Camera, ArrowLeft, ShieldCheck, Zap, StopCircle, RefreshCw } from 'lucide-react';
+import { Camera, ArrowLeft, ShieldCheck, Zap, StopCircle, RefreshCw, AlertCircle } from 'lucide-react';
 import LoadingScreen from '../components/LoadingScreen';
 import '../styles/dashboard.css';
 
@@ -12,6 +13,8 @@ const ReceiverScanner = () => {
     const [cameras, setCameras] = useState([]);
     const [activeCameraId, setActiveCameraId] = useState('');
     const [isScanning, setIsScanning] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState(false);
     const html5QrCodeRef = useRef(null);
     const scannerContainerId = "reader";
 
@@ -80,20 +83,28 @@ const ReceiverScanner = () => {
 
     const handleScanSuccess = async (code) => {
         await stopScanning();
+        setError('');
+        
+        try {
+            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
+            
+            const { data } = await axios.put(`${apiBase}/api/parcels/scan/${code}`, {}, {
+                headers: { Authorization: `Bearer ${userInfo.token}` }
+            });
 
-        const localDeliveries = JSON.parse(localStorage.getItem('sellerDeliveries') || '[]');
-        const updated = localDeliveries.map(d => {
-            if (d.trackingCode === code) {
-                return { ...d, status: 'Received' };
-            }
-            return d;
-        });
-        localStorage.setItem('sellerDeliveries', JSON.stringify(updated));
-        setScanResult(code);
-
-        setTimeout(() => {
-            navigate('/receiver');
-        }, 2500);
+            setScanResult(code);
+            setSuccess(true);
+            
+            setTimeout(() => {
+                navigate('/receiver');
+            }, 3000);
+        } catch (err) {
+            console.error("Verification failed", err);
+            setError(err.response?.data?.message || 'Package verification failed. Please check the code.');
+            setScanResult(null);
+            setTimeout(() => setError(''), 5000);
+        }
     };
 
     const handleCameraChange = (e) => {
@@ -117,6 +128,12 @@ const ReceiverScanner = () => {
                         </button>
                         <h2 style={{ margin: 0, color: '#fff' }}>Scanner <span style={{ color: '#ff6600' }}>Terminal</span></h2>
                     </div>
+
+                    {error && (
+                        <div style={{ background: 'rgba(255, 60, 60, 0.1)', border: '1px solid #ff3c3c', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', color: '#ff3c3c', fontSize: '0.9rem', display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center' }}>
+                            <AlertCircle size={20} /> {error}
+                        </div>
+                    )}
 
                     {!scanResult ? (
                         <div className="scanner-container">
@@ -183,9 +200,9 @@ const ReceiverScanner = () => {
                     ) : (
                         <div style={{ padding: '3rem 2rem', background: 'rgba(0, 204, 102, 0.05)', borderRadius: '20px', border: '2px solid #00cc66', animation: 'zoomIn 0.3s ease' }}>
                             <ShieldCheck size={64} style={{ color: '#00cc66', marginBottom: '1.5rem' }} />
-                            <h2 style={{ color: '#fff', marginBottom: '10px' }}>Verification Successful</h2>
-                            <p style={{ color: '#00cc66', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '20px' }}>Code: {scanResult}</p>
-                            <p style={{ color: '#888' }}>The package has been marked as <strong>Received</strong>. Redirecting you back to terminal...</p>
+                            <h2 style={{ color: '#fff', marginBottom: '10px' }}>Delivery Confirmed</h2>
+                            <p style={{ color: '#00cc66', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '20px' }}>Package Identity: {scanResult}</p>
+                            <p style={{ color: '#888' }}>The package has been verified and marked as <strong>Delivered</strong>. Redirecting to terminal...</p>
                             <div className="loading-bar-container" style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', marginTop: '2rem' }}>
                                 <div style={{ width: '100%', height: '100%', background: '#00cc66', borderRadius: '2px', animation: 'progress 2.5s linear' }}></div>
                             </div>
