@@ -762,8 +762,6 @@ body {
   font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.3s;
-  width: 100%;
-  margin-top: 1rem;
 }
 
 .secondary-btn:hover {

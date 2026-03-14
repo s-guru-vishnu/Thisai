@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
 import Navbar from '../components/Navbar';
 import axios from 'axios';
-import DashboardTabs from '../components/DashboardTabs';
 import { Package, Truck, MapPin, CheckCircle, ArrowLeft, MoreVertical, Edit2, QrCode, X, Eye, Map, Navigation } from 'lucide-react';
 import '../styles/dashboard.css';
 import '../styles/seller.css';
@@ -81,18 +80,17 @@ const SellerDeliveries = () => {
             <Navbar />
 
             <main className="main-content" style={{ paddingTop: '2rem' }}>
-                <header className="dashboard-header" style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                        <Link to="/seller" className="secondary-btn" style={{ padding: '0.6rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <header className="dashboard-header" style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                        <Link to="/seller" className="secondary-btn" style={{ width: '45px', height: '45px', padding: 0, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: 0 }}>
                             <ArrowLeft size={20} />
                         </Link>
                         <div>
-                            <h1>Deliveries <span>Tracker</span></h1>
-                            <p className="subtitle">Track and update the status of all your dispatched packages</p>
+                            <h1 style={{ fontSize: '2rem', margin: 0 }}>Deliveries <span>Tracker</span></h1>
+                            <p className="subtitle" style={{ fontSize: '0.95rem' }}>Track and update dispatched packages</p>
                         </div>
                     </div>
                 </header>
-                <DashboardTabs />
 
 
                 <div className="stats-row">
