@@ -5,6 +5,7 @@ import UsersPage from '../pages/UsersPage';
 import ParcelsPage from '../pages/ParcelsPage';
 import DriversPage from '../pages/DriversPage';
 import LiveMapPage from '../pages/LiveMapPage';
+import NotFoundPage from '../pages/NotFoundPage';
 import ProfilePage from '../pages/ProfilePage';
 
 const AdminRoutes = () => {
@@ -15,6 +16,7 @@ const AdminRoutes = () => {
             <Route path="/parcels" element={<ParcelsPage />} />
             <Route path="/drivers" element={<DriversPage />} />
             <Route path="/map" element={<LiveMapPage />} />
+            <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );
 };

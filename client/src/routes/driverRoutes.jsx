@@ -4,6 +4,7 @@ import InterWarehouseDashboard from '../dashboards/InterWarehouseDashboard';
 import DeliveryDriverDashboard from '../dashboards/DeliveryDriverDashboard';
 import DriverDashboard from '../dashboards/DriverDashboard';
 import VehicleDetails from '../dashboards/VehicleDetails';
+import NotFoundPage from '../pages/NotFoundPage';
 
 const DriverRoutes = () => {
     const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
@@ -19,6 +20,7 @@ const DriverRoutes = () => {
         <Routes>
             <Route path="/" element={renderDashboard()} />
             <Route path="/vehicle" element={<VehicleDetails />} />
+            <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );
 };

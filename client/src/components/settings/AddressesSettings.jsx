@@ -181,6 +181,7 @@ const AddressesSettings = ({ userContext, showToast }) => {
                 fullName: userContext.name,
                 phone: userContext.phone
             };
+            if (payload.nearestHub === '') delete payload.nearestHub;
 
             if (editingId) {
                 await axios.put(`${apiBase}/api/address/${editingId}`, payload, config);

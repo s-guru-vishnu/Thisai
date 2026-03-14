@@ -75,6 +75,7 @@ const AddressSettings = ({ userContext, showToast }) => {
             isDefault: addresses.length === 0, // First address is default
             nearestHub: locationData.nearestHub || ''
         };
+        if (addressData.nearestHub === '') delete addressData.nearestHub;
 
         try {
             const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;

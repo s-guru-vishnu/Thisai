@@ -8,8 +8,11 @@ const addAddress = async (req, res) => {
     try {
         console.log('--- RESTART VERIFIED: addAddress called ---');
         console.log('Payload:', JSON.stringify(req.body, null, 2));
+        const payload = { ...req.body };
+        if (payload.nearestHub === '') delete payload.nearestHub;
+
         const address = new Address({
-            ...req.body,
+            ...payload,
             userId: req.user._id
         });
 
@@ -69,7 +72,11 @@ const updateAddress = async (req, res) => {
             // Update fields
             Object.keys(req.body).forEach(key => {
                 if (key !== 'userId') {
-                    address[key] = req.body[key];
+                    if (key === 'nearestHub' && req.body[key] === '') {
+                        address[key] = undefined;
+                    } else {
+                        address[key] = req.body[key];
+                    }
                 }
             });
 

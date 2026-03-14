@@ -74,6 +74,7 @@ function AppContent() {
                         root.style.setProperty('--accent', prefs.accentColor);
                         root.style.setProperty('--accent-glow', `${prefs.accentColor}40`);
                         root.style.setProperty('--border-accent', `${prefs.accentColor}66`);
+                        root.style.setProperty('--accent-subtle', `${prefs.accentColor}1a`);
                     }
                     
                     // If logged in and no manual override on current session, use prefs

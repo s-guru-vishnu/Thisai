@@ -168,6 +168,8 @@ const UsersPage = () => {
                             if (user.role) {
                                 if (user.role.toLowerCase() === 'parcel_receiver') {
                                     formattedRole = 'Receiver';
+                                } else if (user.role.toLowerCase() === 'cargo_driver') {
+                                    formattedRole = 'Cargo Driver';
                                 } else {
                                     formattedRole = user.role.charAt(0).toUpperCase() + user.role.slice(1);
                                 }

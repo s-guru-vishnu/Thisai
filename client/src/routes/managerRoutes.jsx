@@ -5,6 +5,7 @@ import ReceiverScanner from '../dashboards/ReceiverScanner';
 import ReceiverManualEntry from '../dashboards/ReceiverManualEntry';
 
 import UserManagement from '../dashboards/UserManagement';
+import NotFoundPage from '../pages/NotFoundPage';
 
 const ManagerRoutes = () => {
     return (
@@ -13,7 +14,7 @@ const ManagerRoutes = () => {
             <Route path="/users" element={<UserManagement />} />
             <Route path="/scan" element={<ReceiverScanner />} />
             <Route path="/manual" element={<ReceiverManualEntry />} />
-            {/* Add more manager-specific routes here */}
+            <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );
 };

@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import ParcelReceiverDashboard from '../dashboards/ParcelReceiverDashboard';
 import ReceiverScanner from '../dashboards/ReceiverScanner';
 import ReceiverManualEntry from '../dashboards/ReceiverManualEntry';
+import NotFoundPage from '../pages/NotFoundPage';
 
 const ParcelReceiverRoutes = () => {
     return (
@@ -10,7 +11,7 @@ const ParcelReceiverRoutes = () => {
             <Route path="/" element={<ParcelReceiverDashboard />} />
             <Route path="/scan" element={<ReceiverScanner />} />
             <Route path="/manual" element={<ReceiverManualEntry />} />
-            {/* Add more receiver-specific routes here */}
+            <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );
 };

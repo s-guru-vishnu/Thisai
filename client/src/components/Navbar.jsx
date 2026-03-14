@@ -88,9 +88,9 @@ const Navbar = () => {
         { name: 'Dashboard', path: '/manager', icon: <LayoutDashboard size={18} />, show: isManager },
         { name: 'Users', path: '/dashboard/users', icon: <Users size={18} />, show: isAdmin },
         { name: 'Live Map', path: '/dashboard/map', icon: <Map size={18} />, show: isAdmin },
-        { name: 'Parcels', path: '/dashboard/parcels', icon: <Package size={18} />, show: isAdmin || isReceiver },
         { name: 'Drivers', path: '/dashboard/drivers', icon: <Truck size={18} />, show: isAdmin },
         // Seller specific
+        { name: 'Dashboard', path: '/seller', icon: <LayoutDashboard size={18} />, show: isSeller },
         { name: 'My Deliveries', path: '/seller/deliveries', icon: <Package size={18} />, show: isSeller },
 
         // Receiver specific
@@ -98,7 +98,6 @@ const Navbar = () => {
         { name: 'Manual Entry', path: '/receiver/manual', icon: <LayoutDashboard size={18} />, show: isReceiver },
 
         // Manager specific
-        { name: 'Parcels', path: '/manager', icon: <Package size={18} />, show: isManager },
         { name: 'User Management', path: '/manager/users', icon: <Users size={18} />, show: isManager },
         { name: 'Scan QR', path: '/manager/scan', icon: <LayoutDashboard size={18} />, show: isManager },
         { name: 'Manual Entry', path: '/manager/manual', icon: <LayoutDashboard size={18} />, show: isManager },

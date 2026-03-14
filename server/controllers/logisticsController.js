@@ -13,9 +13,6 @@ const getHubs = async (req, res) => {
     }
 };
 
-// @desc    Calculate path between two hubs using database
-// @route   GET /api/logistics/path
-// @access  Private
 const getPath = async (req, res) => {
     try {
         const { startHub, endHub } = req.query;
