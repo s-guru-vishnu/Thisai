@@ -6,12 +6,15 @@ const User = require('../models/User');
 // @access  Private
 const addAddress = async (req, res) => {
     try {
+        console.log('--- RESTART VERIFIED: addAddress called ---');
+        console.log('Payload:', JSON.stringify(req.body, null, 2));
         const address = new Address({
             ...req.body,
             userId: req.user._id
         });
 
         const createdAddress = await address.save();
+        console.log('Address saved with ID:', createdAddress._id);
 
         // Sync to User location if it's the first/default address
         if (createdAddress.isDefault) {
@@ -30,6 +33,7 @@ const addAddress = async (req, res) => {
 
         res.status(201).json(createdAddress);
     } catch (error) {
+        console.error('Error in addAddress:', error);
         res.status(400).json({ message: error.message });
     }
 };

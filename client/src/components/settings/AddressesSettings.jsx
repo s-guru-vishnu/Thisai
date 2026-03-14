@@ -13,6 +13,8 @@ const AddressesSettings = ({ userContext, showToast }) => {
     const [locationLoading, setLocationLoading] = useState(false);
     const [showMap, setShowMap] = useState(false);
 
+    const getToken = () => userContext.token || JSON.parse(localStorage.getItem('userInfo') || '{}').token;
+
     const [formData, setFormData] = useState({
         pincode: '',
         houseNumber: '',
@@ -30,7 +32,7 @@ const AddressesSettings = ({ userContext, showToast }) => {
     const fetchAddresses = async () => {
         try {
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
+            const config = { headers: { Authorization: `Bearer ${getToken()}` } };
             const { data } = await axios.get(`${apiBase}/api/address`, config);
             setAddresses(data);
         } catch (error) {
@@ -76,7 +78,7 @@ const AddressesSettings = ({ userContext, showToast }) => {
         
         try {
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
+            const config = { headers: { Authorization: `Bearer ${getToken()}` } };
             await axios.delete(`${apiBase}/api/address/${id}`, config);
             showToast('Address deleted');
             fetchAddresses();
@@ -153,7 +155,7 @@ const AddressesSettings = ({ userContext, showToast }) => {
         setFormLoading(true);
         try {
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
+            const config = { headers: { Authorization: `Bearer ${getToken()}` } };
             
             // Use profile name and phone as fallback/default for the address
             const payload = {

@@ -4,15 +4,15 @@
   --bg-panel: #151515;
   --bg-card-hover: #1c1c1e;
 
-  --accent: #FF6B00;
-  --accent-hover: #ff7d1f;
-  --accent-glow: rgba(255, 107, 0, 0.25);
+  --accent: #FF8A00;
+  --accent-hover: #ff9900;
+  --accent-glow: rgba(255, 138, 0, 0.25);
 
   --text-main: #FFFFFF;
   --text-muted: #A3A3A3;
 
   --border-color: #2A2A2A;
-  --border-accent: rgba(255, 107, 0, 0.4);
+  --border-accent: rgba(255, 138, 0, 0.4);
 
   --success: #16C784;
   --warning: #F7931A;

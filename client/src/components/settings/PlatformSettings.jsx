@@ -4,6 +4,8 @@ import axios from 'axios';
 
 const PlatformSettings = ({ userContext, showToast }) => {
     const [loading, setLoading] = useState(false);
+
+    const getToken = () => userContext.token || JSON.parse(localStorage.getItem('userInfo') || '{}').token;
     
     // Defaults with realistic placeholders based on prompt
     const defaultEcommerce = [
@@ -61,11 +63,13 @@ const PlatformSettings = ({ userContext, showToast }) => {
         setLoading(true);
         try {
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
+            const config = { headers: { Authorization: `Bearer ${getToken()}` } };
             
             const { data } = await axios.put(`${apiBase}/api/auth/platforms`, platforms, config);
             
-            const updatedContext = { ...userContext, platforms: data };
+            // Update local storage - merge with existing to keep token
+            const existingUserInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            const updatedContext = { ...existingUserInfo, platforms: data };
             localStorage.setItem('userInfo', JSON.stringify(updatedContext));
             
             showToast('Integration platforms updated successfully');

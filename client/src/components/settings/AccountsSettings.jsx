@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
-import { Shield, Key, AlertCircle, CheckCircle, Trash2, Mail, Eye, EyeOff } from 'lucide-react';
+import { Shield, Key, AlertCircle, CheckCircle, Trash2, Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const AccountsSettings = ({ userContext, showToast }) => {
     const [loading, setLoading] = useState(false);
     
-    const [accountData, setAccountData] = useState({
-        email: userContext.email || ''
-    });
 
     const [passwords, setPasswords] = useState({
         currentPassword: '',
@@ -24,27 +21,6 @@ const AccountsSettings = ({ userContext, showToast }) => {
     const [deleteInput, setDeleteInput] = useState('');
     const navigate = useNavigate();
 
-    const handleEmailUpdate = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
-            
-            const { data } = await axios.put(`${apiBase}/api/auth/profile`, { email: accountData.email }, config);
-            
-            // Spread existing userContext to preserve token, then overwrite with updated data
-            const updatedContext = { ...userContext, ...data };
-            localStorage.setItem('userInfo', JSON.stringify(updatedContext));
-            
-            // Also need to update state if there's any local state depending on context
-            showToast('Email and Account Info updated successfully.');
-        } catch (error) {
-            showToast(error.response?.data?.message || 'Failed to update email.', 'error');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handlePasswordChange = async (e) => {
         e.preventDefault();
@@ -118,22 +94,27 @@ const AccountsSettings = ({ userContext, showToast }) => {
                     </div>
                 </div>
 
-                <form onSubmit={handleEmailUpdate} style={{ display: 'flex', alignItems: 'flex-end', gap: '1rem', maxWidth: '500px' }}>
-                    <div className="form-group" style={{ flex: 1 }}>
-                        <label style={{ color: 'var(--text-muted)', marginBottom: '8px', display: 'block', fontSize: '0.9rem' }}>Primary Email Address</label>
-                        <div style={{ position: 'relative' }}>
-                            <Mail size={18} style={{ position: 'absolute', left: '15px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                            <input 
-                                type="email" required
-                                value={accountData.email} onChange={(e) => setAccountData({ email: e.target.value })} 
-                                className="settings-input settings-input-with-icon"
-                            />
+                {userContext.role === 'driver' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem', padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                        <div className="form-group">
+                            <label style={{ color: 'var(--text-muted)', marginBottom: '8px', display: 'block', fontSize: '0.9rem' }}>Driver License Number</label>
+                            <input value={userContext.driverLicenseNumber || 'Not Specified'} disabled className="settings-input" style={{ background: 'rgba(0,0,0,0.1)', color: 'var(--text-muted)', cursor: 'not-allowed' }} />
+                        </div>
+                        <div className="form-group">
+                            <label style={{ color: 'var(--text-muted)', marginBottom: '8px', display: 'block', fontSize: '0.9rem' }}>Vehicle Type</label>
+                            <input value={userContext.vehicleType || 'Not Specified'} disabled className="settings-input" style={{ background: 'rgba(0,0,0,0.1)', color: 'var(--text-muted)', cursor: 'not-allowed' }} />
+                        </div>
+                        <div className="form-group">
+                            <label style={{ color: 'var(--text-muted)', marginBottom: '8px', display: 'block', fontSize: '0.9rem' }}>Vehicle Plate Number</label>
+                            <input value={userContext.vehicleNumber || 'Not Specified'} disabled className="settings-input" style={{ background: 'rgba(0,0,0,0.1)', color: 'var(--text-muted)', cursor: 'not-allowed' }} />
+                        </div>
+                        <div className="form-group">
+                            <label style={{ color: 'var(--text-muted)', marginBottom: '8px', display: 'block', fontSize: '0.9rem' }}>Years of Experience</label>
+                            <input value={userContext.yearsOfExperience ? `${userContext.yearsOfExperience} Years` : 'Not Specified'} disabled className="settings-input" style={{ background: 'rgba(0,0,0,0.1)', color: 'var(--text-muted)', cursor: 'not-allowed' }} />
                         </div>
                     </div>
-                    <button type="submit" disabled={loading} style={{ background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', padding: '12px 24px', height: '44px' }}>
-                        Save
-                    </button>
-                </form>
+                )}
+
             </section>
 
             {/* Change Password */}

@@ -56,7 +56,7 @@ const userSchema = mongoose.Schema(
         
         preferences: {
             theme: { type: String, default: 'system' },
-            accentColor: { type: String, default: 'default' }
+            accentColor: { type: String, default: '#FF8A00' }
         },
         nearestWarehouse: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         region: { type: String, default: '' },

@@ -6,7 +6,6 @@ import CustomerMap from '../components/CustomerMap';
 import { Search, QrCode, Package, Truck, MapPin, CheckCircle, X, ShieldCheck, Navigation, Phone } from 'lucide-react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import LocationRequiredModal from '../components/modals/LocationRequiredModal';
-import DashboardTabs from '../components/DashboardTabs';
 import '../styles/dashboard.css';
 
 const CustomerDashboard = () => {
@@ -118,8 +117,6 @@ const CustomerDashboard = () => {
                         <p className="subtitle">Enter your 10-digit code or scan the QR code to track your package</p>
                     </div>
                 </header>
-
-                <DashboardTabs />
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                     
