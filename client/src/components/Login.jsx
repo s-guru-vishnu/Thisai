@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 import axios from 'axios';
 import '../styles/dashboard.css';
 
@@ -81,9 +81,18 @@ const Login = () => {
 
             <div className="login-box">
                 <div className="login-header">
-                    <div className="logo-orb-placeholder" style={{ width: '64px', height: '64px', background: 'var(--accent)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', fontWeight: 'bold', fontSize: '2rem', margin: '0 auto 1rem auto' }}>T</div>
-                    <h2>THISAI</h2>
-                    <p>Login to your portal</p>
+                    <img 
+                        src="/Thisai.png" 
+                        alt="THISAI Logo" 
+                        style={{ 
+                            width: '100px', 
+                            height: '100px', 
+                            marginBottom: '1rem', 
+                            filter: 'drop-shadow(0 0 15px var(--accent-glow))' 
+                        }} 
+                    />
+                    <h2 style={{ fontSize: '2.2rem', fontWeight: '900', letterSpacing: '2px', marginBottom: '0.5rem' }}>THISAI</h2>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Login to your portal</p>
                 </div>
 
                 {error && <div className="error-message">{error}</div>}
@@ -91,25 +100,30 @@ const Login = () => {
                 <form onSubmit={handleLogin} className="login-form">
                     <div className="form-group">
                         <label>Email Address</label>
-                        <input
-                            type="email"
-                            placeholder="Enter Email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
+                        <div style={{ position: 'relative' }}>
+                            <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <input
+                                type="email"
+                                placeholder="Enter Email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                style={{ width: '100%', paddingLeft: '40px' }}
+                            />
+                        </div>
                     </div>
 
                     <div className="form-group">
                         <label>Password</label>
                         <div style={{ position: 'relative' }}>
+                            <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                             <input
                                 type={showPassword ? "text" : "password"}
                                 placeholder="Enter Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                style={{ width: '100%', paddingRight: '45px' }}
+                                style={{ width: '100%', paddingLeft: '40px', paddingRight: '45px' }}
                             />
                             <button
                                 type="button"
@@ -138,10 +152,10 @@ const Login = () => {
                     </button>
                 </form>
 
-                <div className="seed-section">
-                    <p className="seed-text" style={{ marginBottom: '10px' }}>Don't have an account? <span onClick={() => navigate('/register')} style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: 'bold' }}>Register as Customer</span></p>
-                    <p className="seed-text">First time setup? Need test accounts?</p>
-                    <button onClick={handleSeedDatabase} className="secondary-btn" disabled={loading}>
+                <div className="seed-section" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
+                    <p className="seed-text" style={{ marginBottom: '15px', color: 'var(--text-muted)' }}>Don't have an account? <span onClick={() => navigate('/register')} style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: '900', textDecoration: 'underline' }}>Register</span></p>
+                    <p className="seed-text" style={{ fontSize: '0.8rem', opacity: 0.7 }}>First time setup? Need test accounts?</p>
+                    <button onClick={handleSeedDatabase} className="secondary-btn" disabled={loading} style={{ width: '100%', marginTop: '8px' }}>
                         Seed Default Database
                     </button>
                 </div>

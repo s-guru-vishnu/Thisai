@@ -114,8 +114,8 @@ const Navbar = () => {
 
     return (
         <nav className="navbar">
-            <div className="nav-brand">
-                <div className="logo-orb-placeholder" style={{ width: '32px', height: '32px', background: 'var(--accent)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black', fontWeight: 'bold' }}>T</div>
+            <div className="nav-brand" style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>
+                <img src="/Thisai.png" alt="THISAI Logo" className="logo-orb" style={{ width: '36px', height: '36px', borderRadius: '50%' }} />
                 <span className="brand-name">THISAI</span>
             </div>
 

@@ -19,32 +19,16 @@ const AppearanceSettings = ({ userContext, showToast }) => {
 
     const getToken = () => userContext.token || JSON.parse(localStorage.getItem('userInfo') || '{}').token;
 
-    // Apply accent color to document root immediately
+    // Apply accent color and force dark mode
     useEffect(() => {
         document.documentElement.style.setProperty('--accent', preferences.accentColor);
         document.documentElement.style.setProperty('--accent-glow', `${preferences.accentColor}40`);
         document.documentElement.style.setProperty('--border-accent', `${preferences.accentColor}66`);
 
-        if (preferences.theme === 'dark') {
-            document.body.classList.add('dark-mode');
-            document.body.classList.remove('light-mode');
-        } else if (preferences.theme === 'light') {
-            document.body.classList.add('light-mode');
-            document.body.classList.remove('dark-mode');
-        } else {
-            // System
-            document.body.classList.remove('dark-mode', 'light-mode');
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.body.classList.add('dark-mode');
-            } else {
-                document.body.classList.add('light-mode');
-            }
-        }
-    }, [preferences]);
-
-    const handleThemeChange = (theme) => {
-        setPreferences({ ...preferences, theme });
-    };
+        // Force Dark Mode for premium aesthetic
+        document.body.classList.add('dark-mode');
+        document.body.classList.remove('light-mode');
+    }, [preferences.accentColor]);
 
     const handleColorChange = (hex) => {
         setPreferences({ ...preferences, accentColor: hex });
@@ -62,7 +46,6 @@ const AppearanceSettings = ({ userContext, showToast }) => {
             const existingUserInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
             const updatedUser = { ...existingUserInfo, preferences };
             localStorage.setItem('userInfo', JSON.stringify(updatedUser));
-            localStorage.setItem('theme', preferences.theme);
 
             showToast('Appearance settings saved successfully');
         } catch (error) {
@@ -76,57 +59,6 @@ const AppearanceSettings = ({ userContext, showToast }) => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', animation: 'fadeIn 0.3s ease' }}>
             
-            {/* Theme Selection */}
-            <section>
-                <div style={{ marginBottom: '1.5rem' }}>
-                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '0 0 5px 0', color: 'var(--text-main)' }}>
-                        <Moon size={20} className="text-accent" /> Theme Preference
-                    </h3>
-                    <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.9rem' }}>Choose how you'd like the application to look.</p>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
-                    <button 
-                        onClick={() => handleThemeChange('light')}
-                        style={{ 
-                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', 
-                            padding: '1.5rem', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s',
-                            background: preferences.theme === 'light' ? 'rgba(255,255,255,0.05)' : 'transparent',
-                            border: preferences.theme === 'light' ? '2px solid var(--accent)' : '2px solid var(--border-color)'
-                        }}
-                    >
-                        <Sun size={32} style={{ color: preferences.theme === 'light' ? 'var(--accent)' : 'var(--text-muted)' }} />
-                        <span style={{ fontWeight: '500', color: preferences.theme === 'light' ? 'white' : 'var(--text-muted)' }}>Light</span>
-                    </button>
-
-                    <button 
-                        onClick={() => handleThemeChange('dark')}
-                        style={{ 
-                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', 
-                            padding: '1.5rem', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s',
-                            background: preferences.theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'transparent',
-                            border: preferences.theme === 'dark' ? '2px solid var(--accent)' : '2px solid var(--border-color)'
-                        }}
-                    >
-                        <Moon size={32} style={{ color: preferences.theme === 'dark' ? 'var(--accent)' : 'var(--text-muted)' }} />
-                        <span style={{ fontWeight: '500', color: preferences.theme === 'dark' ? 'white' : 'var(--text-muted)' }}>Dark</span>
-                    </button>
-
-                    <button 
-                        onClick={() => handleThemeChange('system')}
-                        style={{ 
-                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', 
-                            padding: '1.5rem', borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s',
-                            background: preferences.theme === 'system' ? 'rgba(255,255,255,0.05)' : 'transparent',
-                            border: preferences.theme === 'system' ? '2px solid var(--accent)' : '2px solid var(--border-color)'
-                        }}
-                    >
-                        <Monitor size={32} style={{ color: preferences.theme === 'system' ? 'var(--accent)' : 'var(--text-muted)' }} />
-                        <span style={{ fontWeight: '500', color: preferences.theme === 'system' ? 'white' : 'var(--text-muted)' }}>System</span>
-                    </button>
-                </div>
-            </section>
-
             {/* Accent Color Selection */}
             <section style={{ borderTop: '1px solid var(--border-color)', paddingTop: '2.5rem' }}>
                 <div style={{ marginBottom: '1.5rem' }}>

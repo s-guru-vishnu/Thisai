@@ -663,6 +663,7 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  padding: 40px 0;
   background: var(--bg-primary);
   background-image: radial-gradient(circle at 50% -20%, rgba(255, 102, 0, 0.15) 0%, transparent 60%);
 }
