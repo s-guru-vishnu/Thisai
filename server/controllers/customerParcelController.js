@@ -2,6 +2,7 @@
 const Parcel = require('../models/Parcel'); // Assuming returning mock data if DB isn't fully structured for this, but using existing parcel schema layout if possible.
 
 const { getLiveWeather } = require('../services/weatherService');
+const { calculateDelayInternal } = require('../services/predictionService');
 const User = require('../models/User');
 
 const generateTimeline = (parcel) => {
@@ -49,54 +50,7 @@ const generateTimeline = (parcel) => {
     return timeline;
 };
 
-// Internal Helper for Delay Calculation
-const calculateDelayInternal = async (parcel) => {
-    let lat = 13.0827;
-    let lng = 80.2707;
-    let distanceFactor = 1.0;
-    
-    if (parcel && parcel.currentLocation) {
-         lat = parcel.currentLocation.lat;
-         lng = parcel.currentLocation.lng;
-         distanceFactor = 1.1; 
-    }
 
-    const weather = await getLiveWeather(lat, lng);
-    let weatherRiskFactor = 1.0;
-    if (weather.riskLevel === 'HIGH') weatherRiskFactor = 1.6;
-    else if (weather.riskLevel === 'MEDIUM') weatherRiskFactor = 1.25;
-    
-    const hour = new Date().getHours();
-    const isRushHour = (hour >= 8 && hour <= 10) || (hour >= 17 && hour <= 20);
-    const trafficDelayFactor = isRushHour ? 1.5 : 1.0;
-
-    const routeScore = distanceFactor * trafficDelayFactor * weatherRiskFactor;
-    let delayRisk = 'LOW';
-    let customReason = 'Clear route';
-    
-    if (routeScore >= 1.8) {
-         delayRisk = 'HIGH';
-         if (weatherRiskFactor >= 1.6) customReason = `Severe weather delay (${weather.weatherMain})`;
-         else customReason = 'Severe traffic congestion detected';
-    } else if (routeScore >= 1.3) {
-         delayRisk = 'MEDIUM';
-         if (weatherRiskFactor > 1.0) customReason = `Moderate weather impact (${weather.weatherDescription})`;
-         else customReason = 'Moderate routing delay';
-    }
-    
-    const delayMinutes = Math.floor((routeScore - 1.0) * 20);
-    const baseETA = 30 + Math.floor(Math.random() * 20); // Base estimate 30-50m
-    const totalETA = baseETA + delayMinutes;
-
-    return {
-        delayRisk,
-        delayMinutes: delayMinutes > 0 ? delayMinutes : 0,
-        reason: customReason,
-        routeScore: routeScore.toFixed(2),
-        weatherMeta: weather,
-        eta: `${totalETA} mins`
-    };
-};
 
 // @desc    Get parcel details by Tracking ID
 // @route   GET /api/parcel/:trackingId
@@ -151,6 +105,7 @@ const getParcelByTrackingId = async (req, res) => {
             eta: prediction.eta,
             delayMinutes: prediction.delayMinutes,
             delayRisk: prediction.delayRisk,
+            reason: prediction.reason,
             status: parcel.status,
             driverName: parcel.assignedDriver ? parcel.assignedDriver.name : 'Unassigned',
             driverLocation: parcel.currentLocation || { lat: 13.0827, lng: 80.2707 },
@@ -286,6 +241,7 @@ const getActiveShipment = async (req, res) => {
             eta: prediction.eta,
             delayMinutes: prediction.delayMinutes,
             delayRisk: prediction.delayRisk,
+            reason: prediction.reason,
             driverName: parcel.assignedDriver ? parcel.assignedDriver.name : 'Unassigned',
             timeline: generateTimeline(parcel),
             logisticsPath: {

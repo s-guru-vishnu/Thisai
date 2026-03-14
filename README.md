@@ -16,7 +16,7 @@ Thisai (Tamil for "Direction") is a state-of-the-art, end-to-end logistics manag
 ### 🧠 Intelligent Logistics Engine
 - **Fair Burden Distribution (FBD)**: An AI-driven assignment algorithm that calculates a `Fairness Score (FS)` for drivers based on current workload and historical burden, preventing burnout.
 - **Mesh Routing Architecture**: Automated pathing through regional hubs (Chennai, Coimbatore, Madurai, etc.) to optimize long-distance transit.
-- **Explainable AI (XAI)**: A built-in "Thisai AI Expert" chatbot powered by **Gemini 1.5 Flash** that explains routing decisions, delays, and logistics logic to users in real-time.
+- **Explainable AI (XAI)**: A built-in "Thisai AI Expert" chatbot powered by an **n8n Webhook Workflow** that explains routing decisions, delays, and logistics logic to users in real-time.
 - **Predictive Delay Updates**: Real-time evaluation of weather conditions (OpenWeather integration) and traffic patterns to provide customers with accurate ETAs.
 
 ---
@@ -26,7 +26,7 @@ Thisai (Tamil for "Direction") is a state-of-the-art, end-to-end logistics manag
 ### Backend
 - **Core**: Node.js, Express.js
 - **Database**: MongoDB (Mongoose ODM)
-- **AI**: Google Generative AI (Gemini 1.5 Flash)
+- **AI**: n8n Webhook Integration
 - **APIs**: OpenWeatherMap (Weather risk)
 - **Security**: JWT Authentication, Role-Based Access Control (RBAC), Bcrypt password hashing.
 
@@ -46,7 +46,7 @@ Thisai (Tamil for "Direction") is a state-of-the-art, end-to-end logistics manag
 - MongoDB (Running locally or Atlas)
 - API Keys: 
   - Google Maps API Key
-  - Google Gemini API Key
+  - n8n Webhook URL
   - OpenWeatherMap API Key
 
 ### 2. Installation
@@ -67,7 +67,6 @@ Create a `.env` file in the `server` directory:
 PORT=5005
 MONGO_URI=mongodb://127.0.0.1:27017/thisai_db
 JWT_SECRET=your_jwt_secret
-GEMINI_API_KEY=your_gemini_key
 WEATHER_API_KEY=your_openweather_key
 ```
 

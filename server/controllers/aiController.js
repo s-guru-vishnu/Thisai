@@ -1,58 +1,91 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const axios = require("axios");
 const Parcel = require("../models/Parcel");
 const User = require("../models/User");
+const { calculateDelayInternal } = require("../services/predictionService");
 
 const explainLogistics = async (req, res) => {
     try {
-        const { message, context } = req.body;
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const { message } = req.body;
+        const webhookUrl = process.env.N8N_WEBHOOK_URL;
+
+        if (!webhookUrl) {
+            throw new Error("N8N_WEBHOOK_URL is not defined in environment variables");
+        }
 
         // Gather some data context to make it "explainable"
-        const userId = req.user._id;
-        const role = req.user.role;
+        const userId = req.user?._id;
+        const role = req.user?.role;
         
-        let systemContext = `
-            You are "Thisai AI", a logistics and supply chain expert. 
-            You explain the system's decisions to ${role}s.
-            
-            Our Key Algorithms:
-            1. Fair Burden Distribution: We avoid driver burnout using Fairness Score (FS).
-               FS = 0.7 * (Active Workload) + 0.3 * (Historical Burden Ratio).
-               Lower FS means the driver is more available.
-            2. Mesh Routing: We route parcels through regional hubs (Chennai, Coimbatore, Madurai, Trichy, Tirunelveli).
-            
-            User Role: ${role}
-            Current User ID: ${userId}
-        `;
+        let contextData = {
+            role,
+            userId,
+            algorithms: {
+                fairBurdenDistribution: "FS = 0.7 * (Workload) + 0.3 * (History)",
+                meshRouting: ["Chennai", "Coimbatore", "Madurai", "Trichy", "Tirunelveli"]
+            },
+            parcelInfo: null
+        };
 
         // If the user asks about a specific parcel, we can fetch it
-        const parcelMatch = message.match(/PRC-\d+/i);
+        const parcelMatch = message.match(/PRC-\d+/i) || message.match(/M-[0-9A-Z]+/i);
         if (parcelMatch) {
-            const parcel = await Parcel.findOne({ parcelId: parcelMatch[0].toUpperCase() });
+            const parcel = await Parcel.findOne({ 
+                $or: [
+                    { parcelId: parcelMatch[0].toUpperCase() },
+                    { trackingCode: parcelMatch[0].toUpperCase() }
+                ]
+            });
             if (parcel) {
-                systemContext += `\nContext on Parcel ${parcel.parcelId}: 
-                Status: ${parcel.status}, 
-                Driver Assigned: ${parcel.assignedDriver || 'None'},
-                Origin: ${parcel.origin},
-                Destination: ${parcel.destination}`;
+                const prediction = await calculateDelayInternal(parcel);
+                contextData.parcelInfo = {
+                    parcelId: parcel.parcelId || parcel.trackingCode,
+                    status: parcel.status,
+                    driver: parcel.assignedDriver || 'None',
+                    origin: parcel.origin || 'N/A',
+                    destination: parcel.destination,
+                    prediction: {
+                        eta: prediction.eta,
+                        delayMinutes: prediction.delayMinutes,
+                        riskLevel: prediction.delayRisk,
+                        reason: prediction.reason
+                    }
+                };
             }
         }
 
-        const prompt = `${systemContext}\n\nUser Question: ${message}\nAI Explanation:`;
-        
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        // Trigger n8n Webhook
+        const response = await axios.post(webhookUrl, {
+            message,
+            context: contextData,
+            timestamp: new Date().toISOString()
+        });
 
-        res.json({ reply: text });
-    } catch (error) {
-        console.error("CRITICAL Gemini AI Error:", error.message);
-        if (error.response) {
-            console.error("Gemini Response Error:", error.response.data);
+        // n8n should return { reply: "..." } or similar
+        console.log("n8n Webhook Success. Data received:", response.data);
+
+        let reply = "I'm processing your request via n8n...";
+        
+        if (typeof response.data === 'string') {
+            reply = response.data;
+        } else if (response.data) {
+            reply = response.data.reply || 
+                    response.data.output || 
+                    response.data.message || 
+                    response.data.text ||
+                    (typeof response.data === 'object' ? JSON.stringify(response.data) : String(response.data));
         }
+
+        res.json({ reply });
+    } catch (error) {
+        if (error.response) {
+            console.error("n8n Webhook Error Response:", {
+                status: error.response.status,
+                data: error.response.data
+            });
+        }
+        console.error("CRITICAL n8n Webhook Error:", error.message);
         res.status(500).json({ 
-            message: "AI Engine error", 
+            message: "AI Workflow error", 
             error: error.message 
         });
     }

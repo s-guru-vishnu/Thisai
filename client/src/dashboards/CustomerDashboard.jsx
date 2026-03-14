@@ -242,13 +242,36 @@ const CustomerDashboard = () => {
                                             <Clock size={16} />
                                             ETA: {activeShipment.eta}
                                         </div>
-                                        {activeShipment.delayMinutes > 0 && (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.85rem', color: '#ff4444', fontWeight: 'bold' }}>
-                                                <AlertTriangle size={16} />
-                                                Delay: {activeShipment.delayMinutes}m
-                                            </div>
-                                        )}
+                                        <div style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            gap: '5px', 
+                                            fontSize: '0.8rem', 
+                                            color: activeShipment.delayMinutes > 0 ? '#ff4444' : 'var(--success)', 
+                                            fontWeight: '600',
+                                            background: activeShipment.delayMinutes > 0 ? 'rgba(255,68,68,0.1)' : 'rgba(0,204,102,0.1)',
+                                            padding: '4px 10px',
+                                            borderRadius: '8px',
+                                            border: `1px solid ${activeShipment.delayMinutes > 0 ? 'rgba(255,68,68,0.2)' : 'rgba(0,204,102,0.2)'}`
+                                        }}>
+                                            {activeShipment.delayMinutes > 0 ? <AlertTriangle size={14} /> : <CheckCircle size={14} />}
+                                            {activeShipment.delayMinutes > 0 ? `Delay: ${activeShipment.delayMinutes}m` : 'On Time'}
+                                        </div>
                                     </div>
+                                    {activeShipment.reason && (
+                                        <div style={{ 
+                                            marginTop: '12px', 
+                                            fontSize: '0.75rem', 
+                                            color: 'var(--text-muted)', 
+                                            fontStyle: 'italic',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px'
+                                        }}>
+                                            <Navigation size={12} style={{ color: 'var(--accent)' }} />
+                                            AI Prediction: {activeShipment.reason}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             
