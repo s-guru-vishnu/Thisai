@@ -173,21 +173,22 @@ const ManagerDashboard = () => {
                 {/* ═══ FAIR ASSIGNMENT ENGINE ═══ */}
                 <section style={{ marginTop: '2rem' }}>
                     <div style={{ 
-                        background: 'linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.08))', 
-                        padding: '2rem', 
-                        borderRadius: '20px', 
-                        border: '1px solid rgba(139,92,246,0.25)',
+                        background: 'linear-gradient(135deg, rgba(255,138,0,0.08), rgba(255,107,0,0.08))', 
+                        padding: '2.5rem', 
+                        borderRadius: '24px', 
+                        border: '1px solid rgba(255,138,0,0.2)',
                         position: 'relative',
-                        overflow: 'hidden'
+                        overflow: 'hidden',
+                        boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
                     }}>
                         {/* Decorative glow */}
-                        <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)', borderRadius: '50%' }}></div>
+                        <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '250px', height: '250px', background: 'radial-gradient(circle, rgba(255,138,0,0.12) 0%, transparent 70%)', borderRadius: '50%' }}></div>
                         
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem', position: 'relative', zIndex: 1 }}>
                             <div style={{ flex: '1', minWidth: '280px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                                    <div style={{ background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)', padding: '10px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(139,92,246,0.3)' }}>
-                                        <Zap size={22} color="white" />
+                                    <div style={{ background: 'linear-gradient(135deg, var(--accent), #FF6B00)', padding: '12px', borderRadius: '14px', boxShadow: '0 8px 20px var(--accent-glow)' }}>
+                                        <Zap size={22} color="white" fill="white" />
                                     </div>
                                     <div>
                                         <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: '800' }}>Fair Assignment Engine</h2>
@@ -201,15 +202,15 @@ const ManagerDashboard = () => {
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px', minWidth: '260px' }}>
-                                <div style={{ display: 'flex', gap: '20px', padding: '12px 20px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+                                <div style={{ display: 'flex', gap: '20px', padding: '15px 25px', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
                                     <div style={{ textAlign: 'center' }}>
-                                        <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#8b5cf6' }}>{unassignedCount}</div>
-                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>Unassigned</div>
+                                        <div style={{ fontSize: '1.8rem', fontWeight: '800', color: 'var(--accent)' }}>{unassignedCount}</div>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Unassigned</div>
                                     </div>
-                                    <div style={{ width: '1px', background: 'var(--border-color)' }}></div>
+                                    <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
                                     <div style={{ textAlign: 'center' }}>
-                                        <div style={{ fontSize: '1.6rem', fontWeight: '800', color: '#3b82f6' }}>{teamDrivers.length}</div>
-                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>Team Drivers</div>
+                                        <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#FF6B00' }}>{teamDrivers.length}</div>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Team Drivers</div>
                                     </div>
                                 </div>
 
@@ -220,15 +221,15 @@ const ManagerDashboard = () => {
                                         padding: '14px 28px',
                                         borderRadius: '14px',
                                         border: 'none',
-                                        background: assigning ? '#555' : 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+                                        background: assigning ? '#555' : 'linear-gradient(135deg, var(--accent), #FF6B00)',
                                         color: 'white',
-                                        fontSize: '0.95rem',
+                                        fontSize: '1rem',
                                         fontWeight: '800',
                                         cursor: assigning ? 'not-allowed' : 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '10px',
-                                        boxShadow: assigning ? 'none' : '0 6px 25px rgba(139,92,246,0.4)',
+                                        gap: '12px',
+                                        boxShadow: assigning ? 'none' : '0 10px 30px var(--accent-glow)',
                                         transition: 'all 0.3s ease',
                                         width: '100%',
                                         justifyContent: 'center'
@@ -263,30 +264,32 @@ const ManagerDashboard = () => {
 
                         {/* ═══ RESULTS PANEL ═══ */}
                         {assignResult && (
-                            <div style={{ marginTop: '1.5rem', background: 'rgba(0,0,0,0.25)', borderRadius: '16px', padding: '1.5rem', border: '1px solid rgba(139,92,246,0.2)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <CheckSquare size={20} color="#10b981" />
-                                        <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#10b981' }}>Assignment Complete</h3>
+                            <div style={{ marginTop: '2rem', background: 'rgba(0,0,0,0.3)', borderRadius: '20px', padding: '2rem', border: '1px solid var(--border-accent)', animation: 'slideInUp 0.4s ease-out' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div style={{ background: 'rgba(16,185,129,0.15)', padding: '8px', borderRadius: '50%' }}>
+                                            <CheckSquare size={22} color="#10b981" />
+                                        </div>
+                                        <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#10b981', fontWeight: '800' }}>Assignment Complete</h3>
                                     </div>
-                                    <button onClick={() => setAssignResult(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
+                                    <button onClick={() => setAssignResult(null)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '8px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={18} /></button>
                                 </div>
 
                                 <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>{assignResult.message}</p>
 
                                 {/* Fairness Metrics Bar */}
-                                <div style={{ display: 'flex', gap: '16px', marginBottom: '1.2rem', flexWrap: 'wrap' }}>
-                                    <div style={{ padding: '10px 16px', background: 'rgba(139,92,246,0.1)', borderRadius: '10px', border: '1px solid rgba(139,92,246,0.2)' }}>
-                                        <div style={{ fontSize: '0.6rem', color: '#8b5cf6', fontWeight: 'bold', textTransform: 'uppercase' }}>Algorithm</div>
-                                        <div style={{ fontSize: '0.85rem', fontWeight: '700', fontFamily: 'monospace' }}>{assignResult.fairnessMetrics?.algorithm}</div>
+                                <div style={{ display: 'flex', gap: '16px', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                                    <div style={{ padding: '12px 20px', background: 'rgba(255,138,0,0.1)', borderRadius: '14px', border: '1px solid rgba(255,138,0,0.2)' }}>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px' }}>Algorithm</div>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: '700', fontFamily: 'monospace', color: 'var(--text-main)' }}>{assignResult.fairnessMetrics?.algorithm}</div>
                                     </div>
-                                    <div style={{ padding: '10px 16px', background: 'rgba(59,130,246,0.1)', borderRadius: '10px', border: '1px solid rgba(59,130,246,0.2)' }}>
-                                        <div style={{ fontSize: '0.6rem', color: '#3b82f6', fontWeight: 'bold', textTransform: 'uppercase' }}>Parcels Assigned</div>
-                                        <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{assignResult.totalAssigned}</div>
+                                    <div style={{ padding: '12px 20px', background: 'rgba(255,107,0,0.1)', borderRadius: '14px', border: '1px solid rgba(255,107,0,0.2)' }}>
+                                        <div style={{ fontSize: '0.7rem', color: '#FF6B00', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px' }}>Parcels Assigned</div>
+                                        <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--text-main)' }}>{assignResult.totalAssigned}</div>
                                     </div>
-                                    <div style={{ padding: '10px 16px', background: 'rgba(16,185,129,0.1)', borderRadius: '10px', border: '1px solid rgba(16,185,129,0.2)' }}>
-                                        <div style={{ fontSize: '0.6rem', color: '#10b981', fontWeight: 'bold', textTransform: 'uppercase' }}>Fleet Avg Past Load</div>
-                                        <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>{assignResult.fairnessMetrics?.fleetAveragePastLoad}</div>
+                                    <div style={{ padding: '12px 20px', background: 'rgba(16,185,129,0.1)', borderRadius: '14px', border: '1px solid rgba(16,185,129,0.2)' }}>
+                                        <div style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '4px' }}>Fleet Avg Past Load</div>
+                                        <div style={{ fontSize: '1.4rem', fontWeight: '900', color: 'var(--text-main)' }}>{assignResult.fairnessMetrics?.fleetAveragePastLoad}</div>
                                     </div>
                                 </div>
 
@@ -319,7 +322,7 @@ const ManagerDashboard = () => {
                                                             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{d.email}</div>
                                                         </td>
                                                         <td style={{ padding: '8px', textAlign: 'center', color: 'var(--text-muted)' }}>{d.previousLoad}</td>
-                                                        <td style={{ padding: '8px', textAlign: 'center', fontWeight: 'bold', color: '#8b5cf6' }}>+{d.newAssignments}</td>
+                                                        <td style={{ padding: '8px', textAlign: 'center', fontWeight: 'bold', color: 'var(--accent)' }}>+{d.newAssignments}</td>
                                                         <td style={{ padding: '8px', textAlign: 'center', fontWeight: 'bold' }}>{d.totalActive}</td>
                                                         <td style={{ padding: '8px', textAlign: 'center' }}>
                                                             <span style={{ color: burdenColor, fontWeight: 'bold' }}>{d.burdenRatio}</span>
@@ -328,7 +331,7 @@ const ManagerDashboard = () => {
                                                         <td style={{ padding: '8px', minWidth: '140px' }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                                 <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                                                                    <div style={{ width: `${barWidth}%`, height: '100%', background: `linear-gradient(90deg, #8b5cf6, #3b82f6)`, borderRadius: '3px', transition: 'width 0.5s ease' }}></div>
+                                                                    <div style={{ width: `${barWidth}%`, height: '100%', background: `linear-gradient(90deg, var(--accent), #FF6B00)`, borderRadius: '3px', transition: 'width 0.5s ease' }}></div>
                                                                 </div>
                                                                 <span style={{ fontSize: '0.65rem', color: burdenColor, fontWeight: 'bold', whiteSpace: 'nowrap' }}>{burdenLabel}</span>
                                                             </div>
@@ -526,6 +529,10 @@ const ManagerDashboard = () => {
                 @keyframes spin {
                     from { transform: rotate(0deg); }
                     to { transform: rotate(360deg); }
+                }
+                @keyframes slideInUp {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
             `}</style>
         </div>

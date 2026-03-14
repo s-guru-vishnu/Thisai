@@ -85,21 +85,13 @@ function AppContent() {
             } catch (e) { }
         }
 
-        if (activeTheme === 'dark') {
-            document.body.classList.add('dark-mode');
-            document.body.classList.remove('light-mode');
-        } else if (activeTheme === 'light') {
+        if (activeTheme === 'light') {
             document.body.classList.add('light-mode');
             document.body.classList.remove('dark-mode');
         } else {
-            // OS Default
-            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                document.body.classList.add('dark-mode');
-                document.body.classList.remove('light-mode');
-            } else {
-                document.body.classList.add('light-mode');
-                document.body.classList.remove('dark-mode');
-            }
+            // Default to Dark Mode for premium feel
+            document.body.classList.add('dark-mode');
+            document.body.classList.remove('light-mode');
         }
     };
 
@@ -224,6 +216,7 @@ class ErrorBoundary extends React.Component {
         if (this.state.hasError) {
             return (
                 <div style={{ padding: '50px', textAlign: 'center', color: 'white', background: '#0b0b0c', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <img src="/Thisai.png" alt="THISAI Logo" style={{ width: '80px', height: '80px', marginBottom: '2rem', filter: 'drop-shadow(0 0 15px var(--accent-glow))' }} />
                     <h1 style={{ color: 'var(--accent, #ff6b00)' }}>Something went wrong.</h1>
                     <p>The dashboard encountered a runtime error. Please try refreshing the page.</p>
                     <button onClick={() => window.location.reload()} className="primary-btn" style={{ marginTop: '20px' }}>
