@@ -39,7 +39,7 @@ const ChatBot = () => {
 
             setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
         } catch (err) {
-            setMessages(prev => [...prev, { role: 'assistant', content: "I'm having trouble connecting to my AI engine. Please ensure the n8n webhook workflow is active and accessible." }]);
+            setMessages(prev => [...prev, { role: 'assistant', content: "I'm having trouble connecting to my AI logic engine. Please ensure the Gemini API key in the server .env is correct." }]);
         } finally {
             setLoading(false);
         }

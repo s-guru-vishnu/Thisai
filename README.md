@@ -16,7 +16,7 @@ Thisai (Tamil for "Direction") is a state-of-the-art, end-to-end logistics manag
 ### 🧠 Intelligent Logistics Engine
 - **Fair Burden Distribution (FBD)**: An AI-driven assignment algorithm that calculates a `Fairness Score (FS)` for drivers based on current workload and historical burden, preventing burnout.
 - **Mesh Routing Architecture**: Automated pathing through regional hubs (Chennai, Coimbatore, Madurai, etc.) to optimize long-distance transit.
-- **Explainable AI (XAI)**: A built-in "Thisai AI Expert" chatbot powered by an **n8n Webhook Workflow** that explains routing decisions, delays, and logistics logic to users in real-time.
+- **Explainable AI (XAI)**: A built-in "Thisai AI Expert" chatbot powered by **Google Gemini AI** that explains routing decisions, delays, and logistics logic to users in real-time.
 - **Predictive Delay Updates**: Real-time evaluation of weather conditions (OpenWeather integration) and traffic patterns to provide customers with accurate ETAs.
 
 ---
@@ -26,27 +26,26 @@ Thisai (Tamil for "Direction") is a state-of-the-art, end-to-end logistics manag
 ### Backend
 - **Core**: Node.js, Express.js
 - **Database**: MongoDB (Mongoose ODM)
-- **AI**: n8n Webhook Integration
+- **AI**: Google Generative AI (Gemini 1.5 Flash)
 - **APIs**: OpenWeatherMap (Weather risk)
 - **Security**: JWT Authentication, Role-Based Access Control (RBAC), Bcrypt password hashing.
 
 ### Frontend
-- **Core**: React.js (Vite)
-- **Styling**: Vanilla CSS (Premium Dark Mode, Glassmorphism)
-- **Mapping**: Google Maps JavaScript API (@react-google-maps/api)
-- **Icons**: Lucide-react
-- **Scanning**: Html5-qrcode
+- **Framework**: React.js (Vite)
+- **State Management**: React Context API
+- **Styling**: Vanilla CSS (Premium Glassmorphism Design)
+- **Maps**: Google Maps JS API (Live Tracking)
 
 ---
 
-## 🚀 Getting Started
+## 🚦 Getting Started
 
 ### 1. Prerequisites
 - Node.js (v18+)
 - MongoDB (Running locally or Atlas)
 - API Keys: 
   - Google Maps API Key
-  - n8n Webhook URL
+  - Google Gemini API Key
   - OpenWeatherMap API Key
 
 ### 2. Installation
