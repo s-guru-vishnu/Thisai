@@ -30,7 +30,11 @@ const ProfilePage = () => {
                     headers: { Authorization: `Bearer ${userInfo.token}` }
                 });
                 if (data) {
-                    const updated = { ...userInfo, ...data };
+                    const updated = { 
+                        ...userInfo, 
+                        ...data,
+                        token: userInfo.token || data.token // Extra safeguard
+                    };
                     setUserInfo(updated);
                     localStorage.setItem('userInfo', JSON.stringify(updated));
                 }
@@ -82,7 +86,6 @@ const ProfilePage = () => {
     const availableTabs = [
         { id: 'basic-info', label: 'Basic Info', icon: <User size={18} />, allowed: true },
         { id: 'profile-details', label: 'Profile Details', icon: <ClipboardList size={18} />, allowed: userInfo.role !== 'customer' },
-        { id: 'visibility', label: 'Visibility', icon: <Eye size={18} />, allowed: userInfo.role === 'manager' || userInfo.role === 'seller' || userInfo.role === 'warehouse' },
         { id: 'accounts', label: 'Accounts', icon: <Shield size={18} />, allowed: true },
         { id: 'addresses', label: 'Addresses', icon: <MapPin size={18} />, allowed: true },
         { id: 'appearance', label: 'Appearance', icon: <Palette size={18} />, allowed: true }

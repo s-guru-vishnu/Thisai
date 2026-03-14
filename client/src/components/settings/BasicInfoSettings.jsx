@@ -4,6 +4,9 @@ import axios from 'axios';
 
 const BasicInfoSettings = ({ userContext, showToast }) => {
     const [loading, setLoading] = useState(false);
+
+    const getToken = () => userContext.token || JSON.parse(localStorage.getItem('userInfo') || '{}').token;
+
     const [formData, setFormData] = useState({
         name: userContext.name || '',
         email: userContext.email || '',
@@ -96,8 +99,7 @@ const BasicInfoSettings = ({ userContext, showToast }) => {
         setLoading(true);
         try {
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
-            
+            const config = { headers: { Authorization: `Bearer ${getToken()}` } };
             const payload = {
                 name: formData.name,
                 phone: formData.phone,
@@ -117,7 +119,8 @@ const BasicInfoSettings = ({ userContext, showToast }) => {
             const { data } = await axios.put(`${apiBase}/api/auth/profile`, payload, config);
 
             // Store user info in localStorage, handling quota errors gracefully
-            const userInfoToStore = { ...userContext, ...data };
+            const existingUserInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            const userInfoToStore = { ...existingUserInfo, ...data };
             try {
                 localStorage.setItem('userInfo', JSON.stringify(userInfoToStore));
             } catch (quotaError) {

@@ -12,10 +12,12 @@ const ACCENT_COLORS = [
 ];
 
 const AppearanceSettings = ({ userContext, showToast }) => {
-    const defaultPreferences = userContext.preferences || { theme: 'system', accentColor: '#6C63FF' };
+    const defaultPreferences = userContext.preferences || { theme: 'system', accentColor: '#FF8A00' };
     
     const [preferences, setPreferences] = useState(defaultPreferences);
     const [loading, setLoading] = useState(false);
+
+    const getToken = () => userContext.token || JSON.parse(localStorage.getItem('userInfo') || '{}').token;
 
     // Apply accent color to document root immediately
     useEffect(() => {
@@ -52,12 +54,13 @@ const AppearanceSettings = ({ userContext, showToast }) => {
         setLoading(true);
         try {
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
+            const config = { headers: { Authorization: `Bearer ${getToken()}` } };
             
             await axios.put(`${apiBase}/api/auth/preferences`, preferences, config);
             
-            // Update local storage
-            const updatedUser = { ...userContext, preferences };
+            // Update local storage - merge with existing to keep token
+            const existingUserInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            const updatedUser = { ...existingUserInfo, preferences };
             localStorage.setItem('userInfo', JSON.stringify(updatedUser));
             localStorage.setItem('theme', preferences.theme);
 

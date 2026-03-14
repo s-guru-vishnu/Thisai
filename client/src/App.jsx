@@ -14,6 +14,7 @@ import SellerRoutes from './routes/sellerRoutes';
 import SettingsRoutes from './routes/settingsRoutes';
 import LoadingScreen from './components/LoadingScreen';
 import NotFoundPage from './pages/NotFoundPage';
+import HomePage from './pages/HomePage';
 import './styles/dashboard.css';
 
 import ChatBot from './components/ChatBot';
@@ -182,7 +183,7 @@ function AppContent() {
             <ChatBot />
 
             <Routes>
-                <Route path="/" element={<Navigate to="/login" />} />
+                <Route path="/" element={<HomePage />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
 

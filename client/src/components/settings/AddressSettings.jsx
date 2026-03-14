@@ -10,11 +10,13 @@ const AddressSettings = ({ userContext, showToast }) => {
     const [viewLocation, setViewLocation] = useState(null); // For viewing a saved location on map
     const [showViewMap, setShowViewMap] = useState(false);
 
+    const getToken = () => userContext.token || JSON.parse(localStorage.getItem('userInfo') || '{}').token;
+
     const fetchAddresses = async () => {
         setLoading(true);
         try {
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
+            const config = { headers: { Authorization: `Bearer ${getToken()}` } };
             const { data } = await axios.get(`${apiBase}/api/address`, config);
             setAddresses(data);
 
@@ -100,11 +102,10 @@ const AddressSettings = ({ userContext, showToast }) => {
         // Save to DB
         try {
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
+            const config = { headers: { Authorization: `Bearer ${getToken()}` } };
             await axios.post(`${apiBase}/api/address`, addressData, config);
             showToast('Address saved!');
             
-            // Update local storage if this is the only address (and thus default)
             if (addressData.isDefault) {
                 const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
                 userInfo.location = {
@@ -128,7 +129,7 @@ const AddressSettings = ({ userContext, showToast }) => {
     const handleSetDefault = async (id, silent = false) => {
         try {
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
+            const config = { headers: { Authorization: `Bearer ${getToken()}` } };
             await axios.put(`${apiBase}/api/address/${id}`, { isDefault: true }, config);
             if (!silent) {
                 showToast('Default address updated!');
@@ -161,7 +162,7 @@ const AddressSettings = ({ userContext, showToast }) => {
         if (!window.confirm('Delete this address?')) return;
         try {
             const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            const config = { headers: { Authorization: `Bearer ${userContext.token}` } };
+            const config = { headers: { Authorization: `Bearer ${getToken()}` } };
             await axios.delete(`${apiBase}/api/address/${id}`, config);
             showToast('Address removed');
             fetchAddresses();
