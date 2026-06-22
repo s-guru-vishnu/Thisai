@@ -47,7 +47,11 @@ app.get('/', (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
-// End of file
+if (process.env.NODE_ENV !== 'production' || process.env.RUN_LOCAL === 'true') {
+    app.listen(PORT, () => {
+        console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    });
+}
+
+// Export the app for Vercel serverless deployment
+module.exports = app;
