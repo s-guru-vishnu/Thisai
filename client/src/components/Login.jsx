@@ -154,19 +154,6 @@ const Login = () => {
 
                 <div className="seed-section" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '1.5rem', marginTop: '1.5rem' }}>
                     <p className="seed-text" style={{ marginBottom: '15px', color: 'var(--text-muted)' }}>Don't have an account? <span onClick={() => navigate('/register')} style={{ color: 'var(--accent)', cursor: 'pointer', fontWeight: '900', textDecoration: 'underline' }}>Register</span></p>
-                    <p className="seed-text" style={{ fontSize: '0.8rem', opacity: 0.7 }}>First time setup? Need test accounts?</p>
-                    <button onClick={handleSeedDatabase} className="secondary-btn" disabled={loading} style={{ width: '100%', marginTop: '8px' }}>
-                        Seed Default Database
-                    </button>
-                </div>
-
-                <div className="demo-credentials">
-                    <small>
-                        <b>Testing Accounts (PWD: password123):</b><br />
-                        admin@impact.com | manager@impact.com | warehouse@impact.com<br />
-                        driver@impact.com | customer@impact.com | receiver@impact.com<br />
-                        seller@impact.com
-                    </small>
                 </div>
             </div>
         </div>
