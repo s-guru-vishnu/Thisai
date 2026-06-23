@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
-import axios from 'axios';
+import api from '../utils/api';
 import '../styles/dashboard.css';
 
 const Login = () => {
@@ -17,8 +17,7 @@ const Login = () => {
         setError('');
 
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            const { data } = await axios.post(`${apiBase}/api/auth/login`, {
+            const { data } = await api.post('/api/auth/login', {
                 email,
                 password,
             });
@@ -63,8 +62,7 @@ const Login = () => {
     const handleSeedDatabase = async () => {
         try {
             setLoading(true);
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            await axios.post(`${apiBase}/api/auth/seed`);
+            await api.post('/api/auth/seed');
             alert('Database seeded successfully in MongoDB Compass! Check "logist" DB.');
             setError('');
         } catch (err) {

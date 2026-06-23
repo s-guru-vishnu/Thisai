@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, User, Mail, Lock } from 'lucide-react';
-import axios from 'axios';
+import api from '../utils/api';
 import '../styles/dashboard.css';
 
 const Register = () => {
@@ -35,8 +35,7 @@ const Register = () => {
         }
 
         try {
-            const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005';
-            const { data } = await axios.post(`${apiBase}/api/auth/register`, {
+            const { data } = await api.post('/api/auth/register', {
                 name,
                 email,
                 password,

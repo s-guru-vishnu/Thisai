@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Environment variables (keep .env out of git - set in Vercel dashboard)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Coverage
+coverage/
+*.lcov
+
+# Temporary
+*.tmp
+*.temp
