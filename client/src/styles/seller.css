@@ -479,4 +479,57 @@
   .seller-grid {
     grid-template-columns: 1fr;
   }
+  .stats-row {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .stat-widget {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .stats-row {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .stat-widget {
+    flex: 1 1 100%;
+    padding: 1rem 1.2rem;
+    gap: 1rem;
+  }
+  .stat-info .value {
+    font-size: 1.7rem;
+  }
+  .stat-info h4 {
+    font-size: 0.8rem;
+  }
+  .stat-icon {
+    padding: 0.75rem;
+  }
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+  .stats-card {
+    padding: 1.2rem;
+  }
+  .custom-toast {
+    width: 90%;
+    border-radius: 14px;
+    padding: 0.8rem 1.2rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-info .value {
+    font-size: 1.4rem;
+  }
+  .products-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .mini-product-card {
+    padding: 0.75rem;
+  }
 }

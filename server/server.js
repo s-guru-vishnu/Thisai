@@ -11,7 +11,32 @@ connectDB();
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use(cors());
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, Postman, curl)
+        if (!origin) return callback(null, true);
+        const allowed = [
+            'https://thisai-logistics.vercel.app',
+            'http://localhost:5173',
+            'http://localhost:3000',
+            'http://localhost:5005',
+        ];
+        // Also allow any vercel.app preview deployments
+        if (allowed.includes(origin) || /\.vercel\.app$/.test(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+// Handle pre-flight across all routes
+app.options('*', cors(corsOptions));
 
 // Import Routes
 const authRoutes = require('./routes/authRoutes');

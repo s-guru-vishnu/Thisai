@@ -685,6 +685,7 @@
   .mp-content { flex-direction: column; }
   .footer-top { grid-template-columns: 1fr 1fr; }
 }
+
 @media (max-width: 768px) {
   .landing-nav { padding: 0.8rem 1.5rem; }
   .landing-nav-links { display: none; }
@@ -701,4 +702,81 @@
   .step-item:not(:last-child)::after { display: none; }
   .footer-top { grid-template-columns: 1fr; }
   .track-box { flex-direction: column; }
+  .hp-section-title { font-size: 1.7rem; }
+  .stat-value { font-size: 2.2rem; }
+  .join-card { padding: 2rem; }
+}
+
+@media (max-width: 480px) {
+  .landing-nav { padding: 0.7rem 1rem; }
+  .hero-section { padding: 100px 1rem 30px; gap: 1.5rem; }
+  .hero-left h1 { font-size: 1.6rem; }
+  .hero-left p { font-size: 1rem; }
+  .btn-accent-lg { padding: 12px 22px; font-size: 0.9rem; }
+  .hp-section { padding: 40px 1rem; }
+  .hp-section-title { font-size: 1.4rem; }
+  .hp-section-subtitle { font-size: 0.9rem; }
+  .services-grid { gap: 14px; }
+  .service-card { padding: 1.3rem; }
+  .ai-grid { gap: 14px; }
+  .stats-grid { grid-template-columns: 1fr; gap: 0; }
+  .stat-value { font-size: 2rem; }
+  .stat-item { padding: 1.2rem; }
+  .testimonials-grid { gap: 14px; }
+  .testimonial-card { padding: 1.3rem; }
+  .join-card { padding: 1.5rem; }
+  .join-card h3 { font-size: 1.15rem; }
+  .mp-info h3 { font-size: 1.25rem; }
+  .faq-question { font-size: 0.9rem; padding: 1rem; }
+  .footer-top { gap: 1.5rem; }
+  .landing-footer { padding: 40px 1rem 24px; }
+  .footer-bottom { font-size: 0.78rem; }
+  .track-box { padding: 6px; }
+  .track-features { flex-direction: column; align-items: flex-start; gap: 0.8rem; }
+}
+
+/* Mobile nav overlay */
+.landing-nav-mobile {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(11, 11, 12, 0.98);
+  backdrop-filter: blur(20px);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  transform: translateX(-100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.landing-nav-mobile.open {
+  transform: translateX(0);
+}
+
+.landing-nav-mobile a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  transition: color 0.2s;
+}
+
+.landing-nav-mobile a:hover {
+  color: #FF6B00;
+}
+
+.landing-nav-mobile .mobile-close {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
 }
